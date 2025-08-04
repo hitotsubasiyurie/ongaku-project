@@ -1,0 +1,2 @@
+class OngakuException(Exception):
+    pass

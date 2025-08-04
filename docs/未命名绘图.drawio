@@ -1,0 +1,43 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.6 Chrome/138.0.7204.100 Electron/37.2.3 Safari/537.36" version="28.0.6">
+  <diagram name="第 1 页" id="oWgwL8ZDsoxQIV98hBk7">
+    <mxGraphModel dx="1489" dy="919" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="bmT7h9vC3gOpRqE1M4xn-3" value="BT 下载 做种 文件夹" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;" parent="1" vertex="1">
+          <mxGeometry x="80" y="405" width="210" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bmT7h9vC3gOpRqE1M4xn-5" value="临时处理文件夹" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;" parent="1" vertex="1">
+          <mxGeometry x="435" y="405" width="160" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bmT7h9vC3gOpRqE1M4xn-6" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.927;entryY=0.033;entryDx=0;entryDy=0;entryPerimeter=0;fontSize=20;" parent="1" edge="1" target="bmT7h9vC3gOpRqE1M4xn-7">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="330" y="420" as="sourcePoint" />
+            <mxPoint x="530" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bmT7h9vC3gOpRqE1M4xn-7" value="硬链接克隆" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;" parent="1" vertex="1">
+          <mxGeometry x="320" y="415" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="NG4wUBKepzJXdPVMgNYT-1" value="" style="ellipse;whiteSpace=wrap;html=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="125" y="300" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="NG4wUBKepzJXdPVMgNYT-2" value="" style="ellipse;whiteSpace=wrap;html=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="460" y="300" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="NG4wUBKepzJXdPVMgNYT-3" value="元数据目录&lt;div&gt;metadata_path&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="695" y="390" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="NG4wUBKepzJXdPVMgNYT-4" value="" style="ellipse;whiteSpace=wrap;html=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="720" y="295" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="NG4wUBKepzJXdPVMgNYT-5" value="资源目录&lt;div&gt;resource_path&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="940" y="390" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="NG4wUBKepzJXdPVMgNYT-6" value="" style="ellipse;whiteSpace=wrap;html=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="960" y="295" width="120" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

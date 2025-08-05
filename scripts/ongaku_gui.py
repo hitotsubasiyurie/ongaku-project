@@ -1,7 +1,9 @@
-import sys
 import os
+import sys
+from pathlib import Path
 
-sys.path.append(r"E:\my\ongaku")
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 os.environ["ONGAKU_METADATA_PATH"] = r"D:\ongaku-metadata"
 os.environ["ONGAKU_RESOURCE_PATH"] = r"D:\移动云盘同步盘\ongaku-resource"
 os.environ["ONGAKU_TMP_PATH"] = r"D:\ongaku-tmp"

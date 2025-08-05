@@ -1,10 +1,9 @@
-import os
 import sys
 import itertools
 from pathlib import Path
 from collections import defaultdict
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ongaku.logger import logger
 from ongaku.common.constants import TMP_PATH

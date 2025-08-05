@@ -1,7 +1,7 @@
 from typing import Any
 
 from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QItemSelection, QMimeData, )
-from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, )
+from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, )
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, )
 
@@ -23,7 +23,7 @@ class AlbumTableItemModel(QAbstractItemModel):
         self.albums: list[Album] = albums
         self.album_states: list[ResourceState] = album_states
 
-        self.headers = ["S", "ALBUM", "CATNO", "DATE"]
+        self.headers = ["RS", "ALBUM", "CATNO", "DATE"]
         self.table = [[s, a.album, a.catalognumber, a.date] 
                        for a, s in zip(self.albums, self.album_states)]
 
@@ -127,8 +127,24 @@ class ResourceStateItemDelegate(QStyledItemDelegate):
         painter.setBrush(QColor(ResourceStateItemDelegate.RESOURCE_STATE_COLOR[state]))
         # 抗锯齿
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
         rect: QRect = option.rect
-        painter.drawEllipse(rect.center(), 10, 10)
+        center = rect.center()
+        radius = 10
+        
+        # 创建路径
+        path = QPainterPath()
+        # 移动到中心点（起点）
+        path.moveTo(center)
+        # 添加圆弧 - 从0度开始，顺时针绘制270度（360-90）
+        path.arcTo(QRect(center.x() - radius, center.y() - radius, 
+                        radius * 2, radius * 2), 
+                  0, 270)
+        # 闭合路径（回到中心点）
+        path.lineTo(center)
+        
+        # 绘制路径
+        painter.drawPath(path)
         painter.restore()
 
 

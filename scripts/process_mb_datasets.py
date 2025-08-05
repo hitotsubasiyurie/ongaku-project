@@ -16,6 +16,7 @@
 
 """
 
+import sys
 import time
 import pickle
 from pathlib import Path
@@ -24,10 +25,11 @@ from collections import defaultdict
 import orjson
 from tqdm import tqdm
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from ongaku.metadata.vgmdb_api import VGMdbAPI
 from ongaku.metadata.musicbrainz_api import MusicBrainzAPI
 from ongaku.common.metadata import Album
-
 
 
 if __name__ == "__main__":

@@ -10,10 +10,10 @@ from threading import Lock
 import requests
 from lxml import etree
 
-from ongaku.common.exception import OngakuException
-from ongaku.logger import logger, logger_watched
-from ongaku.common.metadata import Album, Disc, Track
-from ongaku.common.utils import retry
+from src.common.exception import OngakuException
+from src.logger import logger, logger_watched
+from src.ongaku_library.basemodels import Album, Disc, Track
+from src.common.utils import retry
 
 
 class VGMdbAPI:

@@ -5,11 +5,11 @@ from collections import defaultdict
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from ongaku.logger import logger
-from ongaku.common.constants import TMP_PATH
-from ongaku.common.exception import OngakuException
-from ongaku.metadata.vgmdb_api import VGMdbAPI
-from ongaku.common.mdf_util import save_album, album_filename
+from src.logger import logger
+from src.common.constants import TMP_PATH
+from src.common.exception import OngakuException
+from src.metadata.vgmdb_api import VGMdbAPI
+from src.ongaku_library.mdf_util import save_album, album_filename
 
 
 if __name__ == "__main__":

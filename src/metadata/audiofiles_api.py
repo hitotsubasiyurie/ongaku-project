@@ -5,9 +5,9 @@ from pathlib import Path
 
 import mutagen
 
-from ongaku.common.exception import OngakuException
-from ongaku.logger import logger
-from ongaku.common.metadata import Album, MultiDiscAlbum, Track
+from src.common.exception import OngakuException
+from src.logger import logger
+from src.ongaku_library.basemodels import Album, MultiDiscAlbum, Track
 
 
 class AudioFilesAPI:

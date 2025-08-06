@@ -17,16 +17,17 @@ def _get_logger(level: int = logging.ERROR) -> logging.Logger:
     fmt= "[%(asctime)s][%(levelname)s] %(message)s [%(funcName)s, %(filename)s, line %(lineno)d][process %(process)d, thread %(thread)d]"
     formatter = logging.Formatter(fmt)
 
-    # 附加到 sys.stderr
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-    logger.addHandler(stream_handler)
-
+    # ONGAKU_TMP_PATH 影响日志输出位置
     # 附加到 文件
     if tmp_path:= os.getenv("ONGAKU_TMP_PATH"):
         file_handler = logging.FileHandler(os.path.join(tmp_path, "ongaku.log"), "w", encoding="utf_8")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
+    # 附加到 sys.stderr
+    else:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
 
     return logger
 

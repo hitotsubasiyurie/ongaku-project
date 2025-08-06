@@ -11,10 +11,10 @@ sys.path.append(r"E:\my\ongaku")
 os.environ["ONGAKU_TMP_PATH"] = r"E:\ongaku-tmp"
 
 
-from ongaku.logger import logger
-from ongaku.metadata.vgmdb_api import VGMdbAPI
-from ongaku.metadata.musicbrainz_api import MusicBrainzAPI
-from ongaku.common.metadata import Album, metadata_filename, save_metadata, load_metadata
+from src.logger import logger
+from src.metadata.vgmdb_api import VGMdbAPI
+from src.metadata.musicbrainz_api import MusicBrainzAPI
+from src.ongaku_library.basemodels import Album, metadata_filename, save_metadata, load_metadata
 
 
 if __name__ == "__main__":

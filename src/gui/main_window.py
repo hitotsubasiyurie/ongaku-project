@@ -4,6 +4,7 @@ import shutil
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable
+import subprocess
 
 import numpy
 from PySide6.QtCore import (Qt, QEvent, QObject, QModelIndex, )
@@ -11,24 +12,20 @@ from PySide6.QtGui import (QPixmap, QResizeEvent, )
 from PySide6.QtWidgets import (QWidget, QLineEdit, QLabel, QGridLayout, QMessageBox, QGraphicsOpacityEffect, )
 from scipy.optimize import linear_sum_assignment
 
-from ongaku.common.constants import METADATA_PATH, RESOURCE_PATH, TMP_PATH
-from ongaku.common.mdf_util import (load_album, get_track_states, track_filenames, _get_album_state, album_filename)
-from ongaku.common.metadata import Album
-from ongaku.gui.album_table_view import AlbumTableView
-from ongaku.gui.link_combo_box import LinkComboBox
-from ongaku.gui.theme_box_widget import ThemeBoxWidget
-from ongaku.gui.track_table_view import TrackTableView
-from ongaku.gui.check_message_box import CheckMessageBox
-
-
-AUDIO_EXTS = {".mp3", ".flac"}
-IMG_EXTS = {".jpg", ".png"}
+from src.logger import logger
+from src.ongaku_library.ongaku_library import OngakuLibrary, IMG_EXTS, AUDIO_EXTS, track_filenames
+from src.ongaku_library.basemodels import Album
+from src.gui.album_table_view import AlbumTableView
+from src.gui.link_combo_box import LinkComboBox
+from src.gui.theme_box_widget import ThemeBoxWidget
+from src.gui.track_table_view import TrackTableView
+from src.gui.check_message_box import CheckMessageBox
 
 
 class MainWindow(QWidget):
 
     def setup_ui(self) -> None:
-        self.setWindowTitle("ongaku")
+        self.setWindowTitle("OngakuLibrary")
         
         # 初始化 UI
         grid_layout = QGridLayout()
@@ -75,7 +72,7 @@ class MainWindow(QWidget):
         self.catno_field.textEdited.connect(self._set_album_view)
         self.date_field.textEdited.connect(self._set_album_view)
         self.theme_field.selected_changed.connect(self._set_album_view)
-        self.album_table_view.selected_changed.connect(self._set_track_view)
+        self.album_table_view.selected_changed.connect(self._on_album_view_selected)
         self.album_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.album_table_view.action_edit_clicked.connect(self._edit_album)
@@ -87,17 +84,15 @@ class MainWindow(QWidget):
         self.track_table_view.installEventFilter(self)
         self.cover_label.installEventFilter(self)
 
-    def __init__(self) -> None:
+    def __init__(self, metadata_dir: str, resource_dir: str) -> None:
         super().__init__()
 
-        self.metadata_dir: Path = Path(METADATA_PATH)
-        self.resource_dir: Path = Path(RESOURCE_PATH)
-        self.tmp_dir: Path = Path(TMP_PATH)
+        self.ongaku_library = OngakuLibrary(metadata_dir, resource_dir)
 
         self.setup_ui()
         self.setup_event()
 
-        self._refresh_album_view()
+        self._set_album_view()
 
     # 重写方法
 
@@ -117,101 +112,87 @@ class MainWindow(QWidget):
             # 其余键按下时，拦截
             return True
         if event.type() == QEvent.Type.KeyRelease:
-            # F5 键释放时，刷新视图
-            if event.key() == Qt.Key.Key_F5:
-                self._refresh_album_view()
-            # 其余按键释放时，透明化 cover_label
-            else:
-                self.cover_effect.setOpacity(0.1)
+            # # F5 键释放时，刷新视图
+            # if event.key() == Qt.Key.Key_F5:
+            #     # self._refresh_album_view()
+            # 任何按键释放时，透明化 cover_label
+            self.cover_effect.opacity() != 0.1 and self.cover_effect.setOpacity(0.1)
             return True
         return super().eventFilter(watched, event)
 
     # 内部方法
 
-    def _refresh_album_view(self) -> None:
-        self._scan_metadata_dir()
-        self._scan_resource_dir()
-        self._set_album_view()
-        # 聚焦 album view 、索引第一行
-        self.album_table_view.setFocus()
-        self.album_table_view.selectRow(0)
-        self.album_table_view.setCurrentIndex(self.album_table_view.selectedIndexes()[0])
-
-    def _scan_metadata_dir(self) -> None:
-        self.album_mdfs = list(self.metadata_dir.rglob("*.json"))
-        self.albums = list(map(load_album, self.album_mdfs))
-        self.aid2idx = {id(a): i for i, a in enumerate(self.albums)}
-
-    def _scan_resource_dir(self) -> None:
-        _dname2path = {p.name: p for p in self.resource_dir.rglob("*") if p.is_dir()}
-        self.album_dirs = [_dname2path.get(f.stem, None) for f in self.album_mdfs]
-        self.track_states = [get_track_states(a, d) for a, d in zip(self.albums, self.album_dirs)]
-        self.album_states = list(map(_get_album_state, self.track_states))
-        self.album_imgs = [d and next((p for p in Path(d).rglob("*") if p.name.lower() in ["cover.jpg", "cover.png"]), None)
-                            for d in self.album_dirs]
+    # def _refresh_album_view(self) -> None:
+    #     self._set_album_view()
+    #     # 聚焦 album view 、索引第一行
+    #     self.album_table_view.setFocus()
+    #     self.album_table_view.setCurrentIndex(self.album_table_view.model().index(0, 0))
 
     def _set_album_view(self, *args, **kwargs) -> None:
-        # 筛选
+        # 根据 搜索框 过滤 albums
         album_key = self.album_field.text().lower()
         catno_key = self.catno_field.text().lower()
         date_key = self.date_field.text().lower()
         themes_key = set(self.theme_field.selected)
 
-        tmp = [(a, s) for a, s in zip(self.albums, self.album_states)
+        albums = self.ongaku_library.get_albums()
+        metadata_states = self.ongaku_library.get_album_metadata_states()
+        resource_states = self.ongaku_library.get_album_resource_states()
+
+        tmp = [(a, ms, rs) for a, ms, rs in zip(albums, metadata_states, resource_states)
                if album_key in a.album.lower() and catno_key in a.catalognumber.lower() \
                and date_key in a.date.lower() and themes_key.issubset(a.themes)]
         
-        albums, album_states = list(zip(*tmp)) if tmp else [[], []]
-        self.album_table_view.set_albums(albums, album_states)
+        albums, metadata_states, resource_states = list(zip(*tmp)) if tmp else [[], [], []]
+        self.album_table_view.set_albums(albums, metadata_states, resource_states)
         self.theme_field.set_themes(list(set(itertools.chain.from_iterable(a.themes for a in albums))))
 
-    def _set_track_view(self, *args, **kwargs) -> None:
-        rows = [i.row() for i in self.album_table_view.selectedIndexes()]
+    def _on_album_view_selected(self, *args, **kwargs) -> None:
+        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
         albums = [self.album_table_view.model().albums[r] for r in rows]
-        idxs = [self.aid2idx[id(a)] for a in albums]
 
-        # 多选 albums 的 links, themes
+        # 展示 已选 albums 的 links, themes
         self.link_box.set_links(list(set(itertools.chain.from_iterable(a.links for a in albums))))
         self.theme_field.set_current_themes(list(set(itertools.chain.from_iterable(a.themes for a in albums))))
 
-        # 首个 album 的 track, cover
-        self.track_table_view.set_tracks(albums[0].tracks, self.track_states[idxs[0]])
-        if img:= self.album_imgs[idxs[0]]:
-            pix = QPixmap(img)
+        # 展示 首个 album 的 track, cover
+        a = albums[0]
+        self.track_table_view.set_tracks(a.tracks, self.ongaku_library.get_album_track_states(a))
+        if cover:= self.ongaku_library.get_album_covers(a):
+            pix = QPixmap(cover)
             pix = pix.scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.cover_label.setPixmap(pix)
         else:
             self.cover_label.clear()
 
     def _locate_album(self) -> None:
-        """打开 album 资源所在文件夹"""
-        a_row = self.album_table_view.selectedIndexes()[0].row()
-        album = self.album_table_view.model().albums[a_row]
-        idx = self.aid2idx[id(album)]
-        album_dir = self.album_dirs[idx]
-        album_dir and os.startfile(album_dir)
+        # 定位 首个 album 的 资源位置
+        row = self.album_table_view.selectedIndexes()[0].row()
+        a = self.album_table_view.model().albums[row]
+        if res_dir:= self.ongaku_library.get_album_resource_dirs(a):
+            subprocess.run(f'explorer /select, "{res_dir}"')
 
     def _edit_album(self) -> None:
-        """编辑 album 元数据文件"""
-        a_row = self.album_table_view.selectedIndexes()[0].row()
-        album = self.album_table_view.model().albums[a_row]
-        idx = self.aid2idx[id(album)]
-        mdf = self.album_mdfs[idx]
+        # 编辑 首个 album 元数据文件
+        row = self.album_table_view.selectedIndexes()[0].row()
+        a = self.album_table_view.model().albums[row]
+        mdf = self.ongaku_library.get_album_metadata_files(a)
         os.startfile(mdf)
 
     def _delete_album(self) -> None:
-        """删除 album 元数据文件"""
+        # 删除 已选 album 的 元数据文件
         rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
         albums = [self.album_table_view.model().albums[r] for r in rows]
-        idxs = [self.aid2idx[id(a)] for a in albums]
+
         if not rows:
             return
-        mdfs = [self.album_mdfs[idx] for idx in idxs]
+
+        mdfs = [self.ongaku_library.get_album_metadata_files(a) for a in albums]
 
         def _operate() -> None:
-            [f.unlink() for f in mdfs]
+            [os.remove(f) for f in mdfs]
             # 刷新视图
-            self._refresh_album_view()
+            self.album_table_view.delete_rows()
         
         text = "Will delete files:\n\n" + "\n".join(map(str, mdfs))
         self._show_check_message("Check Again", text, icon=QMessageBox.Icon.Warning, on_yes_clicked=_operate)
@@ -238,37 +219,42 @@ class MainWindow(QWidget):
         if not rows:
             return
         albums = [self.album_table_view.model().albums[r] for r in rows]
-        idxs = [self.aid2idx[id(a)] for a in albums]
 
-        dst_dirs = [self.album_dirs[idx] or self.resource_dir/self.album_mdfs[idx].stem 
-                    for idx in idxs]
-        [d.mkdir(exist_ok=True) for d in dst_dirs]
+        dst_dirs = [self.ongaku_library.get_album_resource_dirs(a) 
+                    or self.ongaku_library.get_album_dst_resource_dirs(a)
+                    for a in albums]
+        dst_dirs = list(map(Path, dst_dirs))
 
         given_paths = list(map(Path, given_strs))
 
         # 拖入文件夹列表时
         if all(p.is_dir() for p in given_paths):
-            # 数量等于 album view 选中数
-            if len(given_paths) == len(albums):
-                [self._on_album_src_dropped(*args) for args in zip(given_paths, dst_dirs, albums)]
+            # 路径数量必须等于 album view 选中数
+            if len(given_paths) != len(albums):
+                return
+            [self._on_album_src_dropped(*args) for args in zip(given_paths, dst_dirs, albums)]
             return
 
         exts = set(p.suffix.lower() for p in given_paths)
         # 拖入图片列表时
         if exts.issubset(IMG_EXTS):
-            # 数量等于 album view 选中数
+            # 路径数量等于 album view 选中数
             if len(given_paths) == len(albums):
                 [self._on_cover_src_dropped(*args) for args in zip(given_paths, dst_dirs)]
-            # 数量为一个
+            # 路径数量为一个
             elif len(given_paths) == 1:
                 [self._on_cover_src_dropped(given_paths[0], d) for d in dst_dirs]
 
-        # 拖入音频列表时，album view 选中一个
-        elif exts.issubset(AUDIO_EXTS) and len(albums) == 1:
-            # 拖入数量为一个
+        # 拖入音频列表时
+        elif exts.issubset(AUDIO_EXTS):
+            # album view 必须仅选中一个
+            if len(albums) != 1:
+                return
+            # 路径数量为一个
             if len(given_paths) == 1:
                 trackidx = self.track_table_view.selectedIndexes()[0].row()
                 [self._on_track_src_dropped(p, d, albums[0], trackidx) for p, d in zip(given_paths, dst_dirs)]
+            # 路径数量为多个
             else:
                 self._on_album_src_dropped(given_paths, dst_dirs[0], albums[0])
 
@@ -276,9 +262,10 @@ class MainWindow(QWidget):
         src_files = given_path if isinstance(given_path, list) else \
             [p for p in given_path.rglob("*") if p.suffix.lower() in AUDIO_EXTS]
         
-        # 轨道数量相等
+        # tracks 数量必须等于音频文件数量
         if len(album.tracks) != len(src_files):
             return
+        
         dst_files = [dst_dir / (n+f.suffix) for f, n in zip(src_files, track_filenames(album))]
         
         # 一一配对 总相似度最高
@@ -302,8 +289,9 @@ class MainWindow(QWidget):
             cover = imgs[0] if len(imgs) == 1 else next((p for p in imgs if p.stem.lower()=="cover"), None)
             cover and self._on_cover_src_dropped(cover, dst_dir)
 
-        text = (f"{None if isinstance(given_path, list) else given_path.name}\n\n{album.album}\n\nAverage Similarity: {aver_similarity:.02f}\n\n"
-                + "\n".join(f"      {k.name}\n->  {v.name}\n" for k, v in _map.items()))
+        text = "Directory:\t" + "" if isinstance(given_path, list) else given_path.name + "\n"
+        text += f"Album:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
+        text += "\n".join(f"      {k.name}\n->  {v.name}\n" for k, v in _map.items())
         self._show_check_message("Check Again", text, on_yes_clicked=_operate)
 
     def _on_cover_src_dropped(self, given_path: Path, dst_dir: Path) -> None:
@@ -320,4 +308,5 @@ class MainWindow(QWidget):
 
         text = f"      {src.name}\n->  {dst.name}"
         self._show_check_message("Check Again", text, on_yes_clicked=_operate)
+
 

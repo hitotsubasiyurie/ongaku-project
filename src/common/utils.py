@@ -4,7 +4,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Callable, Generator
 
-from ongaku.logger import logger
+from src.logger import logger
 
 
 def retry(retries: int = 3, delay: int | float = 2) -> Callable:

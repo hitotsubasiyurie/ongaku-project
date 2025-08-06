@@ -1,12 +1,13 @@
 from typing import Any
 
-from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QItemSelection, QMimeData, )
+from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QItemSelection, QMimeData, 
+    QRectF, )
 from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, )
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, )
 
-from ongaku.common.mdf_util import ResourceState
-from ongaku.common.metadata import Album
+from src.ongaku_library.ongaku_library import MetadataState, ResourceState
+from src.ongaku_library.basemodels import Album
 
 
 class AlbumTableItemModel(QAbstractItemModel):
@@ -16,16 +17,18 @@ class AlbumTableItemModel(QAbstractItemModel):
 
         self.set_albums([], [])
 
-        # 排序状态
+        # 模型 排序状态
         self.sort_args = None
 
-    def set_albums(self, albums: list[Album], album_states: list[ResourceState]) -> None:
+    def set_albums(self, albums: list[Album], metadata_states: list[MetadataState], 
+                   resource_states: list[ResourceState]) -> None:
         self.albums: list[Album] = albums
-        self.album_states: list[ResourceState] = album_states
+        self.metadata_states: list[MetadataState] = metadata_states
+        self.resource_states: list[ResourceState] = resource_states
 
-        self.headers = ["RS", "ALBUM", "CATNO", "DATE"]
-        self.table = [[s, a.album, a.catalognumber, a.date] 
-                       for a, s in zip(self.albums, self.album_states)]
+        self.headers = ["S", "ALBUM", "CATNO", "DATE"]
+        self.table = [[(ms, rs), a.album, a.catalognumber, a.date] 
+                       for a, ms, rs in zip(self.albums, self.metadata_states, self.resource_states)]
 
         self.row_cnt = len(self.table)
         self.col_cnt = len(self.headers)
@@ -68,9 +71,10 @@ class AlbumTableItemModel(QAbstractItemModel):
         # 数据仍然有效，只是布局变化
         self.layoutAboutToBeChanged.emit()
         # 原始数据 一起 排序
-        combined = sorted(zip(self.table, self.albums, self.album_states), key=lambda x: x[0][column], 
+        combined = sorted(zip(self.table, self.albums, self.metadata_states, self.resource_states), 
+                          key=lambda x: x[0][column], 
                           reverse=(order==Qt.SortOrder.DescendingOrder))
-        self.table, self.albums, self.album_states = map(list, zip(*combined))
+        self.table, self.albums, self.metadata_states, self.resource_states = map(list, zip(*combined))
         self.layoutChanged.emit()
         # 更新排序状态
         self.sort_args = (column, order)
@@ -102,7 +106,7 @@ class AlbumTableItemModel(QAbstractItemModel):
         #  编辑无效
         return True
 
-    # drop
+    # drop 支持
     
     def supportedDropActions(self) -> Qt.DropAction:
         return Qt.DropAction.CopyAction | Qt.DropAction.MoveAction
@@ -114,39 +118,56 @@ class AlbumTableItemModel(QAbstractItemModel):
 
 class ResourceStateItemDelegate(QStyledItemDelegate):
 
-    RESOURCE_STATE_COLOR = {
-        ResourceState.LOSSLESS: 0x99CC66, 
-        ResourceState.LOSSY: 0xFFCC00, 
-        ResourceState.MISSING: 0xDDDDDD
+    # ResourceState 到颜色的映射
+    RESOURCE_STATE_COLORS = {
+        ResourceState.LOSSLESS: QColor(0x99CC66),
+        ResourceState.LOSSY: QColor(0xFFCC00),
+        ResourceState.MISSING: QColor(0xDDDDDD),
     }
-
+    
+    # MetadataState 到角度的映射，每个标志对应60度的扇面
+    METADATA_STATE_ANGLES = {
+        MetadataState.TITLE_EXIST: (0, 60),
+        MetadataState.DATE_EXIST: (60, 60),
+        MetadataState.CATNO_EXIST: (120, 60),
+        MetadataState.TRACK_EXIST: (180, 60),
+        MetadataState.ARTIST_EXIST: (240, 60),
+        MetadataState.COVER_EXIST: (300, 60)
+    }
+    
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         painter.save()
-        state = index.data(Qt.ItemDataRole.DisplayRole)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(ResourceStateItemDelegate.RESOURCE_STATE_COLOR[state]))
-        # 抗锯齿
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        ms, rs = index.data(Qt.ItemDataRole.DisplayRole)
         
-        rect: QRect = option.rect
+        # 设置抗锯齿（可选，如果性能敏感可以关闭）
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        
+        rect = option.rect
         center = rect.center()
-        radius = 10
-        
-        # 创建路径
-        path = QPainterPath()
-        # 移动到中心点（起点）
-        path.moveTo(center)
-        # 添加圆弧 - 从0度开始，顺时针绘制270度（360-90）
-        path.arcTo(QRect(center.x() - radius, center.y() - radius, 
-                        radius * 2, radius * 2), 
-                  0, 270)
-        # 闭合路径（回到中心点）
-        path.lineTo(center)
-        
-        # 绘制路径
-        painter.drawPath(path)
-        painter.restore()
+        radius = min(rect.width(), rect.height()) / 2 - 1
+        diameter = radius * 2
+        left, top = center.x() - radius, center.y() - radius
 
+        # 复用 QPainterPath（避免频繁创建）
+        path = QPainterPath()
+        path.moveTo(center)
+        
+        if ms:
+            for state, (start_angle, span_angle) in self.METADATA_STATE_ANGLES.items():
+                if state in ms:
+                    path.arcTo(left, top, diameter, diameter, start_angle, span_angle)
+                    path.lineTo(center)
+        else:
+            path.addEllipse(center, radius / 4, radius / 4)
+        
+        path.closeSubpath()
+        
+        # 使用预缓存的 QColor
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(self.RESOURCE_STATE_COLORS[rs])
+        painter.drawPath(path)
+        
+        painter.restore()
 
 class AlbumTableView(QTableView):
 

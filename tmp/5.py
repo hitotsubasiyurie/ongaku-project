@@ -23,12 +23,12 @@ from mutagen.mp3 import EasyMP3
 
 sys.path.append(r"E:\my\my-ongaku")
 
-from ongaku.common.exception import OngakuException
-from ongaku.common.constants import OngakuConstants
-from ongaku.logger import logger
-from ongaku.common.utils import legalize_filename, dump_yaml, archive_directory
-from ongaku.metadata.audiofiles_api import AudioFilesAPI
-from ongaku.common.metadata import Album, MultiDiscAlbum, Disc, Track
+from src.common.exception import OngakuException
+from src.common.constants import OngakuConstants
+from src.logger import logger
+from src.common.utils import legalize_filename, dump_yaml, archive_directory
+from src.metadata.audiofiles_api import AudioFilesAPI
+from src.ongaku_library.basemodels import Album, MultiDiscAlbum, Disc, Track
 
 
 def write_audio_tag(audiopath: str, tag: dict) -> None:

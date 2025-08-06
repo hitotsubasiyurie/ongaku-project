@@ -8,9 +8,9 @@ from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragM
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, )
 
-from ongaku.common.mdf_util import ResourceState
-from ongaku.common.metadata import Track
-from ongaku.gui.album_table_view import ResourceStateItemDelegate
+from src.ongaku_library.mdf_util import ResourceState
+from src.ongaku_library.basemodels import Track
+from src.gui.album_table_view import ResourceStateItemDelegate
 
 
 class TrackTableItemModel(QAbstractItemModel):
@@ -88,7 +88,7 @@ class TrackTableItemModel(QAbstractItemModel):
         #  编辑无效
         return True
 
-    # drop
+    # drop 支持
     
     def supportedDropActions(self) -> Qt.DropAction:
         return Qt.DropAction.CopyAction | Qt.DropAction.MoveAction

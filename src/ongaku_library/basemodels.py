@@ -4,6 +4,7 @@
 catalognumber, date, album, tracknumber, title, artist
 themes, links
 """
+
 from pydantic import BaseModel, Field
 
 

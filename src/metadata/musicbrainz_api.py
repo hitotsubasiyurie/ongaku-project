@@ -13,10 +13,10 @@ from typing import Literal
 import orjson
 import requests
 
-from ongaku.logger import logger, logger_watched
-from ongaku.common.metadata import Album, Disc, Track
-from ongaku.common.utils import retry
-from ongaku.metadata.vgmdb_api import VGMdbAPI
+from src.logger import logger, logger_watched
+from src.ongaku_library.basemodels import Album, Disc, Track
+from src.common.utils import retry
+from src.metadata.vgmdb_api import VGMdbAPI
 
 
 class MusicBrainzAPI:

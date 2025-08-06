@@ -7,7 +7,7 @@ os.environ["ONGAKU_METADATA_PATH"] = r"D:\ongaku-metadata"
 os.environ["ONGAKU_RESOURCE_PATH"] = r"D:\ongaku-resource"
 os.environ["ONGAKU_TMP_PATH"] = r"D:\ongaku-tmp"
 
-from ongaku.common.mdf_util import (load_album, get_track_states, track_filenames, _get_album_state, album_filename)
+from src.ongaku_library.mdf_util import (load_album, get_track_states, track_filenames, _get_album_state, album_filename)
 
 
 # metadata_dir = Path(input("请输入绝对 metadata 路径：").strip("'\""))

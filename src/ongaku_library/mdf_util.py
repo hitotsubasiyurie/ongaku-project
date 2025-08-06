@@ -3,9 +3,9 @@ import os
 from enum import Enum
 from pathlib import Path
 
-from ongaku.common.json_encoder import CustomJSONEncoder
-from ongaku.common.metadata import Album, Track
-from ongaku.common.utils import legalize_filename
+from src.common.json_encoder import CustomJSONEncoder
+from src.ongaku_library.basemodels import Album, Track
+from src.common.utils import legalize_filename
 
 ALBUM_FILENAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"
 TRACK_FILENAME = "{tracknumber}. {title}"

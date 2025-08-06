@@ -10,7 +10,7 @@ os.environ["ONGAKU_TMP_PATH"] = r"D:\ongaku-tmp"
 
 from PySide6.QtWidgets import QApplication
 
-from ongaku.gui.main_window import MainWindow
+from src.gui.main_window import MainWindow
 
 
 if __name__ == "__main__":

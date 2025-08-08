@@ -195,6 +195,8 @@ class MainWindow(QWidget):
         albums = [self.album_table_view.model().albums[r] for r in rows]
 
         dropped_paths = list(map(Path, dropped_strs))
+        exts = set(p.suffix.lower() for p in dropped_paths)
+
         dst_dirs = [self.ongaku_library.get_album_resource_dirs(a) 
                     or self.ongaku_library.get_album_dst_resource_dirs(a)
                     for a in albums]
@@ -219,18 +221,16 @@ class MainWindow(QWidget):
                 # 唯一的图片，或名字为 cover ，认为是封面
                 cover = imgs[0] if len(imgs) == 1 else next((i for i in imgs if i.stem.lower()=="cover"), None)
                 cover and self._putaway_cover_file(cover, d)
-            return
-
-        exts = set(p.suffix.lower() for p in dropped_paths)
         # 拖入图片列表时
-        if exts.issubset(IMG_EXTS):
+        elif exts.issubset(IMG_EXTS):
             # 路径数量等于 album view 选中数
             if len(dropped_paths) == len(albums):
                 [self._putaway_cover_file(*args) for args in zip(dropped_paths, dst_dirs)]
             # 路径数量为一个
             elif len(dropped_paths) == 1:
                 [self._putaway_cover_file(dropped_paths[0], d) for d in dst_dirs]
-
+            else:
+                return
         # 拖入音频列表时
         elif exts.issubset(AUDIO_EXTS):
             # album view 必须仅选中一个
@@ -243,6 +243,9 @@ class MainWindow(QWidget):
             # 路径数量为多个
             else:
                 self._putaway_track_files(dropped_paths, dst_dirs[0], albums[0])
+        
+        self.ongaku_library._scan()
+        self._set_album_view()
 
     def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
         dst_dir.mkdir(parents=True, exist_ok=True)

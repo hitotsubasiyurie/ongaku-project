@@ -8,6 +8,7 @@ from watchdog.observers import Observer
 from watchdog.events import (FileSystemEventHandler, DirMovedEvent, FileMovedEvent, DirCreatedEvent, 
     FileCreatedEvent, DirDeletedEvent, FileDeletedEvent, DirModifiedEvent, FileModifiedEvent)
 
+from src.logger import logger_watched
 from src.common.json_encoder import CustomJSONEncoder
 from src.ongaku_library.basemodels import Album, Track
 from src.common.utils import legalize_filename
@@ -140,6 +141,7 @@ class OngakuLibrary:
 
     # 内部方法
 
+    @logger_watched(1)
     def _scan(self) -> None:
         self._mdfs = list(map(str, Path(self.metadata_dir).rglob("*.json")))
         self._albums = list(map(load_album_model, self._mdfs))

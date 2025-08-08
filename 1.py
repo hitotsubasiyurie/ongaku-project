@@ -1,56 +1,47 @@
-from PySide6.QtWidgets import QApplication, QListWidget, QListWidgetItem, QStyledItemDelegate, QStyle
-from PySide6.QtCore import Qt, QRect
-from PySide6.QtGui import QColor, QPainter, QBrush, QLinearGradient
-import sys
+from PySide6.QtWidgets import (QMessageBox, QScrollArea, QPlainTextEdit, 
+                              QLabel, QGridLayout, QSizePolicy)
+from PySide6.QtCore import Qt
 
-class ProgressDelegate(QStyledItemDelegate):
-    def __init__(self, progress_values, parent=None):
+class CheckMessageBox(QMessageBox):
+    def __init__(self, title: str, text: str, parent=None):
         super().__init__(parent)
-        self.progress_values = progress_values
-    
-    def paint(self, painter, option, index):
-        # Get progress value for this item
-        progress = self.progress_values[index.row()]
+        self.setWindowTitle(title)
         
-        if 0 <= progress <= 1:
-            # Set up colors - gradient from start to end
-            start_color = QColor(100, 200, 100)  # Green
-            end_color = QColor(200, 200, 200)     # Gray
-            
-            # Create a gradient that fills based on progress
-            rect = option.rect
-            gradient = QLinearGradient(rect.topLeft(), rect.topRight())
-            gradient.setColorAt(0, start_color)
-            gradient.setColorAt(progress, start_color)
-            gradient.setColorAt(min(progress + 0.001, 1.0), end_color)
-            
-            # Save painter state
-            painter.save()
-            
-            # Clip the painting area to only paint the background
-            clip_rect = QRect(rect)
-            painter.setClipRect(clip_rect)
-            
-            # Fill with gradient
-            painter.fillRect(rect, QBrush(gradient))
-            
-            # Restore painter state
-            painter.restore()
-        super().paint(painter, option, index)
+        # 创建滚动区域和文本编辑框
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        text_edit = QPlainTextEdit()
+        text_edit.setReadOnly(True)
+        text_edit.setPlainText(text)
+        scroll.setWidget(text_edit)
+        
+        # 设置大小策略和最小尺寸
+        scroll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        scroll.setMinimumSize(400, 300)  # 设置最小尺寸
+        
+        # 获取布局并移除原有标签
+        layout = self.layout()
+        for child in self.children():
+            if isinstance(child, QLabel) and child.text() == "":
+                layout.removeWidget(child)
+                child.deleteLater()
+                break
+        
+        # 添加滚动区域到布局（占据原标签位置）
+        layout.addWidget(scroll, 0, 1, 1, layout.columnCount()-1)
+        
+        # 调整对话框大小策略
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-# Example usage
+# 使用示例
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    from PySide6.QtWidgets import QApplication
+    app = QApplication([])
     
-    # Sample data
-    strings = ["Task 1", "Task 2", "Task 3", "Task 4", "Task 5"]
-    progress = [0.25, 0.5, 0.75, 0.9, 0.1]  # Progress values between 0 and 1
+    long_text = "\n".join([f"这是第 {i} 行文本..." for i in range(1, 101)])
     
-    # Create and show the widget
-    widget = QListWidget()
-    widget.addItems(list(zip(strings, progress)))
-    widget.setItemDelegate(ProgressDelegate(progress))
-    widget.resize(300, 200)
-    widget.show()
+    box = CheckMessageBox("长文本消息", long_text)
+    box.setStandardButtons(QMessageBox.Ok)
+    box.exec()
     
-    sys.exit(app.exec())
+    app.exec()

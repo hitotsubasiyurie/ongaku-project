@@ -1,25 +1,25 @@
 import itertools
 import os
 import shutil
+import subprocess
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable
-import subprocess
 
 import numpy
-from PySide6.QtCore import (Qt, QEvent, QObject, QModelIndex, )
-from PySide6.QtGui import (QPixmap, QResizeEvent, )
-from PySide6.QtWidgets import (QWidget, QLineEdit, QLabel, QGridLayout, QMessageBox, QGraphicsOpacityEffect, )
+from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtGui import QPixmap, QResizeEvent
+from PySide6.QtWidgets import (QGraphicsOpacityEffect, QGridLayout, QLabel, QLineEdit, QMessageBox, 
+    QWidget, )
 from scipy.optimize import linear_sum_assignment
 
-from src.logger import logger
-from src.ongaku_library.ongaku_library import OngakuLibrary, IMG_EXTS, AUDIO_EXTS, track_filenames
-from src.ongaku_library.basemodels import Album
 from src.gui.album_table_view import AlbumTableView
+from src.gui.check_message_box import CheckMessageBox
 from src.gui.link_combo_box import LinkComboBox
 from src.gui.theme_box_widget import ThemeBoxWidget
 from src.gui.track_table_view import TrackTableView
-from src.gui.check_message_box import CheckMessageBox
+from src.ongaku_library.basemodels import Album
+from src.ongaku_library.ongaku_library import AUDIO_EXTS, IMG_EXTS, OngakuLibrary, track_filenames
 
 
 class MainWindow(QWidget):
@@ -93,6 +93,8 @@ class MainWindow(QWidget):
 
         self._set_album_view()
 
+        self._show_check_message("Check Again", "Check Again"*1000)
+
     # 重写方法
 
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -111,9 +113,9 @@ class MainWindow(QWidget):
             # 其余键按下时，拦截
             return True
         if event.type() == QEvent.Type.KeyRelease:
-            # # F5 键释放时，刷新视图
-            # if event.key() == Qt.Key.Key_F5:
-            #     # self._refresh_album_view()
+            # F5 键释放时，刷新视图
+            if event.key() == Qt.Key.Key_F5:
+                self._refresh_album_view()
             # 任何按键释放时，透明化 cover_label
             self.cover_effect.opacity() != 0.1 and self.cover_effect.setOpacity(0.1)
             return True
@@ -173,14 +175,10 @@ class MainWindow(QWidget):
         mdf = self.ongaku_library.get_album_metadata_files(a)
         os.startfile(mdf)
 
-    def _show_check_message(self, title: str, text: str, icon: QMessageBox.Icon = None, on_yes_clicked: Callable = None, 
+    def _show_check_message(self, title: str, text: str, on_yes_clicked: Callable = None, 
                             on_no_clicked: Callable = None) -> None:
         """弹出确认对话框"""
-        check_msg = CheckMessageBox(parent=self)
-        check_msg.setText(text)
-        check_msg.setWindowTitle(title)
-        icon and check_msg.setIcon(icon)
-
+        check_msg = CheckMessageBox(title, text, parent=self)
         check_msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         # 设置默认按钮为 NO
         check_msg.setDefaultButton(QMessageBox.StandardButton.No)

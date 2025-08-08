@@ -16,7 +16,7 @@ class CompletionDelegate(QStyledItemDelegate):
             val = self.completions[text]
             rect: QRect = option.rect
             comp_rect = QRect(rect.left(), rect.top(), int(rect.width() * val), rect.height())
-            painter.fillRect(comp_rect, QColor(0xC5DAE5))
+            painter.fillRect(comp_rect, QColor(0xC1CAB7))
         super().paint(painter, option, index)
 
 class ThemeBoxWidget(QWidget):

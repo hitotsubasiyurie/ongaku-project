@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.logger import logger
 from src.common.constants import TMP_PATH
 from src.common.exception import OngakuException
-from src.metadata.vgmdb_api import VGMdbAPI
+from src.metadata_source.vgmdb_api import VGMdbAPI
 from src.ongaku_library.mdf_util import save_album, album_filename
 
 

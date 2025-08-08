@@ -93,8 +93,6 @@ class MainWindow(QWidget):
 
         self._set_album_view()
 
-        self._show_check_message("Check Again", "Check Again"*1000)
-
     # 重写方法
 
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -283,7 +281,7 @@ class MainWindow(QWidget):
         text += f"Directory:\t{src_files[0].parent}\nAlbum:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
         text += "\n".join(f"      {k.name}\n->  {v.name}\n" for k, v in _map.items())
         accept = self._show_check_message("Check Again", text)
-
+        
         if not accept:
             return False
         

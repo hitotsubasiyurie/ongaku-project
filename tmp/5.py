@@ -27,7 +27,7 @@ from src.common.exception import OngakuException
 from src.common.constants import OngakuConstants
 from src.logger import logger
 from src.common.utils import legalize_filename, dump_yaml, archive_directory
-from src.metadata.audiofiles_api import AudioFilesAPI
+from src.metadata_source.audiofiles_api import AudioFilesAPI
 from src.ongaku_library.basemodels import Album, MultiDiscAlbum, Disc, Track
 
 

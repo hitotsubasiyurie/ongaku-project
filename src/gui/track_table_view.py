@@ -8,9 +8,8 @@ from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragM
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, )
 
-from src.ongaku_library.mdf_util import ResourceState
+from src.ongaku_library.ongaku_library import ResourceState
 from src.ongaku_library.basemodels import Track
-from src.gui.album_table_view import ResourceStateItemDelegate
 
 
 class TrackTableItemModel(QAbstractItemModel):
@@ -98,7 +97,29 @@ class TrackTableItemModel(QAbstractItemModel):
         return True
 
 
-class TrackItemDelegate(QStyledItemDelegate):
+class TrackStateItemDelegate(QStyledItemDelegate):
+
+    RESOURCE_STATE_COLORS = {
+        ResourceState.LOSSLESS: QColor(0x99CC66),
+        ResourceState.LOSSY: QColor(0xFFCC00),
+        ResourceState.MISSING: QColor(0xDDDDDD),
+    }
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        painter.save()
+        rs = index.data(Qt.ItemDataRole.DisplayRole)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(self.RESOURCE_STATE_COLORS[rs])
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        
+        rect: QRect = option.rect
+        center = rect.center()
+        radius = min(rect.width(), rect.height()) / 2 - 1
+        painter.drawEllipse(center, radius, radius)
+        painter.restore()
+
+
+class TrackTitleItemDelegate(QStyledItemDelegate):
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         painter.save()
@@ -152,15 +173,14 @@ class TrackTableView(QTableView):
         # 初始化模型
         model = TrackTableItemModel()
         self.setModel(model)
-        self.setItemDelegateForColumn(0, ResourceStateItemDelegate(self))
-        self.setItemDelegateForColumn(1, TrackItemDelegate())
+        self.setItemDelegateForColumn(0, TrackStateItemDelegate(self))
+        self.setItemDelegateForColumn(1, TrackTitleItemDelegate())
 
         # 表格无边框
         self.setShowGrid(False)
         self.setFrameShape(QFrame.Shape.NoFrame)
         # 可编辑
         self.setEditTriggers(QTableView.EditTrigger.DoubleClicked)
-        # self.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         # 像素滚动
         self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerPixel)
@@ -198,13 +218,6 @@ class TrackTableView(QTableView):
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         # 激活窗口
         self.activateWindow()
-        event.acceptProposedAction()
-
-    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        # 拖入时选择整行
-        index = self.indexAt(event.position().toPoint())
-        if index.isValid():
-            self.selectRow(index.row())
         event.acceptProposedAction()
 
     def dropEvent(self, event: QDropEvent) -> None:

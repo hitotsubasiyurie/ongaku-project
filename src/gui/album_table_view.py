@@ -15,7 +15,7 @@ class AlbumTableItemModel(QAbstractItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.set_albums([], [])
+        self.set_albums([], [], [])
 
         # 模型 排序状态
         self.sort_args = None
@@ -27,7 +27,8 @@ class AlbumTableItemModel(QAbstractItemModel):
         self.resource_states: list[ResourceState] = resource_states
 
         self.headers = ["S", "ALBUM", "CATNO", "DATE"]
-        self.table = [[(ms, rs), a.album, a.catalognumber, a.date] 
+        # (资源状态, 元数据状态) 排序优先级
+        self.table = [[(rs, ms), a.album, a.catalognumber, a.date] 
                        for a, ms, rs in zip(self.albums, self.metadata_states, self.resource_states)]
 
         self.row_cnt = len(self.table)
@@ -116,57 +117,38 @@ class AlbumTableItemModel(QAbstractItemModel):
         return True
 
 
-class ResourceStateItemDelegate(QStyledItemDelegate):
+class AlbumStateItemDelegate(QStyledItemDelegate):
 
-    # ResourceState 到颜色的映射
     RESOURCE_STATE_COLORS = {
         ResourceState.LOSSLESS: QColor(0x99CC66),
         ResourceState.LOSSY: QColor(0xFFCC00),
         ResourceState.MISSING: QColor(0xDDDDDD),
     }
-    
-    # MetadataState 到角度的映射，每个标志对应60度的扇面
-    METADATA_STATE_ANGLES = {
-        MetadataState.TITLE_EXIST: (0, 60),
-        MetadataState.DATE_EXIST: (60, 60),
-        MetadataState.CATNO_EXIST: (120, 60),
-        MetadataState.TRACK_EXIST: (180, 60),
-        MetadataState.ARTIST_EXIST: (240, 60),
-        MetadataState.COVER_EXIST: (300, 60)
-    }
-    
+
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         painter.save()
-        ms, rs = index.data(Qt.ItemDataRole.DisplayRole)
-        
-        # 设置抗锯齿（可选，如果性能敏感可以关闭）
+        rs, ms = index.data(Qt.ItemDataRole.DisplayRole)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(self.RESOURCE_STATE_COLORS[rs])
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         
-        rect = option.rect
+        rect: QRect = option.rect
         center = rect.center()
         radius = min(rect.width(), rect.height()) / 2 - 1
         diameter = radius * 2
         left, top = center.x() - radius, center.y() - radius
 
-        # 复用 QPainterPath（避免频繁创建）
         path = QPainterPath()
         path.moveTo(center)
-        
-        if ms:
-            for state, (start_angle, span_angle) in self.METADATA_STATE_ANGLES.items():
-                if state in ms:
-                    path.arcTo(left, top, diameter, diameter, start_angle, span_angle)
-                    path.lineTo(center)
-        else:
-            path.addEllipse(center, radius / 4, radius / 4)
-        
+
+        # 六种元数据状态 平分 360 度
+        # 正下方开始 顺时针旋转
+        path.arcTo(left, top, diameter, diameter, 270, -(bin(ms).count("1")*60))
+        path.lineTo(center)
+
         path.closeSubpath()
-        
-        # 使用预缓存的 QColor
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(self.RESOURCE_STATE_COLORS[rs])
+
         painter.drawPath(path)
-        
         painter.restore()
 
 class AlbumTableView(QTableView):
@@ -176,7 +158,6 @@ class AlbumTableView(QTableView):
     action_edit_clicked = Signal()
     action_group_clicked = Signal()
     action_locate_clicked = Signal()
-    action_delete_clicked = Signal()
 
     def setup_context_menu(self) -> None:
         # 初始化 右键菜单
@@ -190,9 +171,6 @@ class AlbumTableView(QTableView):
         action = QAction("Locate", self)
         action.triggered.connect(self.action_locate_clicked.emit)
         self.addAction(action)
-        action = QAction("Delete", self)
-        action.triggered.connect(self.action_delete_clicked.emit)
-        self.addAction(action)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -201,7 +179,7 @@ class AlbumTableView(QTableView):
         model = AlbumTableItemModel()
         self.setModel(model)
         self.selectionModel().selectionChanged.connect(self._on_selection_changed)
-        self.setItemDelegateForColumn(0, ResourceStateItemDelegate(self))
+        self.setItemDelegateForColumn(0, AlbumStateItemDelegate(self))
 
         # 表格无边框
         self.setShowGrid(False)
@@ -239,15 +217,16 @@ class AlbumTableView(QTableView):
 
         self.setup_context_menu()
 
-    def set_albums(self, albums: list[Album], album_states: list[ResourceState]) -> None:
+    def set_albums(self, albums: list[Album], metadata_states: list[MetadataState], 
+                   resource_states: list[ResourceState]) -> None:
         model: AlbumTableItemModel = self.model()
         # 所有数据都无效，重新加载
         model.beginResetModel()
-        model.set_albums(albums, album_states)
+        model.set_albums(albums, metadata_states, resource_states)
         model.endResetModel()
 
         # 还原排序状态
-        model.sort_args and model.sort(*model.sort_args)
+        model.sort(*(model.sort_args or (0, Qt.SortOrder.DescendingOrder)))
 
     # 重写方法
 

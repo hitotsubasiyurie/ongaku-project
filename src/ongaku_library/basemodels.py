@@ -12,15 +12,15 @@ class Album(BaseModel):
     catalognumber: str = Field(default="")
     date: str = Field(default="")
     album: str = Field(default="")
-    tracks: list["Track"] = Field(default=[])
-    themes: list[str] = Field(default=[])
-    links: list[str] = Field(default=[])
+    tracks: list["Track"] = Field(default_factory=list)
+    themes: list[str] = Field(default_factory=list)
+    links: list[str] = Field(default_factory=list)
 
 
 class Disc(BaseModel):
     discnumber: int | None = Field(default=None)
     disc: str = Field(default="")
-    tracks: list["Track"] = Field(default=[])
+    tracks: list["Track"] = Field(default_factory=list)
 
 
 class Track(BaseModel):

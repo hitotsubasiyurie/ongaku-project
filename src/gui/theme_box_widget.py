@@ -1,7 +1,23 @@
-from PySide6.QtCore import (Qt, QObject, QEvent, Signal, )
-from PySide6.QtGui import (QColor, QFocusEvent, )
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAbstractScrollArea, QListWidgetItem, )
+from PySide6.QtCore import (Qt, QObject, QEvent, Signal, QModelIndex, QRect, )
+from PySide6.QtGui import (QColor, QFocusEvent, QPainter, )
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAbstractScrollArea, QListWidgetItem, 
+    QStyledItemDelegate, QStyleOptionViewItem, )
 
+
+class CompletionDelegate(QStyledItemDelegate):
+
+    def __init__(self, completions: dict[str, float], parent: QWidget = None):
+        super().__init__(parent)
+        self.completions = completions
+    
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        text = index.data()[1:]
+        if text in self.completions:
+            val = self.completions[text]
+            rect: QRect = option.rect
+            comp_rect = QRect(rect.left(), rect.top(), int(rect.width() * val), rect.height())
+            painter.fillRect(comp_rect, QColor(0xC5DAE5))
+        super().paint(painter, option, index)
 
 class ThemeBoxWidget(QWidget):
 
@@ -18,6 +34,8 @@ class ThemeBoxWidget(QWidget):
         self.line_edit.textEdited.connect(self._on_line_edit_text_changed)
 
         self.list_widget = QListWidget(self)
+        self.delegate = CompletionDelegate([])
+        self.list_widget.setItemDelegate(self.delegate)
         # 设置 弹出 非模态不阻塞
         self.list_widget.setWindowFlag(Qt.WindowType.FramelessWindowHint | Qt.WindowType.ToolTip)
         self.list_widget.setWindowModality(Qt.WindowModality.NonModal)
@@ -32,18 +50,24 @@ class ThemeBoxWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.themes: list[str] = []
-        self.current: list[str] = []
-        self.selected: list[str] = []
+        self.themes: set[str] = set()
+        self.indicate: set[str] = set()
+        self.selected: set[str] = set()
+
+        self.completions: dict[str, float] = {}
 
         self.setup_ui()
 
-    def set_themes(self, themes: list[str]) -> None:
+    def set_themes(self, themes: set[str], completions: dict[str, float] = None) -> None:
+        # 清空 indicate
+        self.indicate = set()
         self.themes = themes
+        self.completions = completions
+        self.delegate.completions = completions
         self._update_list_items()
 
-    def set_current_themes(self, current: list[str]) -> None:
-        self.current = current
+    def set_indicate_themes(self, indicate: list[str]) -> None:
+        self.indicate = indicate
         self._update_list_items()
 
     # 重写方法
@@ -62,16 +86,12 @@ class ThemeBoxWidget(QWidget):
     # 内部方法
 
     def _update_list_items(self) -> None:
-        # list_widget 展示优先级 selected > current > themes
-        tmp = list(dict.fromkeys(self.selected + self.current + self.themes))
+        # list_widget 展示优先级 selected > indicate > themes
+        a, b, c = self.selected, self.indicate - self.selected, self.themes - self.indicate - self.selected
+        a, b, c = [sorted(x, key=self.completions.get, reverse=True) for x in (a, b, c)]
+        tmp = ["⚫"+s for s in a] + ["⚪"+s for s in b] + [" "+s for s in c]
         self.list_widget.clear()
         self.list_widget.addItems(tmp)
-        # 设置 背景颜色
-        for i, t in enumerate(tmp):
-            if t in self.selected:
-                self.list_widget.item(i).setBackground(QColor(0x6699CC))
-            elif t in self.current:
-                self.list_widget.item(i).setBackground(QColor(0xDAE2FF))
         # 滚动 list_widget 至顶
         self.list_widget.scrollToTop()
         self._hide_list_items()
@@ -90,8 +110,8 @@ class ThemeBoxWidget(QWidget):
 
     def _on_list_item_clicked(self, item: QListWidgetItem) -> None:
         # list_widget 元素被双击时，选择/取消选择 元素
-        text = item.text()
-        self.selected.remove(text) if text in self.selected else self.selected.append(text)
+        text = item.text()[1:]
+        self.selected.remove(text) if text in self.selected else self.selected.add(text)
         self._update_list_items()
         # 发出信号
         self.selected_changed.emit()

@@ -77,7 +77,6 @@ class MainWindow(QWidget):
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.album_table_view.action_edit_clicked.connect(self._edit_album)
         self.album_table_view.action_locate_clicked.connect(self._locate_album)
-        self.album_table_view.action_delete_clicked.connect(self._delete_album)
 
         # 拦截 album_table 和 track_table 事件
         self.album_table_view.installEventFilter(self)
@@ -120,20 +119,12 @@ class MainWindow(QWidget):
             return True
         return super().eventFilter(watched, event)
 
-    # 内部方法
-
-    # def _refresh_album_view(self) -> None:
-    #     self._set_album_view()
-    #     # 聚焦 album view 、索引第一行
-    #     self.album_table_view.setFocus()
-    #     self.album_table_view.setCurrentIndex(self.album_table_view.model().index(0, 0))
-
     def _set_album_view(self, *args, **kwargs) -> None:
         # 根据 搜索框 过滤 albums
         album_key = self.album_field.text().lower()
         catno_key = self.catno_field.text().lower()
         date_key = self.date_field.text().lower()
-        themes_key = set(self.theme_field.selected)
+        themes_key = self.theme_field.selected
 
         albums = self.ongaku_library.get_albums()
         metadata_states = self.ongaku_library.get_album_metadata_states()
@@ -145,7 +136,10 @@ class MainWindow(QWidget):
         
         albums, metadata_states, resource_states = list(zip(*tmp)) if tmp else [[], [], []]
         self.album_table_view.set_albums(albums, metadata_states, resource_states)
-        self.theme_field.set_themes(list(set(itertools.chain.from_iterable(a.themes for a in albums))))
+        # 设置 theme view
+        themes = set(itertools.chain.from_iterable(a.themes for a in albums))
+        completions = self.ongaku_library.get_theme_completions()
+        self.theme_field.set_themes(themes, completions)
 
     def _on_album_view_selected(self, *args, **kwargs) -> None:
         rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
@@ -153,7 +147,7 @@ class MainWindow(QWidget):
 
         # 展示 已选 albums 的 links, themes
         self.link_box.set_links(list(set(itertools.chain.from_iterable(a.links for a in albums))))
-        self.theme_field.set_current_themes(list(set(itertools.chain.from_iterable(a.themes for a in albums))))
+        self.theme_field.set_indicate_themes(set(itertools.chain.from_iterable(a.themes for a in albums)))
 
         # 展示 首个 album 的 track, cover
         a = albums[0]
@@ -178,24 +172,6 @@ class MainWindow(QWidget):
         a = self.album_table_view.model().albums[row]
         mdf = self.ongaku_library.get_album_metadata_files(a)
         os.startfile(mdf)
-
-    def _delete_album(self) -> None:
-        # 删除 已选 album 的 元数据文件
-        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
-        albums = [self.album_table_view.model().albums[r] for r in rows]
-
-        if not rows:
-            return
-
-        mdfs = [self.ongaku_library.get_album_metadata_files(a) for a in albums]
-
-        def _operate() -> None:
-            [os.remove(f) for f in mdfs]
-            # 刷新视图
-            self.album_table_view.delete_rows()
-        
-        text = "Will delete files:\n\n" + "\n".join(map(str, mdfs))
-        self._show_check_message("Check Again", text, icon=QMessageBox.Icon.Warning, on_yes_clicked=_operate)
 
     def _show_check_message(self, title: str, text: str, icon: QMessageBox.Icon = None, on_yes_clicked: Callable = None, 
                             on_no_clicked: Callable = None) -> None:

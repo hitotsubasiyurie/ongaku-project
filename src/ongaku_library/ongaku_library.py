@@ -1,5 +1,6 @@
 import json
 import os
+from collections import defaultdict
 from enum import IntEnum, IntFlag, auto
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from src.common.utils import legalize_filename
 
 ALBUM_FILENAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"
 TRACK_FILENAME = "{tracknumber}. {title}"
+
 
 AUDIO_EXTS = {".mp3", ".flac"}
 IMG_EXTS = {".jpg", ".png"}
@@ -96,6 +98,9 @@ class OngakuLibrary:
         self._metadata_states: list[MetadataState] = []
         self._resource_states: list[ResourceState] = []
         self._track_states: list[list[ResourceState]] = []
+        self._theme_completions: dict[str, float] = {}
+
+        self._scan()
 
     def get_albums(self) -> list[Album]:
         return self._albums
@@ -118,8 +123,12 @@ class OngakuLibrary:
     def get_album_track_states(self, a: Album = None) -> list[ResourceState] | list[list[ResourceState]]:
         return self._track_states[self._aid2n[id(a)]] if a else self._track_states
     
+    def get_theme_completions(self, t: str = None) -> float | dict[str, float]:
+        return self._theme_completions.get(t, 0) if t else self._theme_completions
+    
     def get_album_dst_resource_dirs(self, a: Album = None) -> str | list[str]:
         if a:
+            # 相同目录结构
             rel_path = os.path.relpath(self.get_album_metadata_files(a), self.metadata_dir)
             rel_path = os.path.splitext(rel_path)[0]
             dst = os.path.join(self.resource_dir, rel_path)
@@ -138,21 +147,23 @@ class OngakuLibrary:
 
         _dname2path = {p.name: p for p in Path(self.resource_dir).rglob("*") if p.is_dir()}
         # 专辑资源目录 与 专辑元数据文件 同名
-        self._res_dirs = [str(_dname2path.get(os.path.basename(f), "")) for f in self._mdfs]
+        self._res_dirs = [str(_dname2path.get(os.path.splitext(os.path.basename(f))[0], "")) for f in self._mdfs]
 
-        self._resource_states, self._track_states = zip(*[self._scan_album_state(a) for a in self._albums])
+        self._resource_states, self._track_states = zip(*[self._scan_resource_state(a, d) for a, d in zip(self._albums, self._res_dirs)])
 
-        self._covers = [d and next((p for p in Path(d).rglob("*") if p.name.lower() in ["cover.jpg", "cover.png"]), None)
-                            for d in self.album_dirs]
         self._covers = [None if not d else next((str(p) for p in Path(d).rglob("cover.*") if p.suffix.lower() in IMG_EXTS), None) 
                         for d in self._res_dirs]
+        
+        self._metadata_states = [self._scan_metadata_state(a, c) for a, c in zip(self._albums, self._covers)]
 
-    def _scan_album_state(self, album: Album) -> tuple[ResourceState, list[ResourceState]]:
+        self._theme_completions = self._count_theme_completions(self._albums, self._resource_states)
+
+    @staticmethod
+    def _scan_resource_state(album: Album, res_dir: str) -> tuple[ResourceState, list[ResourceState]]:
         # 无 track 信息时为 MISSING
         if not album.tracks:
             return ResourceState.MISSING, []
         
-        res_dir = self._res_dirs[self._aid2n[id(album)]]
         if not res_dir:
             return ResourceState.MISSING, [ResourceState.MISSING]*len(album.tracks)
         
@@ -162,4 +173,32 @@ class OngakuLibrary:
         a_state = min(t_states)
 
         return a_state, t_states
-
+    
+    @staticmethod
+    def _scan_metadata_state(album: Album, cover: str) -> MetadataState:
+        state = MetadataState(0)
+        
+        if album.album:
+            state |= MetadataState.TITLE_EXIST
+        if album.date:
+            state |= MetadataState.DATE_EXIST
+        if album.catalognumber:
+            state |= MetadataState.CATNO_EXIST
+        if album.tracks:
+            state |= MetadataState.TRACK_EXIST
+            if all(t.artist for t in album.tracks):
+                state |= MetadataState.ARTIST_EXIST
+        if cover:
+            state |= MetadataState.COVER_EXIST
+        
+        return state
+    
+    @staticmethod
+    def _count_theme_completions(albums: list[Album], resource_states: list[ResourceState]) -> dict[str, float]:
+        total, missing = defaultdict(int), defaultdict(int)
+        for a, s in zip(albums, resource_states):
+            for t in a.themes:
+                total[t] += 1
+                missing[t] += s == ResourceState.MISSING
+        completions = {k: (v - missing.get(k, 0)) / v for k, v in total.items()}
+        return completions

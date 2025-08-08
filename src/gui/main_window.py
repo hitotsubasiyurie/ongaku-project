@@ -176,7 +176,7 @@ class MainWindow(QWidget):
         os.startfile(mdf)
 
     def _show_check_message(self, title: str, text: str, on_yes_clicked: Callable = None, 
-                            on_no_clicked: Callable = None) -> None:
+                            on_no_clicked: Callable = None) -> bool:
         """弹出确认对话框"""
         check_msg = CheckMessageBox(title, text, parent=self)
         check_msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
@@ -184,9 +184,11 @@ class MainWindow(QWidget):
         check_msg.setDefaultButton(QMessageBox.StandardButton.No)
         on_yes_clicked and check_msg.button(QMessageBox.StandardButton.Yes).clicked.connect(on_yes_clicked)
         on_no_clicked and check_msg.button(QMessageBox.StandardButton.No).clicked.connect(on_no_clicked)
-        check_msg.show()
+        # 阻塞
+        accept = check_msg.exec() == QMessageBox.StandardButton.Yes
+        return accept 
 
-    def _on_paths_dropped(self, given_strs: list[str]) -> None:
+    def _on_paths_dropped(self, dropped_strs: list[str]) -> None:
         # selectedIndexes 以索引为单位，一行多个
         rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
         # album view 至少 选中一个
@@ -194,30 +196,42 @@ class MainWindow(QWidget):
             return
         albums = [self.album_table_view.model().albums[r] for r in rows]
 
+        dropped_paths = list(map(Path, dropped_strs))
         dst_dirs = [self.ongaku_library.get_album_resource_dirs(a) 
                     or self.ongaku_library.get_album_dst_resource_dirs(a)
                     for a in albums]
         dst_dirs = list(map(Path, dst_dirs))
 
-        given_paths = list(map(Path, given_strs))
-
         # 拖入文件夹列表时
-        if all(p.is_dir() for p in given_paths):
+        if all(p.is_dir() for p in dropped_paths):
             # 路径数量必须等于 album view 选中数
-            if len(given_paths) != len(albums):
+            if len(dropped_paths) != len(albums):
                 return
-            [self._on_album_src_dropped(*args) for args in zip(given_paths, dst_dirs, albums)]
+            for p, d, a in zip(dropped_paths, dst_dirs, albums):
+                src_files = [f for f in p.rglob("*") if f.suffix.lower() in AUDIO_EXTS]
+                # 音频文件数量必须等于 tracks 数量
+                if len(src_files) != len(a.tracks):
+                    continue
+                result = self._putaway_track_files(src_files, d, a)
+                if not result:
+                    continue
+                # 存库音轨成功后 再存库封面
+                imgs = [i for i in p.rglob("*") if i.suffix.lower() in IMG_EXTS]
+                cover = None
+                # 唯一的图片，或名字为 cover ，认为是封面
+                cover = imgs[0] if len(imgs) == 1 else next((i for i in imgs if i.stem.lower()=="cover"), None)
+                cover and self._putaway_cover_file(cover, d)
             return
 
-        exts = set(p.suffix.lower() for p in given_paths)
+        exts = set(p.suffix.lower() for p in dropped_paths)
         # 拖入图片列表时
         if exts.issubset(IMG_EXTS):
             # 路径数量等于 album view 选中数
-            if len(given_paths) == len(albums):
-                [self._on_cover_src_dropped(*args) for args in zip(given_paths, dst_dirs)]
+            if len(dropped_paths) == len(albums):
+                [self._putaway_cover_file(*args) for args in zip(dropped_paths, dst_dirs)]
             # 路径数量为一个
-            elif len(given_paths) == 1:
-                [self._on_cover_src_dropped(given_paths[0], d) for d in dst_dirs]
+            elif len(dropped_paths) == 1:
+                [self._putaway_cover_file(dropped_paths[0], d) for d in dst_dirs]
 
         # 拖入音频列表时
         elif exts.issubset(AUDIO_EXTS):
@@ -225,21 +239,36 @@ class MainWindow(QWidget):
             if len(albums) != 1:
                 return
             # 路径数量为一个
-            if len(given_paths) == 1:
+            if len(dropped_paths) == 1:
                 trackidx = self.track_table_view.selectedIndexes()[0].row()
-                [self._on_track_src_dropped(p, d, albums[0], trackidx) for p, d in zip(given_paths, dst_dirs)]
+                [self._putaway_track_file(p, d, albums[0], trackidx) for p, d in zip(dropped_paths, dst_dirs)]
             # 路径数量为多个
             else:
-                self._on_album_src_dropped(given_paths, dst_dirs[0], albums[0])
+                self._putaway_track_files(dropped_paths, dst_dirs[0], albums[0])
 
-    def _on_album_src_dropped(self, given_path: Path | list[Path], dst_dir: Path, album: Album) -> None:
-        src_files = given_path if isinstance(given_path, list) else \
-            [p for p in given_path.rglob("*") if p.suffix.lower() in AUDIO_EXTS]
+    def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        ext = src.suffix.lower()
+        dst = dst_dir / ("cover"+ext)
+        shutil.copy2(src, dst)
+        return True
+
+    def _putaway_track_file(self, src: Path, dst_dir: Path, album: Album, trackidx: int) -> bool:
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        ext = src.suffix.lower()
+        dst = dst_dir / (track_filenames(album)[trackidx]+ext)
+
+        text = f"      {src.name}\n->  {dst.name}"
+        accept = self._show_check_message("Check Again", text)
+
+        if not accept:
+            return False
         
-        # tracks 数量必须等于音频文件数量
-        if len(album.tracks) != len(src_files):
-            return
-        
+        src.rename(dst)
+        return True
+
+    def _putaway_track_files(self, src_files: list[Path], dst_dir: Path, album: Album) -> bool:
+        dst_dir.mkdir(parents=True, exist_ok=True)
         dst_files = [dst_dir / (n+f.suffix) for f, n in zip(src_files, track_filenames(album))]
         
         # 一一配对 总相似度最高
@@ -251,36 +280,14 @@ class MainWindow(QWidget):
         _map: dict[Path, Path] = {src_files[row_ind[n]]: dst_files[col_ind[n]] for n in range(k)}
         aver_similarity = sim_matrix[row_ind, col_ind].sum() / k
 
-        def _operate() -> None:
-            [src.rename(dst) for src, dst in _map.items()]
-
-            if isinstance(given_path, list):
-                return
-
-            imgs = [p for p in given_path.rglob("*") if p.suffix.lower() in IMG_EXTS]
-            cover = None
-            # 唯一的图片，或名字为 cover ，认为是封面
-            cover = imgs[0] if len(imgs) == 1 else next((p for p in imgs if p.stem.lower()=="cover"), None)
-            cover and self._on_cover_src_dropped(cover, dst_dir)
-
-        text = "Directory:\t" + "" if isinstance(given_path, list) else given_path.name + "\n"
-        text += f"Album:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
+        text += f"Directory:\t{src_files[0].parent}\nAlbum:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
         text += "\n".join(f"      {k.name}\n->  {v.name}\n" for k, v in _map.items())
-        self._show_check_message("Check Again", text, on_yes_clicked=_operate)
+        accept = self._show_check_message("Check Again", text)
 
-    def _on_cover_src_dropped(self, given_path: Path, dst_dir: Path) -> None:
-        ext = given_path.suffix.lower()
-        src, dst = given_path, dst_dir / ("cover"+ext)
-        shutil.copy2(src, dst)
-
-    def _on_track_src_dropped(self, given_path: Path, dst_dir: Path, album: Album, trackidx: int) -> None:
-        ext = given_path.suffix.lower()
-        src, dst = given_path, dst_dir / (track_filenames(album)[trackidx]+ext)
-
-        def _operate() -> None:
-            src.rename(dst)
-
-        text = f"      {src.name}\n->  {dst.name}"
-        self._show_check_message("Check Again", text, on_yes_clicked=_operate)
+        if not accept:
+            return False
+        
+        [src.rename(dst) for src, dst in _map.items()]
+        return True
 
 

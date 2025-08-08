@@ -5,7 +5,7 @@ from functools import wraps
 from typing import Callable
 
 
-def _get_logger(level: int = logging.ERROR) -> logging.Logger:
+def _get_logger(level: int = logging.INFO) -> logging.Logger:
 
     # 抑制其他库的日志输出
     logging.getLogger().setLevel(logging.WARNING)

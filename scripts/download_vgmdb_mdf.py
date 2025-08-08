@@ -15,8 +15,7 @@ from src.ongaku_library.mdf_util import save_album, album_filename
 if __name__ == "__main__":
 
     dst_dir = Path(input("Input save dir (will makedirs): ").strip("'\""))
-    cache_dir = Path(TMP_PATH, "cache")
-    cache_dir = Path(input(f"Input cache dir (will makedirs) ({cache_dir}): ").strip("'\"") or cache_dir)
+    cache_dir = Path(input(f"Input cache dir (will makedirs): ").strip("'\""))
     given_url = input("Input VGMDB page (frachise page, product page, search page): ")
 
     dst_dir.mkdir(parents=True, exist_ok=True)

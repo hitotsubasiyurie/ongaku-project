@@ -3,6 +3,10 @@ from functools import wraps
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Generator
+from difflib import SequenceMatcher
+
+import numpy
+from scipy.optimize import linear_sum_assignment
 
 from src.logger import logger
 
@@ -63,22 +67,18 @@ def legalize_filename(name: str) -> str:
     return name
 
 
-def watch_file(filepath: str) -> Generator[int, None, None]:
+def strings_assignment(strings_a: list[str], strings_b: list[str]) -> tuple[float, list[int], list[int]]:
     """
-    监控文件变化。
+        b1 b2 b3 ... bm
+    a1
+    a2
+    a3
+    ...
+    an
     """
-    file = Path(filepath)
-    if not file.is_file():
-        logger.error(f"File to be watched not exists. {filepath}")
-        return None
-
-    mtime = 0
-    while True:
-        if file.stat().st_mtime == mtime:
-            time.sleep(1)
-            continue
-        yield 1
-        mtime = file.stat().st_mtime
-
-
-
+    sim_matrix = [[SequenceMatcher(None, sa, sb).ratio() for sb in strings_b] 
+                   for sa in strings_a]
+    sim_matrix = numpy.asarray(sim_matrix)
+    row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
+    aver_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
+    return aver_similarity, row_ind, col_ind

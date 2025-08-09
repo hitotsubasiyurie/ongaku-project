@@ -26,6 +26,9 @@ class VGMdbAPI:
 
     PRODUCT_URL_FMT = f"{ROOT_URL}/product/{{}}"
     ALBUM_URL_FMT = f"{ROOT_URL}/album/{{}}"
+
+    ALBUM_URL_PATTERN = fr"{ROOT_URL}/album/(\d+)"
+    """album url 正则匹配模板"""
     
     # 界面信息 优先日语
     _HEADERS = {

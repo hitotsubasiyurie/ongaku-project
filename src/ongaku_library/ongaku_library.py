@@ -4,10 +4,6 @@ from collections import defaultdict
 from enum import IntEnum, IntFlag, auto
 from pathlib import Path
 
-from watchdog.observers import Observer
-from watchdog.events import (FileSystemEventHandler, DirMovedEvent, FileMovedEvent, DirCreatedEvent, 
-    FileCreatedEvent, DirDeletedEvent, FileDeletedEvent, DirModifiedEvent, FileModifiedEvent)
-
 from src.logger import logger_watched
 from src.common.json_encoder import CustomJSONEncoder
 from src.ongaku_library.basemodels import Album, Track
@@ -53,12 +49,14 @@ def track_filenames(album: Album) -> list[str]:
     return names
 
 
-def dump_album_model(album: Album, filepath: str) -> None:
+def dump_album_model(album: Album, filepath: str = None) -> None:
     album.links = list(set(album.links))
     album.themes = list(set(album.themes))
     _dict = album.model_dump()
     _dict["tracks"] = [[t.tracknumber, t.title, t.artist] for t in album.tracks]
-    Path(filepath).write_text(json.dumps(_dict, ensure_ascii=False, indent=4, cls=CustomJSONEncoder), encoding="utf-8")
+    content = json.dumps(_dict, ensure_ascii=False, indent=4, cls=CustomJSONEncoder)
+    filepath and Path(filepath).write_text(content, encoding="utf-8")
+    return content
 
 
 def load_album_model(filepath: str) -> Album:
@@ -66,21 +64,6 @@ def load_album_model(filepath: str) -> Album:
     _dict["tracks"] = [Track(tracknumber=l[0], title=l[1], artist=l[2]) for l in _dict["tracks"]]
     album = Album(**_dict)
     return album
-
-
-class MyHandler(FileSystemEventHandler):
-
-    def on_moved(self, event: DirMovedEvent | FileMovedEvent) -> None:
-        pass
-
-    def on_created(self, event: DirCreatedEvent | FileCreatedEvent) -> None:
-        pass
-
-    def on_deleted(self, event: DirDeletedEvent | FileDeletedEvent) -> None:
-        pass
-
-    def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
-        pass
 
 
 class OngakuLibrary:
@@ -101,7 +84,7 @@ class OngakuLibrary:
         self._track_states: list[list[ResourceState]] = []
         self._theme_completions: dict[str, float] = {}
 
-        self._scan()
+        self._scan_all()
 
     def get_albums(self) -> list[Album]:
         return self._albums
@@ -142,8 +125,8 @@ class OngakuLibrary:
     # 内部方法
 
     @logger_watched(1)
-    def _scan(self) -> None:
-        self._mdfs = list(map(str, Path(self.metadata_dir).rglob("*.json")))
+    def _scan_all(self) -> None:
+        self._mdfs = self._scan_metadata_files()
         self._albums = list(map(load_album_model, self._mdfs))
         self._aid2n = {id(a): i for i, a in enumerate(self._albums)}
 
@@ -159,6 +142,10 @@ class OngakuLibrary:
         self._metadata_states = [self._scan_metadata_state(a, c) for a, c in zip(self._albums, self._covers)]
 
         self._theme_completions = self._count_theme_completions(self._albums, self._resource_states)
+
+    @staticmethod
+    def _scan_metadata_files(metadata_dir: str) -> list[str]:
+        return list(map(str, Path(metadata_dir).rglob("*.json")))
 
     @staticmethod
     def _scan_resource_state(album: Album, res_dir: str) -> tuple[ResourceState, list[ResourceState]]:

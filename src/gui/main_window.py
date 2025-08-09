@@ -2,22 +2,20 @@ import itertools
 import os
 import shutil
 import subprocess
-from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable
 
-import numpy
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QPixmap, QResizeEvent
 from PySide6.QtWidgets import (QGraphicsOpacityEffect, QGridLayout, QLabel, QLineEdit, QMessageBox, 
     QWidget, )
-from scipy.optimize import linear_sum_assignment
 
 from src.gui.album_table_view import AlbumTableView
 from src.gui.check_message_box import CheckMessageBox
 from src.gui.link_combo_box import LinkComboBox
 from src.gui.theme_box_widget import ThemeBoxWidget
 from src.gui.track_table_view import TrackTableView
+from src.common.utils import strings_assignment
 from src.ongaku_library.basemodels import Album
 from src.ongaku_library.ongaku_library import AUDIO_EXTS, IMG_EXTS, OngakuLibrary, track_filenames
 
@@ -244,7 +242,7 @@ class MainWindow(QWidget):
             else:
                 self._putaway_track_files(dropped_paths, dst_dirs[0], albums[0])
         
-        self.ongaku_library._scan()
+        self.ongaku_library._scan_all()
         self._set_album_view()
 
     def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
@@ -272,15 +270,8 @@ class MainWindow(QWidget):
         dst_dir.mkdir(parents=True, exist_ok=True)
         dst_files = [dst_dir / (n+f.suffix) for f, n in zip(src_files, track_filenames(album))]
         
-        # 一一配对 总相似度最高
-        k = len(album.tracks)
-        sim_matrix = [[SequenceMatcher(None, src_files[n].stem, dst_files[m].stem).ratio() for m in range(k)] 
-                        for n in range(k)]
-        sim_matrix = numpy.asarray(sim_matrix)
-        row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
+        aver_similarity, row_ind, col_ind = strings_assignment([f.stem for f in src_files], [f.stem for f in dst_files])
         _map: dict[Path, Path] = {src_files[row_ind[n]]: dst_files[col_ind[n]] for n in range(k)}
-        aver_similarity = sim_matrix[row_ind, col_ind].sum() / k
-
         text += f"Directory:\t{src_files[0].parent}\nAlbum:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
         text += "\n".join(f"      {k.name}\n->  {v.name}\n" for k, v in _map.items())
         accept = self._show_check_message("Check Again", text)

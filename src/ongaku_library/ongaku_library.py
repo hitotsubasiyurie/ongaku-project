@@ -123,6 +123,14 @@ class OngakuLibrary:
         """获取 主题 完成度"""
         return self._theme_completions.get(t, 0) if t else self._theme_completions
     
+    def get_album_dst_metadata_files(self, a: Album = None) -> str | list[str]:
+        """获取 专辑 目标 元数据文件"""
+        if a:
+            # 保持父目录
+            return str(Path(self.get_album_metadata_files(a)).parent / (album_filename(a)+".json"))
+        else:
+            return [str(Path(mdf).parent / (album_filename(b)+".json")) for mdf, b in zip(self._mdfs, self._albums)]
+    
     def get_album_dst_resource_dirs(self, a: Album = None) -> str | list[str]:
         """获取 专辑 目标 资源目录"""
         if a:

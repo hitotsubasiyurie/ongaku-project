@@ -23,8 +23,8 @@ class CheckMessageBox(QMessageBox):
         scroll.setWidgetResizable(True)
 
         # 设置滚动区域大小
-        self.w, self.h = 600, 600
-        scroll.setFixedSize(self.w, self.h)
+        w, h = 600, 600
+        scroll.setFixedSize(w, h)
 
         text_edit = QPlainTextEdit()
         text_edit.setReadOnly(True)
@@ -33,12 +33,6 @@ class CheckMessageBox(QMessageBox):
         text_edit.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         scroll.setWidget(text_edit)
         layout.addWidget(scroll, 0, 0)
-
-        # # 获取屏幕尺寸
-        # screen_geometry = QApplication.primaryScreen().availableGeometry()
-        # screen_width = screen_geometry.width()
-        # screen_height = screen_geometry.height()
-        # self.move((screen_width - w) // 2, (screen_height - h) // 2)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -49,6 +43,7 @@ class CheckMessageBox(QMessageBox):
         print(screen_geometry)
         window_width = self.width()
         window_height = self.height()
+        # 中心 展示
         self.move((screen_width - window_width) // 2, 
                  (screen_height - window_height) // 2)
 

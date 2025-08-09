@@ -22,16 +22,29 @@ if __name__ == "__main__":
 
     ongaku_library = OngakuLibrary(metadata_dir, resource_dir)
 
-    for res_dir, dst_dir in zip(ongaku_library.get_album_resource_dirs(), ongaku_library.get_album_dst_resource_dirs()):
+    for mdf, dst_mdf, res_dir, dst_dir in zip(ongaku_library.get_album_metadata_files(), ongaku_library.get_album_dst_metadata_files(), 
+                                              ongaku_library.get_album_resource_dirs(), ongaku_library.get_album_dst_resource_dirs()):
         
-        # 无需移动 跳过
-        if not res_dir or res_dir == dst_dir:
+        old_name = Path(mdf).stem
+        new_name = Path(dst_mdf).stem
+
+        # 移动 元数据文件
+        if old_name != new_name:
+            os.rename(mdf, dst_mdf)
+            logger.info(f"{mdf} -> {dst_mdf}")
+
+        # 无资源 跳过
+        if not res_dir:
             continue
 
-        res_dir, dst_dir = Path(res_dir), Path(dst_dir)
+        dst_dir = Path(dst_dir).parent / new_name
+
+        if res_dir == dst_dir:
+            continue
 
         dst_dir.parent.mkdir(exist_ok=True, parents=True)
-        res_dir.rename(dst_dir)
+        os.rename(res_dir, dst_dir)
+        logger.info(f"{res_dir} -> {dst_dir}")
 
     # 删除空目录
     [d.rmdir() for d in Path(resource_dir).rglob("*") if d.is_dir() and not os.listdir(d)]

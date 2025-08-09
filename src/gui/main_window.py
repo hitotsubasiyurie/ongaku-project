@@ -2,6 +2,7 @@ import itertools
 import os
 import shutil
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
@@ -75,6 +76,7 @@ class MainWindow(QWidget):
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.album_table_view.action_edit_clicked.connect(self._edit_album)
         self.album_table_view.action_locate_clicked.connect(self._locate_album)
+        self.album_table_view.action_group_clicked.connect(self._group_album)
 
         # 拦截 album_table 和 track_table 事件
         self.album_table_view.installEventFilter(self)
@@ -171,6 +173,16 @@ class MainWindow(QWidget):
         a = self.album_table_view.model().albums[row]
         mdf = self.ongaku_library.get_album_metadata_files(a)
         os.startfile(mdf)
+
+    def _group_album(self) -> None:
+        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
+        if not rows:
+            return
+        albums = [self.album_table_view.model().albums[r] for r in rows]
+        mdfs  = list(map(self.ongaku_library.get_album_metadata_files, albums))
+        group = Path(self.ongaku_library.metadata_dir, datetime.now().strftime("%Y%m%d%H%M%S"))
+        group.mkdir()
+        [os.symlink(f, group / os.path.basename(f)) for f in mdfs]
 
     def _show_check_message(self, title: str, text: str, on_yes_clicked: Callable = None, 
                             on_no_clicked: Callable = None) -> bool:

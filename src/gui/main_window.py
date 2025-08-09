@@ -111,7 +111,8 @@ class MainWindow(QWidget):
         if event.type() == QEvent.Type.KeyRelease:
             # F5 键释放时，刷新视图
             if event.key() == Qt.Key.Key_F5:
-                self._refresh_album_view()
+                self.ongaku_library._scan_all()
+                self._set_album_view()
             # 任何按键释放时，透明化 cover_label
             self.cover_effect.opacity() != 0.1 and self.cover_effect.setOpacity(0.1)
             return True
@@ -246,6 +247,7 @@ class MainWindow(QWidget):
         self._set_album_view()
 
     def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
+        # TODO: 已存在封面时，是否覆盖
         dst_dir.mkdir(parents=True, exist_ok=True)
         ext = src.suffix.lower()
         dst = dst_dir / ("cover"+ext)
@@ -271,8 +273,8 @@ class MainWindow(QWidget):
         dst_files = [dst_dir / (n+f.suffix) for f, n in zip(src_files, track_filenames(album))]
         
         aver_similarity, row_ind, col_ind = strings_assignment([f.stem for f in src_files], [f.stem for f in dst_files])
-        _map: dict[Path, Path] = {src_files[row_ind[n]]: dst_files[col_ind[n]] for n in range(k)}
-        text += f"Directory:\t{src_files[0].parent}\nAlbum:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
+        _map: dict[Path, Path] = {src_files[row]: dst_files[col] for row, col in zip(row_ind, col_ind)}
+        text = f"Directory:\t{src_files[0].parent}\nAlbum:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
         text += "\n".join(f"      {k.name}\n->  {v.name}\n" for k, v in _map.items())
         accept = self._show_check_message("Check Again", text)
         

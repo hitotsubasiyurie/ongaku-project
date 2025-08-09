@@ -90,27 +90,41 @@ class OngakuLibrary:
         return self._albums
 
     def get_album_metadata_files(self, a: Album = None) -> str | list[str]:
+        """获取 专辑 元数据文件"""
         return self._mdfs[self._aid2n[id(a)]] if a else self._mdfs
 
     def get_album_resource_dirs(self, a: Album = None) -> str | list[str]:
+        """
+        获取 专辑 当前 资源目录。
+        :return: 存在的资源目录路径，或空字符串
+        """
         return self._res_dirs[self._aid2n[id(a)]] if a else self._res_dirs
 
     def get_album_covers(self, a: Album = None) -> str | list[str]:
+        """
+        获取 专辑 封面文件。
+        :return: 存在的封面路径，或空字符串
+        """
         return self._covers[self._aid2n[id(a)]] if a else self._covers
 
     def get_album_metadata_states(self, a: Album = None) -> MetadataState | list[MetadataState]:
+        """获取 专辑 元数据状态"""
         return self._metadata_states[self._aid2n[id(a)]] if a else self._metadata_states
 
     def get_album_resource_states(self, a: Album = None) -> ResourceState | list[ResourceState]:
+        """获取 专辑 资源状态"""
         return self._resource_states[self._aid2n[id(a)]] if a else self._resource_states
 
     def get_album_track_states(self, a: Album = None) -> list[ResourceState] | list[list[ResourceState]]:
+        """获取 专辑 轨道 资源状态"""
         return self._track_states[self._aid2n[id(a)]] if a else self._track_states
     
     def get_theme_completions(self, t: str = None) -> float | dict[str, float]:
+        """获取 主题 完成度"""
         return self._theme_completions.get(t, 0) if t else self._theme_completions
     
     def get_album_dst_resource_dirs(self, a: Album = None) -> str | list[str]:
+        """获取 专辑 目标 资源目录"""
         if a:
             # 相同目录结构
             rel_path = os.path.relpath(self.get_album_metadata_files(a), self.metadata_dir)
@@ -126,7 +140,7 @@ class OngakuLibrary:
 
     @logger_watched(1)
     def _scan_all(self) -> None:
-        self._mdfs = self._scan_metadata_files()
+        self._mdfs = self._scan_metadata_files(self.metadata_dir)
         self._albums = list(map(load_album_model, self._mdfs))
         self._aid2n = {id(a): i for i, a in enumerate(self._albums)}
 

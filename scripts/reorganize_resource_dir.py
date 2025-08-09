@@ -1,0 +1,49 @@
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.logger import logger
+from src.common.constants import METADATA_PATH, TMP_PATH, RESOURCE_PATH
+from src.common.utils import strings_assignment
+from src.common.exception import OngakuException
+from src.metadata_source.vgmdb_api import VGMdbAPI
+from src.ongaku_library.ongaku_library import dump_album_model, album_filename, OngakuLibrary
+
+
+if __name__ == "__main__":
+
+    metadata_dir = input(f"Please input metadata directory ({METADATA_PATH}): ").strip("'\"") or METADATA_PATH
+    resource_dir = input(f"Please input resource directory ({RESOURCE_PATH}): ").strip("'\"") or RESOURCE_PATH
+
+    if not metadata_dir or not resource_dir:
+        sys.exit(0)
+
+    ongaku_library = OngakuLibrary(metadata_dir, resource_dir)
+
+    for res_dir, dst_dir in zip(ongaku_library.get_album_resource_dirs(), ongaku_library.get_album_dst_resource_dirs()):
+        
+        # 无需移动 跳过
+        if not res_dir or res_dir == dst_dir:
+            continue
+
+        res_dir, dst_dir = Path(res_dir), Path(dst_dir)
+
+        dst_dir.parent.mkdir(exist_ok=True, parents=True)
+        res_dir.rename(dst_dir)
+
+    # 删除空目录
+    [d.rmdir() for d in Path(resource_dir).rglob("*") if d.is_dir() and not os.listdir(d)]
+
+
+
+
+
+
+
+
+
+
+
+

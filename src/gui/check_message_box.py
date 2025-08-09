@@ -2,7 +2,7 @@
 from PySide6.QtCore import (Qt, QEvent, QObject, )
 from PySide6.QtGui import (QPixmap, QResizeEvent, QKeyEvent, )
 from PySide6.QtWidgets import (QWidget, QLineEdit, QLabel, QGridLayout, QMessageBox, QGraphicsOpacityEffect, 
-    QScrollArea, QPlainTextEdit, )
+    QScrollArea, QPlainTextEdit, QApplication, )
 
 
 class CheckMessageBox(QMessageBox):
@@ -21,7 +21,10 @@ class CheckMessageBox(QMessageBox):
         # 滚动区域和文本框
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
-        scroll.setFixedSize(400, 400)
+
+        # 设置滚动区域大小
+        self.w, self.h = 600, 600
+        scroll.setFixedSize(self.w, self.h)
 
         text_edit = QPlainTextEdit()
         text_edit.setReadOnly(True)
@@ -31,4 +34,21 @@ class CheckMessageBox(QMessageBox):
         scroll.setWidget(text_edit)
         layout.addWidget(scroll, 0, 0)
 
+        # # 获取屏幕尺寸
+        # screen_geometry = QApplication.primaryScreen().availableGeometry()
+        # screen_width = screen_geometry.width()
+        # screen_height = screen_geometry.height()
+        # self.move((screen_width - w) // 2, (screen_height - h) // 2)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        # 获取屏幕尺寸
+        screen_geometry = QApplication.primaryScreen().availableGeometry()
+        screen_width = screen_geometry.width()
+        screen_height = screen_geometry.height()
+        print(screen_geometry)
+        window_width = self.width()
+        window_height = self.height()
+        self.move((screen_width - window_width) // 2, 
+                 (screen_height - window_height) // 2)
 

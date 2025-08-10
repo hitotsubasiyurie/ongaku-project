@@ -31,12 +31,16 @@ class MusicBrainzAPI:
 
     _HEADERS = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"}
 
-    def __init__(self, cache_dir: str, album_db: str = None) -> None:
+    def __init__(self, cache_dir: str, database_dir: str = None) -> None:
         """
         :param cache_dir: 缓存目录路径
+        :param database_dir: 数据库目录路径，包含 .album, .albumindex 文件
         """
         self._cache_dir = cache_dir
-        self._album_db = album_db
+        self._database_dir = database_dir
+
+        # 动态属性
+        self._album_index: dict[str, list[tuple[int, int]]] = None
         self._request_lock = Lock()
         self._last_request_time = 0
 
@@ -50,6 +54,9 @@ class MusicBrainzAPI:
         :param limit: 返回结果数，默认 5
         :return:
         """
+        if not any([catno, date, release, tracks_number]):
+            logger.info(f"No valid param to query. Return.")
+            return []
         lst = []
         release and lst.append("release:{}".format(self._LUCENE_ESCAPE_RE.sub(r"\\\1", release)))
         catno and lst.append("catno:{}".format(self._LUCENE_ESCAPE_RE.sub(r"\\\1", catno)))
@@ -111,8 +118,8 @@ class MusicBrainzAPI:
         从 release 获取专辑模型列表。
         raises: OngakuException
         """
-        if self._album_db and not latest:
-            albums = self._get_album_from_album_db(release_id)
+        if not latest and self._database_dir:
+            albums = self._get_album_from_local_database(release_id)
             if albums:
                 return albums
         
@@ -163,39 +170,22 @@ class MusicBrainzAPI:
         logger.debug(json.dumps(recordings, ensure_ascii=False))
         return recordings
 
-    def process_mb_database(recording_db: str, release_db: str, album_db: str) -> None:
-        """处理 mb 数据库。"""
-        recording_db, release_db, album_db = Path(recording_db), Path(release_db), Path(album_db)
-        wf = album_db.open("w", encoding="utf-8")
+    def _get_album_from_local_database(self, release_id: str) -> list[Album]:
+        if not self._album_index:
+            file = next(f for f in Path(self._database_dir).rglob("*.albumindex"))
+            self._album_index = pickle.loads(file.read_bytes())
 
-        with recording_db.open(encoding="utf-8") as f:
-            recordings = {r["id"]: r for r in map(orjson.loads, f)}
-
-        with release_db.open(encoding="utf-8") as f:
-            for release in map(orjson.loads, f):
-                [track["recording"].update(recordings.get(track["recording"]["id"], {})) 
-                 for media in release["media"] for track in media.get("tracks", [])]
-                
-                link = f"{MusicBrainzAPI._RELEASE_PAGE_URL}/{release['id']}"
-                catnos = [l["catalog-number"] for l in release["label-info"] if l["catalog-number"]]
-                discs = sorted(MusicBrainzAPI._get_disc_from_release(release), key=lambda d: d.discnumber)
-
-                albums = VGMdbAPI._assemble_albums(catnos, release.get("date", ""), release["title"], discs, link)
-                wf.write("\n".join(a.model_dump_json() for a in albums) + "\n")
-                not int(time.time()) % 10 and wf.flush()
-
-        wf.close()
-
-    def _get_album_from_album_db(self, release_id: str) -> list[Album]:
-        index = self._get_album_db_index()
-        if release_id not in index:
+        if release_id not in self._album_index:
             return []
+        
+        db_file = next(f for f in Path(self._database_dir).rglob("*.album"))
         albums = []
-        with open(self._album_db, "rb") as f:
-            for position in sorted(index[release_id]):
+        with open(db_file, "rb") as f:
+            for position in sorted(self._album_index[release_id]):
                 s, e = position
                 f.seek(s)
                 albums.append(Album(**orjson.loads(f.read(e-s))))
+        logger.info(f"Got {len(albums)} albums from local database. {release_id}")
         return albums
 
     @cache

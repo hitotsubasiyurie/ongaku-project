@@ -286,7 +286,7 @@ class MainWindow(QWidget):
         
         aver_similarity, row_ind, col_ind = strings_assignment([f.stem for f in src_files], [f.stem for f in dst_files])
         _map: dict[Path, Path] = {src_files[row]: dst_files[col] for row, col in zip(row_ind, col_ind)}
-        text = f"Directory:\t{src_files[0].parent}\nAlbum:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
+        text = f"Directory:\t{src_files[0].parent.name}\nAlbum:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
         text += "\n".join(f"      {k.name}\n->  {v.name}\n" for k, v in _map.items())
         accept = self._show_check_message("Check Again", text)
         

@@ -1265,4 +1265,4 @@ usamimi ribon 电波，同人等，来源于 musicbrainz
 
 Tab 键切换
 
-
+元数据文件里，list[dict] 格式存储多源信息，如何

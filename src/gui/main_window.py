@@ -24,7 +24,7 @@ from src.ongaku_library.ongaku_library import AUDIO_EXTS, IMG_EXTS, OngakuLibrar
 class MainWindow(QWidget):
 
     def setup_ui(self) -> None:
-        self.setWindowTitle("OngakuLibrary")
+        self.setWindowTitle("OngakuKanban")
         
         # 初始化 UI
         grid_layout = QGridLayout()

@@ -162,7 +162,7 @@ class AlbumTableView(QTableView):
     def setup_context_menu(self) -> None:
         # 初始化 右键菜单
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction("Edit", self)
+        action = QAction("Open", self)
         action.triggered.connect(self.action_edit_clicked.emit)
         self.addAction(action)
         action = QAction("Group Links", self)

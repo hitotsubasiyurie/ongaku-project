@@ -9,10 +9,11 @@ from pydantic import BaseModel, Field
 
 
 class Album(BaseModel):
+    release_id: str = Field(default="")
     catalognumber: str = Field(default="")
     date: str = Field(default="")
     album: str = Field(default="")
-    tracks: list["Track"] = Field(default_factory=list)
+    tracks: str = Field(default="")
     themes: list[str] = Field(default_factory=list)
     links: list[str] = Field(default_factory=list)
 

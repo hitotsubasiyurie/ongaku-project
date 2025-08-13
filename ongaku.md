@@ -1272,3 +1272,26 @@ Tab 键切换
 vgmdb 和 mb 类，重新梳理类方法
 继承父类。限速方法，检查 链接是否一致方法。
 
+相似性搜索。之后再说吧。有强烈的需求再做吧
+使用 MB 提供的搜索接口足以
+MB 的本地缓存，应该使用 pg 格式的，不应该用文本
+
+【MB 搜索功能实现】
+lib\MusicBrainz\Server\Data\WebService.pm
+```perl
+# construct a lucene search query based on the args given and then pass it to a search server.
+# Return the complete XML document, or a redirect for x-accel-redirect handling.
+sub xml_search
+...
+    elsif ($resource eq 'release')
+...
+        $url_ext = "/$resource/$endpoint?" .
+            "rows=$limit&wt=$format&start=$offset" .
+            '&q=' . uri_escape_utf8($query);
+...
+        return { redirect_url => '/internal/search/' . DBDefs->SEARCH_SERVER . $url_ext };
+...
+# DBDefs->SEARCH_SERVER 是关键 
+Solr（读作“solar”）是Apache Lucene项目的开源企业搜索平台。 其主要功能包括全文检索、命中标示、分面搜索、动态聚类、数据库集成
+```
+

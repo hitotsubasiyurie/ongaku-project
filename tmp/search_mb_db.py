@@ -26,7 +26,6 @@ class MusicBrainzDB:
             logger.info("No valid conditions.")
             return []
         
-        
         where_clauses = []
         release_id and where_clauses.append("release_id = %s")
         catalognumber and where_clauses.append("catalognumber = %s")
@@ -142,21 +141,19 @@ class MusicBrainzDB:
 
 
 track_abstract = """
-1. M@STERPIECE
-2. 君が選ぶ道
-3. M@STERPIECE (MOVIE VERSION)
-4. M@STERPIECE (オリジナル・カラオケ)
-5. 君が選ぶ道 (オリジナル・カラオケ)
+1. お姫さまの国
+2. 千枝ちゃんの挑戦
+3. 第3芸能課カフェ
 """
 
 db = MusicBrainzDB()
 
-print(db.search_albums(
-    catalognumber="COZC-846",
-    date="2014-01-29",
-    album="M@STERPIECE / 765PRO ALLSTARS [Limited Edition] Disc 1 (CD) [COZC-846]",
-    tracks_count=5,
+[print(a) for a in db.search_albums(
+    # catalognumber="CYGX-00017",
+    # date="2023-09-27",
+    album="THE IDOLM@STER CINDERELLA GIRLS U149 Vol.3 Bonus CD",
+    # tracks_count=3,
     tracks_abstract=track_abstract
-))
+)]
 
 

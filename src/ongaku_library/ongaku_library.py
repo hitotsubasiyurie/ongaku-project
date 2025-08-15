@@ -6,7 +6,7 @@ from pathlib import Path
 
 from src.logger import logger_watched
 from src.common.json_encoder import CustomJSONEncoder
-from src.ongaku_library.basemodels import Album, Track
+from src.basemodels import Album, Track
 from src.common.utils import legalize_filename
 
 
@@ -69,6 +69,7 @@ def load_album_model(filepath: str) -> Album:
 class OngakuLibrary:
 
     def __init__(self, metadata_dir: str, resource_dir: str) -> None:
+        # TODO: todolist 目录 多源？
         self.metadata_dir = metadata_dir
         self.resource_dir = resource_dir
 

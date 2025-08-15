@@ -7,7 +7,7 @@ import mutagen
 
 from src.common.exception import OngakuException
 from src.logger import logger
-from src.ongaku_library.basemodels import Album, MultiDiscAlbum, Track
+from src.basemodels import Album, MultiDiscAlbum, Track
 
 
 class AudioFilesAPI:

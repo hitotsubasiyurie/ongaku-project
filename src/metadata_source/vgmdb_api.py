@@ -6,13 +6,14 @@ import time
 import uuid
 from pathlib import Path
 from threading import Lock
+from collections import Counter
 
 import requests
 from lxml import etree
 
 from src.common.exception import OngakuException
 from src.logger import logger, logger_watched
-from src.ongaku_library.basemodels import Album, Disc, Track
+from src.basemodels import Album, Disc, Track
 from src.common.utils import retry
 
 
@@ -175,6 +176,17 @@ class VGMdbAPI:
             albums = [Album(catalognumber=" ,".join(catnos), date=date, album=f"{album_title} {d.disc}", 
                             tracks=d.tracks, links=[link])
                       for d in discs]
+        
+        # 处理同名专辑
+        _count = Counter([a.album for a in albums])
+        for i, a in enumerate(albums):
+            if _count[a.album] > 1:
+                a.album += f"Disc {i+1}"
+            # 去除首尾空格
+            a.catalognumber = a.catalognumber.strip()
+            a.date = a.date.strip()
+            a.album = a.album.strip()
+                
         logger.info(f"Got {len(albums)} albums. {[(a.catalognumber, a.album) for a in albums]}")
         return albums
 

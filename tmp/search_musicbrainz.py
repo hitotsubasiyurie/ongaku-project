@@ -8,7 +8,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.logger import logger
 from src.common.constants import METADATA_PATH, TMP_PATH
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
-from src.ongaku_library.basemodels import Album
+from src.metadata_source.musicbrainz_database import MusicBrainzDataBase
+from src.basemodels import Album
 from src.ongaku_library.ongaku_library import (dump_album_model, album_filename, OngakuLibrary, 
     load_album_model)
 
@@ -19,6 +20,8 @@ Q_PREFIX = "Q ->     "
 R_PREFIX = "R -> "
 YR_PREFIX = "YR -> "
 
+
+# links 多源
 
 def load_query_list_file(filepath: str) -> dict:
     query_list = {}

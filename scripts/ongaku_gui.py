@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from PySide6.QtWidgets import QApplication
 
 from src.common.constants import METADATA_PATH, RESOURCE_PATH
-from src.gui.main_window import MainWindow
+from src.kanban.main_window import MainWindow
 
 
 if __name__ == "__main__":

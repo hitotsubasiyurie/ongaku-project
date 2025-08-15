@@ -1,3 +1,7 @@
+"""
+不嵌套的列表优化展示
+"""
+
 from json.encoder import JSONEncoder, encode_basestring_ascii, encode_basestring, INFINITY
 
 

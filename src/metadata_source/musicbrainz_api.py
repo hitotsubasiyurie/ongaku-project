@@ -14,7 +14,7 @@ import orjson
 import requests
 
 from src.logger import logger, logger_watched
-from src.ongaku_library.basemodels import Album, Disc, Track
+from src.basemodels import Album, Disc, Track
 from src.common.utils import retry
 from src.metadata_source.vgmdb_api import VGMdbAPI
 

@@ -11,13 +11,13 @@ from PySide6.QtGui import QPixmap, QResizeEvent
 from PySide6.QtWidgets import (QGraphicsOpacityEffect, QGridLayout, QLabel, QLineEdit, QMessageBox, 
     QWidget, )
 
-from src.gui.album_table_view import AlbumTableView
-from src.gui.check_message_box import CheckMessageBox
-from src.gui.link_combo_box import LinkComboBox
-from src.gui.theme_box_widget import ThemeBoxWidget
-from src.gui.track_table_view import TrackTableView
+from src.kanban.album_table_view import AlbumTableView
+from src.kanban.check_message_box import CheckMessageBox
+from src.kanban.link_combo_box import LinkComboBox
+from src.kanban.theme_box_widget import ThemeBoxWidget
+from src.kanban.track_table_view import TrackTableView
 from src.common.utils import strings_assignment
-from src.ongaku_library.basemodels import Album
+from src.basemodels import Album
 from src.ongaku_library.ongaku_library import AUDIO_EXTS, IMG_EXTS, OngakuLibrary, track_filenames
 
 

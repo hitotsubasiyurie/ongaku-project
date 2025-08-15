@@ -1,19 +1,14 @@
-import sys
 import json
-import os
 from typing import Any
-from pathlib import Path
 from datetime import datetime
 
 import psycopg2
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from src.logger import logger
-from src.ongaku_library.basemodels import Album
+from src.basemodels import Album
 
 
-class MusicBrainzDB:
+class MusicBrainzDataBase:
 
     def __init__(self) -> None:
         conn = psycopg2.connect(database="musicbrainz", user="Administrator", client_encoding="utf8")
@@ -61,7 +56,7 @@ class MusicBrainzDB:
             order_params.append(catalognumber)
         
         if date:
-            date_int = sum(MusicBrainzDB._date_str_to_range(date)) // 2
+            date_int = sum(MusicBrainzDataBase._date_str_to_range(date)) // 2
             where_clauses.append("((ABS(_date_min - %s) < 366 OR ABS(_date_max - %s) < 366) OR (_date_min = 0 AND _date_max = 0))")
             order_clauses.append("similarity(date, %s)")
             where_params.extend([date_int, date_int])
@@ -101,7 +96,7 @@ class MusicBrainzDB:
     # 内部方法
 
     @staticmethod
-    def _record_to_album(record: tuple[Any, ...]) -> Album:
+    def _record_to_album(record: tuple[Any]) -> Album:
         data = {
             "catalognumber": record[2],
             "date": record[3],
@@ -138,22 +133,5 @@ class MusicBrainzDB:
         
         return 0, 0
 
-
-
-track_abstract = """
-1. お姫さまの国
-2. 千枝ちゃんの挑戦
-3. 第3芸能課カフェ
-"""
-
-db = MusicBrainzDB()
-
-[print(a) for a in db.search_albums(
-    # catalognumber="CYGX-00017",
-    # date="2023-09-27",
-    album="THE IDOLM@STER CINDERELLA GIRLS U149 Vol.3 Bonus CD",
-    # tracks_count=3,
-    tracks_abstract=track_abstract
-)]
 
 

@@ -8,71 +8,70 @@ from src.logger import logger
 from src.basemodels import Album
 
 
-class MusicBrainzDataBase:
+class MusicBrainzDatabase:
+
+    COLUMNS = ["release_id", "catalognumber", "date", "album", "tracks_json", "themes", "links", 
+               "_date_min", "_date_max", "_tracks_count", "_tracks_abstract"]
 
     def __init__(self) -> None:
         conn = psycopg2.connect(database="musicbrainz", user="Administrator", client_encoding="utf8")
         self.cur = conn.cursor()
 
-    def select_albums(self, release_id: str = None, catalognumber: str = None, 
-                      date: str = None) -> list[Album]:
-        
-        if not any([release_id, catalognumber, date]):
+    def select_albums(
+            self,
+            filter_release_id: str = None,
+            filter_catalognumber: str = None,
+            filter_date: str = None,
+            filter_date_int: str = None,
+            filter_tracks_count: int = None,
+            order_catalognumber: str = None,
+            order_album: str = None,
+            order_tracks_abstract: str = None,
+            limit: int = 10) -> list[Album]:
+
+        if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count, 
+                    order_catalognumber, order_album, order_tracks_abstract]):
             logger.info("No valid conditions.")
             return []
         
-        where_clauses = []
-        release_id and where_clauses.append("release_id = %s")
-        catalognumber and where_clauses.append("catalognumber = %s")
-        date and where_clauses.append("date = %s")
-        query_params = [v for v in [release_id, catalognumber, date] if v]
-
-        sql = "SELECT * FROM album WHERE " + " AND ".join(where_clauses)
-        
-        logger.info(f"Executing Query: {self.cur.mogrify(sql, tuple(query_params)).decode('utf-8')}")
-
-        self.cur.execute(sql, query_params)
-        records = self.cur.fetchall()
-        albums = [self._record_to_album(r) for r in records]
-
-        logger.info(f"Got {len(albums)} albums.")
-        return albums
-
-    def search_albums(self, catalognumber: str = None, date: str = None, album: str = None, 
-                     tracks_count: int = None, tracks_abstract: str = None, limit: int = 10) -> list[Album]:
-
-        if not any([catalognumber, date, album, tracks_count, tracks_abstract]):
-            logger.info("No valid conditions.")
-            return []
-
+        if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count]):
+            logger.warning("No filter conditions, will scan full table.")
 
         where_clauses = []
         order_clauses = []
+        query_params = []
 
-        where_params, order_params = [], []
-
-        if catalognumber:
-            order_clauses.append("similarity(catalognumber, %s)")
-            order_params.append(catalognumber)
+        if filter_release_id:
+            where_clauses.append("release_id = %s")
+            query_params.append(filter_release_id)
         
-        if date:
-            date_int = sum(MusicBrainzDataBase._date_str_to_range(date)) // 2
+        if filter_catalognumber:
+            where_clauses.append("catalognumber = %s")
+            query_params.append(filter_catalognumber)
+        
+        if filter_date:
+            where_clauses.append("date = %s")
+            query_params.append(filter_date)
+        
+        if filter_date_int:
             where_clauses.append("((ABS(_date_min - %s) < 366 OR ABS(_date_max - %s) < 366) OR (_date_min = 0 AND _date_max = 0))")
-            order_clauses.append("similarity(date, %s)")
-            where_params.extend([date_int, date_int])
-            order_params.append(date)
-
-        if album:
-            order_clauses.append("similarity(album, %s)")
-            order_params.append(album)
-
-        if tracks_count is not None:
+            query_params.extend([filter_date_int, filter_date_int])
+        
+        if filter_tracks_count:
             where_clauses.append("_tracks_count = %s")
-            where_params.append(tracks_count)
+            query_params.append(filter_tracks_count)
 
-        if tracks_abstract:
+        if order_catalognumber:
+            order_clauses.append("similarity(catalognumber, %s)")
+            query_params.append(order_catalognumber)
+
+        if order_album:
+            order_clauses.append("similarity(album, %s)")
+            query_params.append(order_album)
+
+        if order_tracks_abstract:
             order_clauses.append("similarity(_tracks_abstract, %s)")
-            order_params.append(tracks_abstract)
+            query_params.append(order_tracks_abstract)
 
         sql = "SELECT * FROM album"
 
@@ -84,9 +83,9 @@ class MusicBrainzDataBase:
         
         sql += f" LIMIT {limit};"
 
-        logger.info(f"Executing Query: {self.cur.mogrify(sql, where_params + order_params).decode('utf-8')}")
+        logger.info(f"Executing Query: {self.cur.mogrify(sql, query_params).decode('utf-8')}")
         
-        self.cur.execute(sql, where_params + order_params)
+        self.cur.execute(sql, query_params)
         records = self.cur.fetchall()
         albums = [self._record_to_album(record) for record in records]
 

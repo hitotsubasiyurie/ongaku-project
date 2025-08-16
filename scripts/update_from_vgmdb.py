@@ -12,7 +12,7 @@ from src.common.constants import METADATA_PATH, TMP_PATH
 from src.common.utils import strings_assignment
 from src.common.exception import OngakuException
 from src.metadata_source.vgmdb_api import VGMdbAPI
-from src.ongaku_library.ongaku_library import dump_album_model, album_filename, OngakuLibrary
+from src.ongaku_library.ongaku_library import dump_album_model, album_filename, OngakuScanner
 
 
 if __name__ == "__main__":
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # 跳过已有元数据文件的 album_ids
 
     skip_a_ids = set()
-    for f in OngakuLibrary._scan_metadata_files(save_dir):
+    for f in OngakuScanner._scan_metadata_files(save_dir):
         match = re.search(VGMdbAPI.ALBUM_URL_PATTERN, Path(f).read_text(encoding="utf-8"))
         if match:
             skip_a_ids.add(match.group(1))

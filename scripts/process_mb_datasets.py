@@ -17,7 +17,10 @@
 """
 
 import sys
+import csv
+import json
 import time
+import logging
 import pickle
 from pathlib import Path
 from collections import defaultdict
@@ -27,17 +30,22 @@ from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from src.logger import logger
+from src.common.constants import TMP_PATH
 from src.metadata_source.vgmdb_api import VGMdbAPI
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
+from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.basemodels import Album
 
 
 if __name__ == "__main__":
 
+    # 抑制日志
+    not TMP_PATH and logger.setLevel(logging.ERROR)
+
     directory = Path(input("输入父目录路径：").strip("'\""))
     recording_db, release_db = directory / "recording", directory / "release"
-
-    album_db, album_index = directory / "album", directory / "album.index"
+    csv_file = directory / "album.csv"
 
     with recording_db.open(encoding="utf-8") as f:
         recordings = {r["id"]: r for r in map(orjson.loads, f)}
@@ -55,24 +63,30 @@ if __name__ == "__main__":
 
     pbar = tqdm(total=release_db.stat().st_size, unit='B', unit_scale=True)
 
-    rid2pos = defaultdict(list)
     rf = release_db.open("rb")
-    wf = album_db.open("w", encoding="utf-8")
+    wf = csv_file.open("w", encoding="utf-8", newline="")
+
+    writer = csv.DictWriter(wf, fieldnames=MusicBrainzDatabase.COLUMNS, 
+                            quoting=csv.QUOTE_STRINGS, extrasaction="ignore")
+    writer.writeheader()
 
     for release in map(orjson.loads, rf):
-        for a in _to_albums(release):
-            start = wf.tell()
-            wf.write(a.model_dump_json() + "\n")
-            end = wf.tell()
-            rid2pos[release["id"]].append((start, end))
+        for album in _to_albums(release):
+            album = album.model_dump()
+            album["release_id"] = release["id"]
+            album["tracks_json"] = json.dumps(album["tracks"], ensure_ascii=False)
+            album["themes"] = set(album["themes"]) if album["themes"] else {}
+            album["links"] = set(album["links"]) if album["links"] else {}
+            album["_date_min"], album["_date_max"] = MusicBrainzDatabase._date_str_to_range(album["date"])
+            album["_tracks_count"] = len(album["tracks"])
+            album["_tracks_abstract"] = "\n".join(f'{t["tracknumber"]}. {t["title"]}' for t in album["tracks"])
+            writer.writerow(album)
         # 每 5 秒刷新
         if not int(time.time()) % 5:
-            wf.flush()
             pbar.n = rf.tell()
             pbar.refresh()
+            wf.flush()
     
     rf.close()
     wf.close()
-
-    album_index.write_bytes(pickle.dumps(rid2pos))
 

@@ -4,7 +4,8 @@ from collections import defaultdict
 from enum import IntEnum, IntFlag, auto
 from pathlib import Path
 
-from src.logger import logger_watched
+from src.logger import logger, logger_watched
+from src.common.exception import OngakuException
 from src.common.json_encoder import CustomJSONEncoder
 from src.basemodels import Album, Track
 from src.common.utils import legalize_filename
@@ -49,7 +50,10 @@ def track_filenames(album: Album) -> list[str]:
     return names
 
 
-def dump_album_model(album: Album, filepath: str = None) -> None:
+def dump_album_model(album: Album, filepath: str = None, overwrite: bool = False) -> str:
+    if not overwrite and os.path.exists(filepath):
+        raise OngakuException()
+    
     album.links = list(set(album.links))
     album.themes = list(set(album.themes))
     _dict = album.model_dump()
@@ -66,10 +70,9 @@ def load_album_model(filepath: str) -> Album:
     return album
 
 
-class OngakuLibrary:
+class OngakuScanner:
 
-    def __init__(self, metadata_dir: str, resource_dir: str) -> None:
-        # TODO: todolist 目录 多源？
+    def __init__(self, metadata_dir: str, resource_dir: str = None) -> None:
         self.metadata_dir = metadata_dir
         self.resource_dir = resource_dir
 
@@ -153,7 +156,8 @@ class OngakuLibrary:
         self._albums = list(map(load_album_model, self._mdfs))
         self._aid2n = {id(a): i for i, a in enumerate(self._albums)}
 
-        _dname2path = {p.name: p for p in Path(self.resource_dir).rglob("*") if p.is_dir()}
+        _dname2path = ({} if not self.resource_dir else 
+                       {p.name: p for p in Path(self.resource_dir).rglob("*") if p.is_dir()})
         # 专辑资源目录 与 专辑元数据文件 同名
         self._res_dirs = [str(_dname2path.get(os.path.splitext(os.path.basename(f))[0], "")) for f in self._mdfs]
 

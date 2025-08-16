@@ -18,7 +18,7 @@ from src.kanban.theme_box_widget import ThemeBoxWidget
 from src.kanban.track_table_view import TrackTableView
 from src.common.utils import strings_assignment
 from src.basemodels import Album
-from src.ongaku_library.ongaku_library import AUDIO_EXTS, IMG_EXTS, OngakuLibrary, track_filenames
+from src.ongaku_library.ongaku_library import AUDIO_EXTS, IMG_EXTS, OngakuScanner, track_filenames
 
 
 class MainWindow(QWidget):
@@ -86,7 +86,7 @@ class MainWindow(QWidget):
     def __init__(self, metadata_dir: str, resource_dir: str) -> None:
         super().__init__()
 
-        self.ongaku_library = OngakuLibrary(metadata_dir, resource_dir)
+        self.ongaku_library = OngakuScanner(metadata_dir, resource_dir)
 
         self.setup_ui()
         self.setup_event()

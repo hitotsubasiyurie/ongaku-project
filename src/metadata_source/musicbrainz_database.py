@@ -5,7 +5,7 @@ from datetime import datetime
 import psycopg2
 
 from src.logger import logger
-from src.basemodels import Album
+from src.basemodels import Album, Track
 
 
 class MusicBrainzDatabase:
@@ -132,5 +132,7 @@ class MusicBrainzDatabase:
         
         return 0, 0
 
-
+    @staticmethod
+    def _abstract_tracks(album: Album) -> str:
+        return "\n".join(f"{t.tracknumber}. {t.title}" for t in album.tracks)
 

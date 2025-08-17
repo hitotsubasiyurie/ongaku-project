@@ -15,6 +15,8 @@ from src.basemodels import Album
 from src.ongaku_library.ongaku_library import (dump_album_model, album_filename, OngakuScanner, 
     load_album_model)
 
+# TODO: link.json 格式
+
 
 SEPERATE = f"\n{'-'*16} seperate {'-'*16}\n"
 V_PREFIX = f"{' '*0}V{'-'*6}>"

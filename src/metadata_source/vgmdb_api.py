@@ -181,7 +181,7 @@ class VGMdbAPI:
         _count = Counter([a.album for a in albums])
         for i, a in enumerate(albums):
             if _count[a.album] > 1:
-                a.album += f"Disc {i+1}"
+                a.album += f" Disc {i+1}"
             # 去除首尾空格
             a.catalognumber = a.catalognumber.strip()
             a.date = a.date.strip()

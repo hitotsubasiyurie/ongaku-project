@@ -69,12 +69,15 @@ def legalize_filename(name: str) -> str:
 
 def strings_assignment(strings_a: list[str], strings_b: list[str]) -> tuple[float, list[int], list[int]]:
     """
+    字符串最大相似度分配。
         b1 b2 b3 ... bm
     a1
     a2
     a3
     ...
     an
+    :param strings_a: 字符串列表 [a1, a2, a3, ..., an]
+    :param strings_b: 字符串列表 [b1, b2, b3, ..., bm]
     """
     sim_matrix = [[SequenceMatcher(None, sa, sb).ratio() for sb in strings_b] 
                    for sa in strings_a]

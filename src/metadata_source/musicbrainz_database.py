@@ -27,7 +27,8 @@ class MusicBrainzDatabase:
             order_catalognumber: str = None,
             order_album: str = None,
             order_tracks_abstract: str = None,
-            limit: int = 10) -> list[Album]:
+            limit: int = 10,
+            allow_full_scan: bool = False) -> list[Album]:
 
         if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count, 
                     order_catalognumber, order_album, order_tracks_abstract]):
@@ -35,7 +36,11 @@ class MusicBrainzDatabase:
             return []
         
         if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count]):
-            logger.warning("No filter conditions, will scan full table.")
+            if not allow_full_scan:
+                logger.info("No filter conditions, and not allow full scan. Return.")
+                return []
+            else:
+                logger.warning("No filter conditions, will scan full table.")
 
         where_clauses = []
         order_clauses = []
@@ -54,7 +59,7 @@ class MusicBrainzDatabase:
             query_params.append(filter_date)
         
         if filter_date_int:
-            where_clauses.append("((ABS(_date_min - %s) < 366 OR ABS(_date_max - %s) < 366) OR (_date_min = 0 AND _date_max = 0))")
+            where_clauses.append("((ABS(_date_min - %s) < 182 OR ABS(_date_max - %s) < 182) OR (_date_min = 0 AND _date_max = 0))")
             query_params.extend([filter_date_int, filter_date_int])
         
         if filter_tracks_count:

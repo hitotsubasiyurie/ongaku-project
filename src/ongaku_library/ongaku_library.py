@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from collections import defaultdict
 from enum import IntEnum, IntFlag, auto
 from pathlib import Path
@@ -40,6 +41,9 @@ def album_filename(album: Album) -> str:
     name = ALBUM_FILENAME.format(catalognumber=album.catalognumber, date=album.date, 
                                  album=album.album, trackcounts=len(album.tracks))
     name = legalize_filename(name)
+    # 文件名 长度 限制
+    if len(name) > 220:
+        name = name[:200] + str(uuid.uuid3(uuid.NAMESPACE_X500, name))
     return name
 
 
@@ -50,10 +54,7 @@ def track_filenames(album: Album) -> list[str]:
     return names
 
 
-def dump_album_model(album: Album, filepath: str = None, overwrite: bool = False) -> str:
-    if not overwrite and os.path.exists(filepath):
-        raise OngakuException()
-    
+def dump_album_model(album: Album, filepath: str = None) -> str:
     album.links = list(set(album.links))
     album.themes = list(set(album.themes))
     _dict = album.model_dump()

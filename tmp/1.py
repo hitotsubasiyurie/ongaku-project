@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.logger import logger
 from src.common.constants import METADATA_PATH, TMP_PATH
+from src.common.json_encoder import CustomJSONEncoder
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.basemodels import Album, Track
@@ -25,22 +26,72 @@ from src.ongaku_library.ongaku_library import (dump_album_model, album_filename,
 
 
 
-pending_dir = Path(r"D:\ongaku-pending")
-metadata_dir = Path(r"D:\ongaku-metadata")
-
-link_file = pending_dir / "link.json"
-link = json.loads(link_file.read_text(encoding="utf-8"))
 
 
-mdfs = set(os.path.join("vgmdb", f.name) for f in metadata_dir.glob("*.json"))
 
-sum = 0
-for group in link:
+def generate_merging_list(pending_dir: str, groups: list[list[str]], filter_files: set[str]) -> list[dict]:
+    filter_files = set(filter_files)
 
-    if not ( f:= mdfs.intersection(group)):
-        continue
+    merging_list = []
+    for group in groups:
 
-    sum += 1
-    
-print(sum)
-        
+        if filter_files and not filter_files.isdisjoint(group):
+            continue
+
+        _dict = {}
+
+        source_names = [os.path.dirname(s) for s in group]
+        _maxlen = max(map(len, source_names))
+        source_names = [n.ljust(_maxlen) for n in source_names]
+
+        source_albums = [load_album_model(Path(pending_dir, s)) for s in group]
+
+        _dict.update({f"catalognumber {n}": a.catalognumber for n, a in zip(source_names, source_albums) if a.catalognumber})
+        _dict.update({f"date {n}": a.date for n, a in zip(source_names, source_albums) if a.catalognumber})
+        _dict.update({f"album {n}": a.album for n, a in zip(source_names, source_albums) if a.catalognumber})
+
+        source_tracklists = [a.tracks for a in source_albums]
+        for i, source_ts in enumerate(itertools.zip_longest(*source_tracklists, fillvalue=None)):
+            _dict.update({f"{i} {n}": [t.tracknumber, t.title, t.artist] for n, t in zip(source_names, source_ts) if t})
+
+        _dict["sources"] = group
+
+        merging_list.append(_dict)
+
+    return merging_list
+
+
+if __name__ == "__main__":
+
+    files = set(os.path.join("vgmdb", f.name) for f in Path(r"D:\ongaku-metadata").glob("*.json"))
+
+    # input 输入
+
+    pending_dir = input(f"Please input pending directory: ").strip("'\"")
+    group_file = os.path.join(pending_dir, "group.json")
+    group_file = input(f"Please input group file ({group_file}): ").strip("'\"") or group_file
+
+    if not pending_dir:
+        sys.exit(0)
+
+    group_file = Path(group_file)
+    mgl_file = Path(pending_dir, "merging_list.json")
+
+    groups = json.loads(group_file.read_text(encoding="utf-8"))
+    merging_list = generate_merging_list(pending_dir, groups, files)
+
+    mgl_file.write_text(json.dumps(merging_list, indent=2, ensure_ascii=False, cls=CustomJSONEncoder), encoding="utf-8")
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -14,11 +14,11 @@ from mutagen.id3 import ID3
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.logger import logger
+from src.common.logger import logger
 from src.common.constants import METADATA_PATH, TMP_PATH
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
-from src.basemodels import Album, Track
+from src.common.basemodels import Album, Track
 from src.ongaku_library.ongaku_library import (dump_album_model, album_filename, OngakuScanner, 
     load_album_model, AUDIO_EXTS)
 

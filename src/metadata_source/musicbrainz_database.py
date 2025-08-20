@@ -4,8 +4,8 @@ from datetime import datetime
 
 import psycopg2
 
-from src.logger import logger
-from src.basemodels import Album, Track
+from src.common.logger import logger
+from src.common.basemodels import Album, Track
 
 
 class MusicBrainzDatabase:

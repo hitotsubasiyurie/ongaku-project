@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QAbstractItemView, )
 
 from src.ongaku_library.ongaku_library import MetadataState, ResourceState
-from src.basemodels import Album
+from src.common.basemodels import Album
 
 
 class AlbumTableItemModel(QAbstractItemModel):

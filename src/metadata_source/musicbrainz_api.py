@@ -13,8 +13,8 @@ from typing import Literal
 import orjson
 import requests
 
-from src.logger import logger, logger_watched
-from src.basemodels import Album, Disc, Track
+from src.common.logger import logger, logger_watched
+from src.common.basemodels import Album, Disc, Track
 from src.common.utils import retry
 from src.metadata_source.vgmdb_api import VGMdbAPI
 

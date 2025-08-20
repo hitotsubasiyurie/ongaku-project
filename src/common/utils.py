@@ -8,7 +8,7 @@ from difflib import SequenceMatcher
 import numpy
 from scipy.optimize import linear_sum_assignment
 
-from src.logger import logger
+from src.common.logger import logger
 
 
 def retry(retries: int = 3, delay: int | float = 2) -> Callable:

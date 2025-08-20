@@ -11,7 +11,7 @@ from typing import Any, Annotated, Iterable, Optional
 from pydantic import BaseModel, Field, BeforeValidator, field_validator
 
 
-def _do_string(value: Any) -> str:
+def _validate_string(value: Any) -> str:
     """
     1. 转换 None 为空字符串
     2. 去除首尾空字符
@@ -23,18 +23,18 @@ def _do_string(value: Any) -> str:
     return value.strip()
 
 
-def _do_strlist(value: Any) -> list:
+def _validate_strlist(value: Any) -> list:
     """
     1. do_string
     2. 列表去重
     """
     if not isinstance(value, Iterable) or isinstance(value, str):
         raise ValueError(f"value is not iterable: {value}")
-    value = list(set(map(_do_string, value)))
+    value = list(set(map(_validate_string, value)))
     return value
 
 
-def _do_tracks_field(tracks: list["Track"]) -> list["Track"]:
+def _validate_tracks_field(tracks: list["Track"]) -> list["Track"]:
     """
     1. 列表去重
     2. 按照 tracknumber 排序
@@ -43,8 +43,8 @@ def _do_tracks_field(tracks: list["Track"]) -> list["Track"]:
     return tracks
 
 
-_CustomStr = Annotated[str, BeforeValidator(_do_string)]
-_CustomStrList = Annotated[list[str], BeforeValidator(_do_strlist)]
+_CustomStr = Annotated[str, BeforeValidator(_validate_string)]
+_CustomStrList = Annotated[list[str], BeforeValidator(_validate_strlist)]
 
 
 class Album(BaseModel):
@@ -58,7 +58,7 @@ class Album(BaseModel):
     themes: _CustomStrList = Field(default_factory=list)
     links: _CustomStrList = Field(default_factory=list)
 
-    _validate_tracks = field_validator("tracks", mode="after")(_do_tracks_field)
+    _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
 
 
 class Disc(BaseModel):
@@ -66,7 +66,7 @@ class Disc(BaseModel):
     disc: _CustomStr = Field(default="")
     tracks: list["Track"] = Field(default_factory=list)
 
-    _validate_tracks = field_validator("tracks", mode="after")(_do_tracks_field)
+    _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
 
 
 class Track(BaseModel):

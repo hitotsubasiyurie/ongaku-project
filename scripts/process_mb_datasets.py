@@ -30,12 +30,12 @@ from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.logger import logger
+from src.common.logger import logger
 from src.common.constants import TMP_PATH
 from src.metadata_source.vgmdb_api import VGMdbAPI
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
-from src.basemodels import Album
+from src.common.basemodels import Album
 
 
 if __name__ == "__main__":

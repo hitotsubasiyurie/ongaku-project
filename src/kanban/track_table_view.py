@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QAbstractItemView, )
 
 from src.ongaku_library.ongaku_library import ResourceState
-from src.basemodels import Track
+from src.common.basemodels import Track
 
 
 class TrackTableItemModel(QAbstractItemModel):

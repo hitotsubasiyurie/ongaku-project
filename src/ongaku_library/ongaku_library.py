@@ -5,10 +5,10 @@ from collections import defaultdict
 from enum import IntEnum, IntFlag, auto
 from pathlib import Path
 
-from src.logger import logger, logger_watched
+from src.common.logger import logger, logger_watched
 from src.common.exception import OngakuException
 from src.common.json_encoder import CustomJSONEncoder
-from src.basemodels import Album, Track
+from src.common.basemodels import Album, Track
 from src.common.utils import legalize_filename
 
 

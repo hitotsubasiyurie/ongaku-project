@@ -12,8 +12,8 @@ import requests
 from lxml import etree
 
 from src.common.exception import OngakuException
-from src.logger import logger, logger_watched
-from src.basemodels import Album, Disc, Track
+from src.common.logger import logger, logger_watched
+from src.common.basemodels import Album, Disc, Track
 from src.common.utils import retry
 
 

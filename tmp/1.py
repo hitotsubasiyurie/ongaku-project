@@ -63,12 +63,10 @@ def generate_merging_list(pending_dir: str, groups: list[list[str]], filter_file
 
 if __name__ == "__main__":
 
-    files = set(os.path.join("vgmdb", f.name) for f in Path(r"D:\ongaku-metadata").glob("*.json"))
-
     # input 输入
 
     pending_dir = input(f"Please input pending directory: ").strip("'\"")
-    group_file = os.path.join(pending_dir, "group.json")
+    
     group_file = input(f"Please input group file ({group_file}): ").strip("'\"") or group_file
 
     if not pending_dir:
@@ -82,10 +80,13 @@ if __name__ == "__main__":
 
     mgl_file.write_text(json.dumps(merging_list, indent=2, ensure_ascii=False, cls=CustomJSONEncoder), encoding="utf-8")
 
+    albums = []
+    pending_dir = Path(r"D:\ongaku-pending\偶像大师")
+    group_file = Path(r"D:\ongaku-pending\偶像大师\group.json")
+    groups = json.loads(group_file.read_text(encoding="utf-8"))
+    _dict = {g[0]: g[1] for g in groups}
 
-
-
-
+    for mdf in Path(r"D:\ongaku-pending\偶像大师\vgmdb").rglob("*.json"):
 
 
 

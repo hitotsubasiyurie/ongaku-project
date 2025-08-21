@@ -71,6 +71,7 @@ def analyze_album(directory: str) -> Album:
                         tracks=list(sorted([analyze_track(a) for a in audios], key=lambda a: a.tracknumber)))
     return album_model
 
+
 def count_album_similarity(a: Album, b: Album) -> float:
     ratio = (SequenceMatcher(None, a.catalognumber, b.catalognumber).ratio() + 
              SequenceMatcher(None, a.date, b.date).ratio() + 

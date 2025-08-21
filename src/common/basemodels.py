@@ -61,16 +61,15 @@ class Album(BaseModel):
     _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
 
     def to_dict(self) -> dict[str, Any]:
-        value = {"catalognumber": self.catalognumber, "date": self.date, "album": self.album, 
-                 "tracks": [(t.tracknumber, t.title, t.artist) for t in self.tracks]}
-        return value
+        _dict = self.model_dump()
+        _dict["tracks"] = [(t.tracknumber, t.title, t.artist) for t in self.tracks]
+        return _dict
 
     @staticmethod
-    def from_dict(value: dict[str, Any]) -> "Album":
-        tracks=[Track(tracknumber=t[0], title=t[1], artist=t[2]) 
-                for t in value.get("tracks", [])]
-        album = Album(catalognumber=value.get("catalognumber"), date=value.get("date"), 
-                    album=value.get("album"), tracks=tracks)
+    def from_dict(_dict: dict[str, Any]) -> "Album":
+        _dict["tracks"] = [Track(tracknumber=t[0], title=t[1], artist=t[2]) 
+                           for t in _dict.get("tracks", [])]
+        album = Album(**_dict)
         return album
 
 

@@ -19,8 +19,8 @@ from src.common.constants import METADATA_PATH, TMP_PATH
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.common.basemodels import Album, Track
-from src.ongaku_library.ongaku_library import (dump_album_model, album_filename, OngakuScanner, 
-    load_album_model, AUDIO_EXTS)
+from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, OngakuScanner, 
+    load_album_json, AUDIO_EXTS)
 
 
 def read_standard_tags(audio: str) -> dict:

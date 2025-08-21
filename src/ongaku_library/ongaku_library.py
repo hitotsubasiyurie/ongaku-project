@@ -54,20 +54,15 @@ def track_filenames(album: Album) -> list[str]:
     return names
 
 
-def dump_album_model(album: Album, filepath: str = None) -> str:
-    album.links = list(set(album.links))
-    album.themes = list(set(album.themes))
-    _dict = album.model_dump()
-    _dict["tracks"] = [[t.tracknumber, t.title, t.artist] for t in album.tracks]
-    content = json.dumps(_dict, ensure_ascii=False, indent=4, cls=CustomJSONEncoder)
+def dump_album_json(album: Album, filepath: str = None) -> str:
+    content = json.dumps(album.to_dict(), ensure_ascii=False, indent=4, cls=CustomJSONEncoder)
     filepath and Path(filepath).write_text(content, encoding="utf-8")
     return content
 
 
-def load_album_model(filepath: str) -> Album:
+def load_album_json(filepath: str) -> Album:
     _dict: dict = json.loads(Path(filepath).read_text(encoding="utf-8"))
-    _dict["tracks"] = [Track(tracknumber=l[0], title=l[1], artist=l[2]) for l in _dict["tracks"]]
-    album = Album(**_dict)
+    album = Album.from_dict(_dict)
     return album
 
 
@@ -154,7 +149,7 @@ class OngakuScanner:
     @logger_watched(1)
     def _scan_all(self) -> None:
         self._mdfs = self._scan_metadata_files(self.metadata_dir)
-        self._albums = list(map(load_album_model, self._mdfs))
+        self._albums = list(map(load_album_json, self._mdfs))
         self._aid2n = {id(a): i for i, a in enumerate(self._albums)}
 
         _dname2path = ({} if not self.resource_dir else 

@@ -12,7 +12,7 @@ from src.common.constants import METADATA_PATH, TMP_PATH
 from src.common.utils import strings_assignment
 from src.common.exception import OngakuException
 from src.metadata_source.vgmdb_api import VGMdbAPI
-from src.ongaku_library.ongaku_library import dump_album_model, album_filename, OngakuScanner
+from src.ongaku_library.ongaku_library import dump_album_json, album_filename, OngakuScanner
 
 
 if __name__ == "__main__":
@@ -86,6 +86,6 @@ if __name__ == "__main__":
             logger.error("", exc_info=1)
             raise e
         
-        [dump_album_model(a, save_dir / (album_filename(a)+".json")) for a in albums]
+        [dump_album_json(a, save_dir / (album_filename(a)+".json")) for a in albums]
 
 

@@ -9,7 +9,7 @@ from src.common.constants import METADATA_PATH, TMP_PATH, RESOURCE_PATH
 from src.common.utils import strings_assignment
 from src.common.exception import OngakuException
 from src.metadata_source.vgmdb_api import VGMdbAPI
-from src.ongaku_library.ongaku_library import dump_album_model, album_filename, OngakuScanner
+from src.ongaku_library.ongaku_library import dump_album_json, album_filename, OngakuScanner
 
 
 if __name__ == "__main__":

@@ -12,8 +12,8 @@ from src.common.constants import METADATA_PATH, TMP_PATH
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.common.basemodels import Album
-from src.ongaku_library.ongaku_library import (dump_album_model, album_filename, OngakuScanner, 
-    load_album_model)
+from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, OngakuScanner, 
+    load_album_json)
 
 # TODO: link.json 格式
 
@@ -74,7 +74,7 @@ def search_query_list(query_list: dict, vgmdb_dir: Path, mb_dir: Path) -> Genera
         if result:
             continue
         
-        a = load_album_model(Path(vgmdb_dir, name))
+        a = load_album_json(Path(vgmdb_dir, name))
         
         filter_params = [a.catalognumber, a.date, sum(MusicBrainzDatabase._date_str_to_range(a.date))//2, len(a.tracks)]
         order_params = [a.catalognumber, a.album, MusicBrainzDatabase._abstract_tracks(a)]
@@ -93,7 +93,7 @@ def search_query_list(query_list: dict, vgmdb_dir: Path, mb_dir: Path) -> Genera
                 continue
 
             mb_mdfs = [mb_dir / (album_filename(mb_a)+".json") for mb_a in mb_as]
-            [dump_album_model(mb_a, mb_mdf) for mb_a, mb_mdf in zip(mb_as, mb_mdfs)]
+            [dump_album_json(mb_a, mb_mdf) for mb_a, mb_mdf in zip(mb_as, mb_mdfs)]
             query_list[name] = {os.path.basename(mb_mdf): False for mb_mdf in mb_mdfs}
 
             # 搜索出结果则退出

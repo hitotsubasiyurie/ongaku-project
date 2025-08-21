@@ -21,8 +21,8 @@ from src.common.json_encoder import CustomJSONEncoder
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.common.basemodels import Album, Track
-from src.ongaku_library.ongaku_library import (dump_album_model, album_filename, OngakuScanner, 
-    load_album_model, AUDIO_EXTS)
+from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, OngakuScanner, 
+    load_album_json, AUDIO_EXTS)
 
 
 
@@ -44,7 +44,7 @@ def generate_merging_list(pending_dir: str, groups: list[list[str]], filter_file
         _maxlen = max(map(len, source_names))
         source_names = [n.ljust(_maxlen) for n in source_names]
 
-        source_albums = [load_album_model(Path(pending_dir, s)) for s in group]
+        source_albums = [load_album_json(Path(pending_dir, s)) for s in group]
 
         _dict.update({f"catalognumber {n}": a.catalognumber for n, a in zip(source_names, source_albums) if a.catalognumber})
         _dict.update({f"date {n}": a.date for n, a in zip(source_names, source_albums) if a.catalognumber})
@@ -65,32 +65,37 @@ if __name__ == "__main__":
 
     # input 输入
 
-    pending_dir = input(f"Please input pending directory: ").strip("'\"")
+    # pending_dir = input(f"Please input pending directory: ").strip("'\"")
     
-    group_file = input(f"Please input group file ({group_file}): ").strip("'\"") or group_file
+    # group_file = input(f"Please input group file ({group_file}): ").strip("'\"") or group_file
 
-    if not pending_dir:
-        sys.exit(0)
+    # if not pending_dir:
+    #     sys.exit(0)
 
-    group_file = Path(group_file)
-    mgl_file = Path(pending_dir, "merging_list.json")
+    # group_file = Path(group_file)
+    # mgl_file = Path(pending_dir, "merging_list.json")
 
-    groups = json.loads(group_file.read_text(encoding="utf-8"))
-    merging_list = generate_merging_list(pending_dir, groups, files)
+    # groups = json.loads(group_file.read_text(encoding="utf-8"))
+    # merging_list = generate_merging_list(pending_dir, groups, files)
 
-    mgl_file.write_text(json.dumps(merging_list, indent=2, ensure_ascii=False, cls=CustomJSONEncoder), encoding="utf-8")
+    # mgl_file.write_text(json.dumps(merging_list, indent=2, ensure_ascii=False, cls=CustomJSONEncoder), encoding="utf-8")
 
     albums = []
     pending_dir = Path(r"D:\ongaku-pending\偶像大师")
     group_file = Path(r"D:\ongaku-pending\偶像大师\group.json")
     groups = json.loads(group_file.read_text(encoding="utf-8"))
+    data = []
     _dict = {g[0]: g[1] for g in groups}
 
     for mdf in Path(r"D:\ongaku-pending\偶像大师\vgmdb").rglob("*.json"):
+        mb_mdf = _dict.get(str(mdf.relative_to(pending_dir)))
+        if mb_mdf:
+            mb_mdf = pending_dir / mb_mdf
+            data.append([load_album_json(mdf).to_dict(), load_album_json(mb_mdf).to_dict()])
+        else:
+            data.append(load_album_json(mdf).to_dict())
 
-
-
-
+    Path(r"D:\ongaku-pending\偶像大师\pending.json").write_text(json.dumps(data, ensure_ascii=False, indent=4, cls=CustomJSONEncoder), encoding="utf-8")
 
 
 

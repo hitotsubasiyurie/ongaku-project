@@ -23,36 +23,46 @@ from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, 
     load_album_json, AUDIO_EXTS)
 
 
+TAGMAP_FLAC = {"catalognumber": "CATALOGNUMBER", "date": "DATE", "album": "ALBUM", 
+               "tracknumber": "TRACKNUMBER", "title": "TITLE", "artist": "ARTIST"}
+TAGMAP_MP3 = {"catalognumber": "catalognumber", "date": "date", "album": "album", 
+              "tracknumber": "tracknumber", "title": "title", "artist": "artist"}
+
+
 def read_standard_tags(audio: str) -> dict:
-    if Path(audio).suffix == ".flac":
-        _map = {"catalognumber": "CATALOGNUMBER", "date": "DATE", "album": "ALBUM", 
-                "tracknumber": "TRACKNUMBER", "title": "TITLE", "artist": "ARTIST"}
+    audio = Path(audio)
+    if audio.suffix == ".flac":
+        _map = TAGMAP_FLAC
         tags = FLAC(audio).tags
-        standard_tags = {s_k: "//".join(tags.get(k, [])) for s_k, k in _map.items()}
-    elif Path(audio).suffix == ".mp3":
-        _map = {"catalognumber": "catalognumber", "date": "date", "album": "album", 
-                "tracknumber": "tracknumber", "title": "title", "artist": "artist"}
+    elif audio.suffix == ".mp3":
+        _map = TAGMAP_MP3
         tags = EasyMP3(audio).tags
-        standard_tags = {s_k: "//".join(tags.get(k, [])) for s_k, k in _map.items()}
+    standard_tags = {s_k: "//".join(tags.get(k, [])) for s_k, k in _map.items()}
     return standard_tags
 
 
-def analyze_track(audio: str) -> Track:
+def analyze_audio(audio: str) -> Track:
     audio = Path(audio)
+
     tags = read_standard_tags(audio)
     tracknumber, title, artist = [tags[k] or "" for k in ["tracknumber", "title", "artist"]]
 
-    if not all([tracknumber, title]) and (match := re.search(r"^(\d+).\s*(.+)$", audio.name)):
-        if not tracknumber: tracknumber = int(match.group(1))
-        if not title: title = match.group(2)
+    if not all([tracknumber, title]):
+        if match := re.search(r"^(\d+).\s*(.+)$", audio.name):
+            if not tracknumber: tracknumber = int(match.group(1))
+            if not title: title = match.group(2)
+    
     if not title: title = audio.name
     
     return Track(tracknumber=tracknumber or None, title=title, artist=artist)
 
 
-def analyze_album(directory: str) -> Album:
+def analyze_directory(directory: str) -> Album:
+    """
+    :param directory: 扁平专辑目录
+    """
     directory = Path(directory)
-    audios = itertools.chain.from_iterable(Path(directory).glob(f"*{ext}") for ext in AUDIO_EXTS)
+    audios = itertools.chain.from_iterable(directory.glob(f"*{ext}") for ext in AUDIO_EXTS)
 
     tags = read_standard_tags(audios[0])
     catalognumber, date, album = [tags[k] or "" for k in ["catalognumber", "date", "album"]]
@@ -68,7 +78,7 @@ def analyze_album(directory: str) -> Album:
 
     date = date.replace(".", "-")
     album_model = Album(catalognumber=catalognumber, date=date, album=album, 
-                        tracks=list(sorted([analyze_track(a) for a in audios], key=lambda a: a.tracknumber)))
+                        tracks=list(sorted([analyze_audio(a) for a in audios], key=lambda a: a.tracknumber)))
     return album_model
 
 
@@ -84,5 +94,5 @@ def count_album_similarity(a: Album, b: Album) -> float:
 
 if __name__ == "__main__":
 
-    pending_dir = input(f"Please input pending directory: ").strip("'\"")
+    pass
 

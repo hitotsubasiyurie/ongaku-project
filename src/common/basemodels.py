@@ -11,6 +11,17 @@ from typing import Any, Annotated, Iterable, Optional
 from pydantic import BaseModel, Field, BeforeValidator, field_validator
 
 
+def _validate_int(value: Any) -> int:
+    """
+    1. 转换 None 为 0
+    """
+    if value is None:
+        value = 0
+    if not isinstance(value, int):
+        raise ValueError(f"value is not int: {value}")
+    return value
+
+
 def _validate_string(value: Any) -> str:
     """
     1. 转换 None 为空字符串
@@ -43,6 +54,7 @@ def _validate_tracks_field(tracks: list["Track"]) -> list["Track"]:
     return tracks
 
 
+_CustomInt = Annotated[int, BeforeValidator(_validate_int)]
 _CustomStr = Annotated[str, BeforeValidator(_validate_string)]
 _CustomStrList = Annotated[list[str], BeforeValidator(_validate_strlist)]
 
@@ -74,7 +86,7 @@ class Album(BaseModel):
 
 
 class Disc(BaseModel):
-    discnumber: Optional[int] = Field(default=None)
+    discnumber: _CustomInt = Field(default=0)
     disc: _CustomStr = Field(default="")
     tracks: list["Track"] = Field(default_factory=list)
 
@@ -82,7 +94,7 @@ class Disc(BaseModel):
 
 
 class Track(BaseModel):
-    tracknumber: Optional[int] = Field(default=None)
+    tracknumber: _CustomInt = Field(default=0)
     title: _CustomStr = Field(default="")
     artist: _CustomStr = Field(default="")
 

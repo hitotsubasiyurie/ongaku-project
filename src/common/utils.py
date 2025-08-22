@@ -2,7 +2,7 @@ import time
 from functools import wraps
 from pathlib import Path
 from threading import Lock
-from typing import Callable, Generator
+from typing import Callable, Generator, Mapping, Any
 from difflib import SequenceMatcher
 
 import numpy
@@ -85,3 +85,31 @@ def strings_assignment(strings_a: list[str], strings_b: list[str]) -> tuple[floa
     row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
     aver_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
     return aver_similarity, row_ind, col_ind
+
+
+def dump_toml(obj: Mapping[str, Any]) -> str:
+
+    from tomli_w._writer import Context, format_literal, ARRAY_TYPES
+
+    def custom_format_inline_array(obj: tuple | list, ctx: Context, nest_level: int) -> str:
+        if not obj:
+            return "[]"
+        item_indent = ctx.indent_str * (1 + nest_level)
+        closing_bracket_indent = ctx.indent_str * nest_level
+        # 扁平列表
+        if not any(isinstance(item, ARRAY_TYPES) for item in obj):
+            return "[" + ", ".join(format_literal(item, ctx, nest_level=nest_level + 1) for item in obj) + f"]"
+        return (
+            "[\n"
+            + ",\n".join(
+                item_indent + format_literal(item, ctx, nest_level=nest_level + 1)
+                for item in obj
+            )
+            + f",\n{closing_bracket_indent}]"
+        )
+    
+    import tomli_w._writer
+    tomli_w._writer.format_inline_array = custom_format_inline_array
+
+
+    return tomli_w.dumps(data)

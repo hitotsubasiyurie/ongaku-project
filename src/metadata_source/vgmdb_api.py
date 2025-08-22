@@ -173,6 +173,7 @@ class VGMdbAPI:
             albums = [Album(catalognumber=c, date=date, album=f"{album_title} {d.disc}", tracks=d.tracks, links=[link])
                       for c, d in zip(catnos, discs)]
         else:
+            logger.warning(f"Failed to assign albums. {catnos, date, album_title}")
             albums = [Album(catalognumber=" ,".join(catnos), date=date, album=f"{album_title} {d.disc}", 
                             tracks=d.tracks, links=[link])
                       for d in discs]
@@ -235,6 +236,8 @@ class VGMdbAPI:
         从 table 元素获取 Track 模型列表。
         :raises OngakuException:
         """
+        # https://vgmdb.net/album/135468
+        # https://vgmdb.net/album/122066
         tracks = []
         for tr in table.iterchildren("tr"):
             tds: list[etree._Element] = list(tr.iterchildren("td"))
@@ -244,6 +247,8 @@ class VGMdbAPI:
             tracknumber = int(tracknumber) if tracknumber.isdigit() else None
             track_title = tds[1].xpath("string(.)").strip()
             tracks.append(Track(tracknumber=tracknumber, title=track_title))
+            if not tracknumber or not track_title:
+                logger.warning(f"Failed to get track. {tracknumber, track_title}")
         logger.info(f"Got {len(tracks)} tracks. {[t.title for t in tracks]}")
         return tracks
 

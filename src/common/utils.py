@@ -87,7 +87,7 @@ def strings_assignment(strings_a: list[str], strings_b: list[str]) -> tuple[floa
     return aver_similarity, row_ind, col_ind
 
 
-def dump_toml(obj: Mapping[str, Any]) -> str:
+def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
 
     from tomli_w._writer import Context, format_literal, ARRAY_TYPES
 
@@ -112,4 +112,6 @@ def dump_toml(obj: Mapping[str, Any]) -> str:
     tomli_w._writer.format_inline_array = custom_format_inline_array
 
 
-    return tomli_w.dumps(obj)
+    text = tomli_w.dumps(obj)
+    file and Path(file).write_text(text, encoding="utf-8")
+    return text

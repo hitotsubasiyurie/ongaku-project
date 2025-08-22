@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.common.logger import logger
 from src.common.constants import METADATA_PATH, TMP_PATH
-from src.common.utils import strings_assignment
+from src.common.utils import strings_assignment, dump_toml
 from src.common.exception import OngakuException
 from src.metadata_source.vgmdb_api import VGMdbAPI
 from src.ongaku_library.ongaku_library import dump_album_json, album_filename, OngakuScanner
@@ -19,18 +19,18 @@ if __name__ == "__main__":
 
     # input 输入
 
-    save_dir = input(f"Please input save directory ({METADATA_PATH}): ").strip("'\"") or METADATA_PATH
+    save_file = input(f"Please input save file (.toml): ").strip("'\"")
     cache_dir = os.path.join(TMP_PATH, "cache") if TMP_PATH else ""
     cache_dir = input(f"Please input cache directory ({cache_dir}): ").strip("'\"") or cache_dir
 
-    if not save_dir or not cache_dir:
+    if not save_file or not cache_dir:
         sys.exit(0)
     
-    save_dir, cache_dir = Path(save_dir), Path(cache_dir)
+    save_file, cache_dir = Path(save_file), Path(cache_dir)
     
     input_url = input("Please input VGMDB page (frachise page, product page, search page): ")
 
-    save_dir.mkdir(parents=True, exist_ok=True)
+    save_file.parent.mkdir(parents=True, exist_ok=True)
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     # 获取 themes_dict album_ids
@@ -59,15 +59,15 @@ if __name__ == "__main__":
         logger.error(f"Not supported url. {input_url}")
         raise OngakuException()
     
-    # 跳过已有元数据文件的 album_ids
+    # # 跳过已有元数据文件的 album_ids
 
-    skip_a_ids = set()
-    for f in OngakuScanner._scan_metadata_files(save_dir):
-        match = re.search(VGMdbAPI.ALBUM_URL_PATTERN, Path(f).read_text(encoding="utf-8"))
-        if match:
-            skip_a_ids.add(match.group(1))
+    # skip_a_ids = set()
+    # for f in OngakuScanner._scan_metadata_files(save_file):
+    #     match = re.search(VGMdbAPI.ALBUM_URL_PATTERN, Path(f).read_text(encoding="utf-8"))
+    #     if match:
+    #         skip_a_ids.add(match.group(1))
 
-    a_ids -= skip_a_ids
+    # a_ids -= skip_a_ids
 
     logger.info(f"Got {len(a_ids)} album ids to be updated.")
     logger.debug(a_ids)
@@ -86,6 +86,6 @@ if __name__ == "__main__":
             logger.error("", exc_info=1)
             raise e
         
-        [dump_album_json(a, save_dir / (album_filename(a)+".json")) for a in albums]
-
+        obj = {str(i+1): a for i, a in enumerate(albums)}
+        dump_toml(obj, save_file)
 

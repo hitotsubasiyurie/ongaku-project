@@ -23,6 +23,7 @@ from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.common.basemodels import Album, Track
 from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, OngakuScanner, 
     load_album_json, AUDIO_EXTS)
+from src.common.utils import dump_toml
 
 
 
@@ -31,20 +32,31 @@ from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, 
 
 if __name__ == "__main__":
 
-    pending_file = Path(r"D:\ongaku-pending\THE IDOLM@STER pending - 副本.json")
-    pending_data = json.loads(pending_file.read_text(encoding="utf-8"))
+    # pending_file = Path(r"D:\ongaku-pending\THE IDOLM@STER pending - 副本.json")
+    # pending_data = json.loads(pending_file.read_text(encoding="utf-8"))
 
-    new_pending = []
+    # new_pending = []
 
-    for value in pending_data:
+    # for value in pending_data:
 
-        if isinstance(value, dict):
-            new_pending.append(value)
-            continue
+    #     if isinstance(value, dict):
+    #         new_pending.append(value)
+    #         continue
 
-        d0, d1 = value
-        d0["tracks"] = d1["tracks"]
-        d0["links"].extend(d1["links"])
-        new_pending.append(d0)
+    #     d0, d1 = value
+    #     d0["tracks"] = d1["tracks"]
+    #     d0["links"].extend(d1["links"])
+    #     new_pending.append(d0)
 
-    Path(r"D:\ongaku-pending\THE IDOLM@STER pending - new.json").write_text(json.dumps(new_pending, ensure_ascii=False, indent=2, cls=CustomJSONEncoder), encoding="utf-8")
+    # Path(r"D:\ongaku-pending\THE IDOLM@STER pending - new.json").write_text(json.dumps(new_pending, ensure_ascii=False, indent=2, cls=CustomJSONEncoder), encoding="utf-8")
+
+    # albums = [load_album_json(f) for f in Path(r"D:\ongaku-pending\偶像大师\vgmdb").rglob("*.json")]
+    
+    # obj = {str(i+1): a.to_dict() for i, a in enumerate(albums)}
+
+    # Path(r"D:\ongaku-pending\pending.toml").write_text(dump_toml(obj), encoding="utf-8")
+
+
+
+
+

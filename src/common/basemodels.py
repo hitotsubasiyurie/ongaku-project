@@ -3,7 +3,7 @@
 基本元数据：
 catalognumber, date, album, tracknumber, title, artist
 自定义元数据：
-themes, links
+links
 """
 
 from typing import Any, Annotated, Iterable, Optional
@@ -37,20 +37,20 @@ def _validate_string(value: Any) -> str:
 def _validate_strlist(value: Any) -> list:
     """
     1. do_string
-    2. 列表去重
+    2. 列表排序、去重
     """
     if not isinstance(value, Iterable) or isinstance(value, str):
         raise ValueError(f"value is not iterable: {value}")
-    value = list(set(map(_validate_string, value)))
+    value = list(sorted(set(map(_validate_string, value))))
     return value
 
 
 def _validate_tracks_field(tracks: list["Track"]) -> list["Track"]:
     """
     1. 列表去重
-    2. 按照 tracknumber 排序
+    2. 按照 [tracknumber, title, artist] 排序
     """
-    tracks = list(sorted(set(tracks), key=lambda t: t.tracknumber or float("inf")))
+    tracks = list(sorted(set(tracks), key=lambda t: (t.tracknumber, t.title, t.artist) or float("inf")))
     return tracks
 
 
@@ -67,7 +67,6 @@ class Album(BaseModel):
     date: _CustomStr = Field(default="", pattern=r"^$|^\d{4}$|^\d{4}-\d{1,2}$|^\d{4}-\d{1,2}-\d{1,2}$")
     album: _CustomStr = Field(default="")
     tracks: list["Track"] = Field(default_factory=list)
-    themes: _CustomStrList = Field(default_factory=list)
     links: _CustomStrList = Field(default_factory=list)
 
     _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)

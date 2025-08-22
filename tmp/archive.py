@@ -94,5 +94,15 @@ def count_album_similarity(a: Album, b: Album) -> float:
 
 if __name__ == "__main__":
 
-    pass
+    parent_directory = Path(r"D:\移动云盘同步盘")
+
+    # 不嵌套的文件夹 认为是专辑文件夹
+    album_directorys = [d for d in parent_directory.rglob("*") 
+                        if d.is_dir() and all(f.is_file() for f in d.glob("*"))]
+    
+    
+
+# 1. 音轨数完全相同
+# 2. 没有音频的文件夹删掉
+# 3. 不嵌套的文件夹 认为是专辑文件夹
 

@@ -74,6 +74,7 @@ if __name__ == "__main__":
 
     # 开始更新
 
+    total_albums = []
     for a_id in a_ids:
         try:
             # 获取 album
@@ -81,11 +82,12 @@ if __name__ == "__main__":
             # 填充 theme 信息 排序
             for a in albums:
                 a.themes = list(sorted(set(themes_dict[a_id])))
+            total_albums.extend(albums)
         # 遇到异常 记录日志 直接退出
         except Exception as e:
             logger.error("", exc_info=1)
             raise e
         
-        obj = {str(i+1): a for i, a in enumerate(albums)}
-        dump_toml(obj, save_file)
+    obj = {str(i+1): a.to_dict() for i, a in enumerate(total_albums)}
+    dump_toml(obj, save_file)
 

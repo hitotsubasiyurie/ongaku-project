@@ -76,6 +76,7 @@ if __name__ == "__main__":
             album["release_id"] = release["id"]
             album["tracks_json"] = json.dumps(album["tracks"], ensure_ascii=False)
             album["themes"] = set(album["themes"]) if album["themes"] else {}
+            # pg 字符串列表 怎么插入
             album["links"] = set(album["links"]) if album["links"] else {}
             album["_date_min"], album["_date_max"] = MusicBrainzDatabase._date_str_to_range(album["date"])
             album["_tracks_count"] = len(album["tracks"])

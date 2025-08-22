@@ -23,10 +23,18 @@ from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, 
     load_album_json, AUDIO_EXTS, ALBUM_FILENAME, TRACK_FILENAME)
 
 
+
 if __name__ == "__main__":
 
     search_album_pattern = ALBUM_FILENAME
     search_track_pattern = TRACK_FILENAME
 
+    
 
+
+
+
+# 1. 音轨数完全相同
+# 2. 没有音频的文件夹删掉
+# 3. 不嵌套的文件夹 认为是专辑文件夹
 

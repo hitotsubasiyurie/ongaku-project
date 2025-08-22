@@ -6,6 +6,7 @@ import itertools
 from difflib import SequenceMatcher
 from typing import Generator
 from pathlib import Path
+import tomllib
 
 import mutagen
 from mutagen.flac import FLAC
@@ -62,7 +63,7 @@ def analyze_directory(directory: str) -> Album:
     :param directory: 扁平专辑目录
     """
     directory = Path(directory)
-    audios = itertools.chain.from_iterable(directory.glob(f"*{ext}") for ext in AUDIO_EXTS)
+    audios = itertools.chain.from_iterable(directory.rglob(f"*{ext}") for ext in AUDIO_EXTS)
 
     tags = read_standard_tags(audios[0])
     catalognumber, date, album = [tags[k] or "" for k in ["catalognumber", "date", "album"]]
@@ -82,6 +83,10 @@ def analyze_directory(directory: str) -> Album:
     return album_model
 
 
+def count_track_similarity(a: Track, b: Track) -> float:
+    ratio = SequenceMatcher(None, , b.catalognumber).ratio()
+
+
 def count_album_similarity(a: Album, b: Album) -> float:
     ratio = (SequenceMatcher(None, a.catalognumber, b.catalognumber).ratio() + 
              SequenceMatcher(None, a.date, b.date).ratio() + 
@@ -94,15 +99,26 @@ def count_album_similarity(a: Album, b: Album) -> float:
 
 if __name__ == "__main__":
 
+    pending_file = Path(r"D:\ongaku-pending\THE IDOLM@STER.toml")
+    dst_albums = list(map(Album.from_dict, tomllib.loads(pending_file.read_text(encoding="utf-8")).values()))
+
     parent_directory = Path(r"D:\移动云盘同步盘")
 
     # 不嵌套的文件夹 认为是专辑文件夹
-    album_directorys = [d for d in parent_directory.rglob("*") 
+    src_directorys = [d for d in parent_directory.rglob("*") 
                         if d.is_dir() and all(f.is_file() for f in d.glob("*"))]
-    
-    
+    src_albums = list(analyze_directory(d) for d in src_directorys)
+
+    for src_dir, src_album in zip(src_directorys, src_albums):
+
+        dst_album = max(dst_albums, key=lambda a: count_album_similarity(src_album, a) if len(src_album.tracks) == len(a.tracks) else 0)
+
+
+
 
 # 1. 音轨数完全相同
 # 2. 没有音频的文件夹删掉
 # 3. 不嵌套的文件夹 认为是专辑文件夹
+# 4. 考虑重复资源
+# 5. 考虑已归档资源
 

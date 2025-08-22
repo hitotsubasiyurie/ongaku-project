@@ -47,10 +47,9 @@ def _validate_strlist(value: Any) -> list:
 
 def _validate_tracks_field(tracks: list["Track"]) -> list["Track"]:
     """
-    1. 列表去重
-    2. 按照 [tracknumber, title, artist] 排序
+    2. 按照 tracknumber 排序
     """
-    tracks = list(sorted(set(tracks), key=lambda t: (t.tracknumber, t.title, t.artist) or float("inf")))
+    tracks = list(sorted(tracks, key=lambda t: t.tracknumber))
     return tracks
 
 

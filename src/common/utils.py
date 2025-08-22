@@ -112,4 +112,4 @@ def dump_toml(obj: Mapping[str, Any]) -> str:
     tomli_w._writer.format_inline_array = custom_format_inline_array
 
 
-    return tomli_w.dumps(data)
+    return tomli_w.dumps(obj)

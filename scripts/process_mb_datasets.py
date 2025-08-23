@@ -75,9 +75,8 @@ if __name__ == "__main__":
             album = album.model_dump()
             album["release_id"] = release["id"]
             album["tracks_json"] = json.dumps(album["tracks"], ensure_ascii=False)
-            album["themes"] = set(album["themes"]) if album["themes"] else {}
-            # pg 字符串列表 怎么插入
-            album["links"] = set(album["links"]) if album["links"] else {}
+            links_str = ", ".join(album["links"])
+            album["links"] = f"{{links_str}}"
             album["_date_min"], album["_date_max"] = MusicBrainzDatabase._date_str_to_range(album["date"])
             album["_tracks_count"] = len(album["tracks"])
             album["_tracks_abstract"] = "\n".join(f'{t["tracknumber"]}. {t["title"]}' for t in album["tracks"])

@@ -7,11 +7,14 @@ from difflib import SequenceMatcher
 from typing import Generator
 from pathlib import Path
 import tomllib
+from functools import cache
 
 import mutagen
 from mutagen.flac import FLAC
 from mutagen.mp3 import EasyMP3
 from mutagen.id3 import ID3
+import numpy
+from scipy.optimize import linear_sum_assignment
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -42,6 +45,7 @@ def read_standard_tags(audio: str) -> dict:
     return standard_tags
 
 
+@cache
 def analyze_audio(audio: str) -> Track:
     audio = Path(audio)
 
@@ -84,7 +88,11 @@ def analyze_directory(directory: str) -> Album:
 
 
 def count_track_similarity(a: Track, b: Track) -> float:
-    ratio = SequenceMatcher(None, , b.catalognumber).ratio()
+    ratio = SequenceMatcher(None, f"{a.tracknumber}. {a.title}", f"{b.tracknumber}. {b.title}").ratio()
+    if a.artist and b.artist:
+        ratio += SequenceMatcher(None, a.artist, b.artist).ratio()
+
+    return ratio
 
 
 def count_album_similarity(a: Album, b: Album) -> float:
@@ -113,12 +121,13 @@ if __name__ == "__main__":
 
         dst_album = max(dst_albums, key=lambda a: count_album_similarity(src_album, a) if len(src_album.tracks) == len(a.tracks) else 0)
 
+        audios = itertools.chain.from_iterable(src_dir.rglob(f"*{ext}") for ext in AUDIO_EXTS)
 
 
 
 # 1. 音轨数完全相同
 # 2. 没有音频的文件夹删掉
 # 3. 不嵌套的文件夹 认为是专辑文件夹
-# 4. 考虑重复资源
+# 4. 考虑重复资源：一个一个文件夹处理
 # 5. 考虑已归档资源
 

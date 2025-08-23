@@ -164,19 +164,24 @@ def apply_matching_log(matching_log: Path, resource_save_dir: Path) -> None:
             Path(src_dir, src_file).rename(dst_dir, dst_file)
 
 
+def clean_resource_parent(resource_parent: Path) -> None:
+    for d in reversed(list(filter(Path.is_dir, resource_parent.rglob("*")))):
+        if not list(itertools.chain.from_iterable(d.rglob(f"*{ext}") for ext in AUDIO_EXTS)):
+            shutil.rmtree(d)
+
 
 if __name__ == "__main__":
 
     # input 输入
     theme_file = input(f"Please input theme metadata file: ").strip("'\"")
-    parent_resource = input(f"Please input resource parent directory: ").strip("'\"")
+    resource_parent = input(f"Please input resource parent directory: ").strip("'\"")
     resource_save_dir = input(f"Please input resource save directory: ").strip("'\"")
     tmp_dir = input(f"Please input temp directory ({TMP_PATH}): ").strip("'\"") or TMP_PATH
 
-    if not theme_file or not parent_resource or not resource_save_dir or not tmp_dir:
+    if not theme_file or not resource_parent or not resource_save_dir or not tmp_dir:
         sys.exit(0)
 
-    theme_file, parent_resource, resource_save_dir, tmp_dir = Path(theme_file), Path(parent_resource), Path(resource_save_dir), Path(tmp_dir)
+    theme_file, resource_parent, resource_save_dir, tmp_dir = Path(theme_file), Path(resource_parent), Path(resource_save_dir), Path(tmp_dir)
 
     matching_log = tmp_dir / "resource_matching.log"
     # analyze_save_file = tmp_dir / "analyze.json"
@@ -189,24 +194,18 @@ if __name__ == "__main__":
 
         os.system("cls")
         print("Please input action number：")
-        # print("1. Analyze resource")
         print("1. Generate matching log")
         print("2. Apply matching log")
-        print("4. Clean musicbrainz save directory")
+        print("3. Clean resource parent directory")
         action = int(input(""))
 
         if action == 1:
             show_detail = input(f"show detail? (Y/N) (default N) ") == "Y"
-            generate_match_log(parent_resource, resource_save_dir, matching_log, show_detail)
+            generate_match_log(resource_parent, resource_save_dir, matching_log, show_detail)
 
         elif action == 2:
             apply_matching_log()
-            # 没有音频的文件夹删掉
-            audios = list(itertools.chain.from_iterable(Path(src_dir).rglob(f"*{ext}") for ext in AUDIO_EXTS))
-            if not audios:
-                shutil.rmtree(src_dir)
 
-
-
-# 5. 考虑已归档资源
+        elif action == 3:
+            clean_resource_parent(resource_parent)
 

@@ -7,6 +7,9 @@ from difflib import SequenceMatcher
 
 import numpy
 from scipy.optimize import linear_sum_assignment
+from mutagen.flac import FLAC
+from mutagen.mp3 import EasyMP3
+from mutagen.id3 import ID3
 
 from src.common.logger import logger
 
@@ -115,3 +118,22 @@ def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
     text = tomli_w.dumps(obj)
     file and Path(file).write_text(text, encoding="utf-8")
     return text
+
+
+_TAGMAP_FLAC = {"catalognumber": "CATALOGNUMBER", "date": "DATE", "album": "ALBUM", 
+               "tracknumber": "TRACKNUMBER", "title": "TITLE", "artist": "ARTIST"}
+_TAGMAP_MP3 = {"catalognumber": "catalognumber", "date": "date", "album": "album", 
+              "tracknumber": "tracknumber", "title": "title", "artist": "artist"}
+
+
+def read_standard_tags(audio: str) -> dict:
+    audio = Path(audio)
+    if audio.suffix == ".flac":
+        _map = _TAGMAP_FLAC
+        tags = FLAC(audio).tags
+    elif audio.suffix == ".mp3":
+        _map = _TAGMAP_MP3
+        tags = EasyMP3(audio).tags
+    standard_tags = {s_k: "//".join(tags.get(k, [])) for s_k, k in _map.items()}
+    return standard_tags
+

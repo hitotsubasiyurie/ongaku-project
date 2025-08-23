@@ -1,10 +1,15 @@
 
 ------------------------
 
-RES_DIRECTORY: 
+SOURCE_DIRECTORY: 
 
-RES_ALBUM: 
+SOURCE_ALBUM: 
+_MATCH_ALBUM: 
 
+SOURCE_TRACK1:
+_MATCH_TRACK1:
+
+--------------------------
 
 SRCDIR: [2020.09.16] GR@DATE WING 07 いつだって僕らは
 DSTDIR: [00001] [2017-11-27] [アイドルマスター ミリオンライブ! Blooming Clover LIMITED CD1] [4]

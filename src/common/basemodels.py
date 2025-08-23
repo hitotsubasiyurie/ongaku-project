@@ -72,13 +72,12 @@ class Album(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         _dict = self.model_dump()
-        _dict["tracks"] = [(t.tracknumber, t.title, t.artist) for t in self.tracks]
+        _dict["tracks"] = list(map(Track.to_tuple, self.tracks))
         return _dict
 
     @staticmethod
     def from_dict(_dict: dict[str, Any]) -> "Album":
-        _dict["tracks"] = [Track(tracknumber=t[0], title=t[1], artist=t[2]) 
-                           for t in _dict.get("tracks", [])]
+        _dict["tracks"] = list(map(Track.from_tuple, _dict.get("tracks", [])))
         album = Album(**_dict)
         return album
 
@@ -96,12 +95,11 @@ class Track(BaseModel):
     title: _CustomStr = Field(default="")
     artist: _CustomStr = Field(default="")
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Track):
-            return NotImplemented
-        return (self.tracknumber, self.title, self.artist) == (other.tracknumber, other.title, other.artist)
+    def to_tuple(self) -> list[Any]:
+        return [self.tracknumber, self.title, self.artist]
 
-    def __hash__(self) -> int:
-        return hash((self.tracknumber, self.title, self.artist))
+    @staticmethod
+    def from_tuple(t: list) -> "Track":
+        return Track(tracknumber=t[0], title=t[1], artist=t[2])
 
 

@@ -10,7 +10,7 @@ from collections import defaultdict
 import orjson
 from tqdm import tqdm
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.logger import logger, _ongaku_logger
 from src.common.ongaku_exception import OngakuException

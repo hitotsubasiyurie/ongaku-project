@@ -13,7 +13,7 @@ from functools import cache
 import numpy
 from scipy.optimize import linear_sum_assignment
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.logger import logger
 from src.common.constants import METADATA_PATH, TMP_PATH

@@ -9,7 +9,7 @@ from pathlib import Path
 import orjson
 from tqdm import tqdm
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.logger import logger, _ongaku_logger
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI

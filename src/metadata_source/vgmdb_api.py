@@ -5,55 +5,49 @@ import re
 import time
 import uuid
 from pathlib import Path
-from threading import Lock
 from collections import Counter
 
 import requests
 from lxml import etree
 
-from src.common.exception import OngakuException
-from src.common.logger import logger, logger_watched
+from src.common.ongaku_exception import OngakuException
+from src.logger import logger, logger_watched
 from src.common.basemodels import Album, Disc, Track
-from src.common.utils import retry
+from src.utils import retry, RateLimiter
 
 
 class VGMdbAPI:
     
-    # 每分钟 45 次
-    _REQUEST_INTERVAL = 2
+    # 限制频率 1.5 秒 1 次
+    _rate_limiter = RateLimiter(interval=1.5)
+    # 超时 8 秒
     _REQUEST_TIMEOUT = 8
     
     ROOT_URL = "https://vgmdb.net"
+    PRODUCT_PAGE_URL = f"{ROOT_URL}/product/{{}}"
+    ALBUM_PAGE_URL = f"{ROOT_URL}/album/{{}}"
 
-    PRODUCT_URL_FMT = f"{ROOT_URL}/product/{{}}"
-    ALBUM_URL_FMT = f"{ROOT_URL}/album/{{}}"
-
-    ALBUM_URL_PATTERN = fr"{ROOT_URL}/album/(\d+)"
-    """album url 正则匹配模板"""
-    
-    # 界面信息 优先日语
     _HEADERS = {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+        # 界面信息 优先日语
         "cookie": "gfa_lang=ja;"
     }
 
-    def __init__(self, cache_dir: str):
+    def __init__(self, cache_dir: str = None) -> None:
         """
-        :param cache_dir: 缓存目录路径
+        :param cache_dir: 可选，缓存目录路径
         """
         self._cache_dir = cache_dir
-        self._request_lock = Lock()
-        self._last_request_time = 0
 
-    def get_product_ids_from_franchise(self, franchise_id) -> list[str]:
+    def get_product_ids_from_franchise(self, franchise_id: str) -> list[str]:
         """
-        从 franchise 页面获取 product ids 。
+        从 franchise 页面获取 product ids 。\n
         :raises OngakuException:
         """
-        url = self.PRODUCT_URL_FMT.format(franchise_id)
+        url = self.PRODUCT_PAGE_URL.format(franchise_id)
         logger.info(f"Will get franchise. {url}")
-        resp = self.__request_get(url)
-
+        resp = self._cached_request_get(url)
+        
         html: etree._Element = etree.HTML(resp.text)
         table = html.xpath("//div[@id='collapse_sub']/div/table")[0]
         product_urls = [a.xpath("@href")[0] for a in table.iter("a")]
@@ -65,11 +59,11 @@ class VGMdbAPI:
 
     def get_product_titles(self, product_id: str) -> list[str]:
         """
-        获取 product 的标题，所有语言。
+        获取 product 的标题，所有语言。\n
         :raises OngakuException:
         """
-        url = self.PRODUCT_URL_FMT.format(product_id)
-        resp = self.__request_get(url)
+        url = self.PRODUCT_PAGE_URL.format(product_id)
+        resp = self._cached_request_get(url)
 
         html: etree._Element = etree.HTML(resp.text)
         spans: list[etree._Element] = html.xpath("//div[@id='innermain']//h1//span[@class='albumtitle']")
@@ -77,13 +71,13 @@ class VGMdbAPI:
         logger.info(f"Got product titles. {product_id} {titles}")
         return titles
 
-    def get_album_ids_from_page(self, url: str) -> list[str]:
+    def get_album_ids_from_search_page(self, url: str) -> list[str]:
         """
-        从搜索页面获取 album ids 。
+        从搜索页面获取 album ids 。\n
         :raises OngakuException:
         """
         logger.info(f"Will get page. {url}")
-        resp = self.__request_get(url)
+        resp = self._cached_request_get(url)
 
         html: etree._Element = etree.HTML(resp.text)
         album_urls: list[str] = html.xpath("//div[@id='albumresults']/table/tbody/tr/td/a/@href")
@@ -94,12 +88,12 @@ class VGMdbAPI:
 
     def get_album_ids_from_product(self, product_id: str) -> list[str]:
         """
-        从 product 页面获取 album ids 。
+        从 product 页面获取 album ids 。\n
         :raises OngakuException:
         """
-        url = self.PRODUCT_URL_FMT.format(product_id)
+        url = self.PRODUCT_PAGE_URL.format(product_id)
         logger.info(f"Will get product. {url}")
-        resp = self.__request_get(url)
+        resp = self._cached_request_get(url)
 
         html: etree._Element = etree.HTML(resp.text)
         album_urls: list[str] = html.xpath("//div[@id='discotable']/table/tbody/tr/td/a/@href")
@@ -111,13 +105,13 @@ class VGMdbAPI:
     @logger_watched(3)
     def get_albums(self, album_id: str) -> list[Album]:
         """
-        从 album 页面获取 SingleDiscAlbum 模型列表。
+        从 album 页面获取 Album 模型列表。\n
         :raises OngakuException:
         """
-        url = self.ALBUM_URL_FMT.format(album_id)
+        url = self.ALBUM_PAGE_URL.format(album_id)
         logger.info(f"Will get album. {url}")
 
-        resp = self.__request_get(url)
+        resp = self._cached_request_get(url)
         html: etree._Element = etree.HTML(resp.text)
 
         album_title = html.xpath("//div[@id='innermain']//h1//span[@class='albumtitle' and @style='display:inline']"
@@ -143,22 +137,24 @@ class VGMdbAPI:
 
         return self._assemble_albums(catnos, date, album_title, discs, url)
 
+    # 内部方法
+
     @staticmethod
     def _assemble_albums(catnos: list[str], date: str, album_title: str, discs: list[Disc], link: str) -> list[Album]:
         """
-        | catno | discs | SingleDiscAlbum | 正确 | 描述                                         |
-        |-------|-------|-----------------|----|--------------------------------------------|
-        | 0     | 0     | 1               | Y  | 无信息的一张专辑                                   |
-        | 0     | 1     | 1               | Y  | 无 catno 的一张专辑                              |
-        | 0     | n     | n               | Y  | 无 catno 的 n 张专辑，加碟名                        |
-        | 1     | 0     | 1               | Y  | 无 tracks 的一张专辑                             |
-        | 1     | 1     | 1               | Y  | 完整信息的一张专辑                                  |
-        | 1     | n     | n               | Y  | 完整信息的 n 张专辑，加碟名                            |
-        | n     | 0     | n               | Y  | n 张专辑，均无 tracks 信息                         |
-        | n     | 1     | 1               | 否  | 一张专辑，赋值全部 catno ，加碟名                       |
-        | n     | n     | n               | Y  | 一一对应的 n 张专辑，均有完整信息，加碟名                     |
-        | n     | n < m | m               | 否  | m 张专辑，缺少一些 catno ，每个 album 赋值全部 catno ，加碟名 |
-        | n     | n > m | n               | 否  | m 张专辑，缺少几张，每个 album 赋值全部 catno ，加碟名        |
+        | catno | discs | Album |   | |
+        |-------|-------|-------|---|-|
+        | 0     | 0     | 1     |   | 1 张专辑，无 catno 无 tracks |
+        | 0     | 1     | 1     |   | 1 张专辑，无 catno |
+        | 0     | n     | n     |   | n 张专辑，无 catno |
+        | 1     | 0     | 1     |   | 1 张专辑，无 tracks |
+        | 1     | 1     | 1     |   | 1 张专辑 |
+        | 1     | n     | n     |   | n 张专辑 |
+        | n     | 0     | n     |   | n 张专辑，无 tracks |
+        | n     | 1     | 1     | × | 1 张专辑，无法确定 catno |
+        | n     | n     | n     |   | n 张专辑 |
+        | n     | n < m | m     | × | m 张专辑，无法确定 catno |
+        | n     | n > m | n     | × | m 张专辑，无法确定 catno |
         """
         if len(catnos) <= 1 and len(discs) <= 1:
             albums = [Album(catalognumber=catnos[0] if catnos else "", date=date, album=album_title,
@@ -174,7 +170,7 @@ class VGMdbAPI:
                       for c, d in zip(catnos, discs)]
         else:
             logger.warning(f"Failed to assign albums. {catnos, date, album_title}")
-            albums = [Album(catalognumber=" ,".join(catnos), date=date, album=f"{album_title} {d.disc}", 
+            albums = [Album(catalognumber=", ".join(catnos), date=date, album=f"{album_title} {d.disc}", 
                             tracks=d.tracks, links=[link])
                       for d in discs]
         
@@ -183,18 +179,14 @@ class VGMdbAPI:
         for i, a in enumerate(albums):
             if _count[a.album] > 1:
                 a.album += f" Disc {i+1}"
-            # 去除首尾空格
-            a.catalognumber = a.catalognumber.strip()
-            a.date = a.date.strip()
-            a.album = a.album.strip()
-                
+
         logger.info(f"Got {len(albums)} albums. {[(a.catalognumber, a.album) for a in albums]}")
         return albums
 
     @staticmethod
     def _get_album_info(info_table: etree._Element) -> dict:
         """
-        从 info_table 元素获取专辑信息。
+        从 info_table 元素获取专辑信息。\n
         """
         table = [list(tr.iterchildren("td")) for tr in info_table.iterchildren("tr")]
         infos = {tds[0].xpath("string(.)").strip(): tds[1].xpath("string(.)").strip() for tds in table if tds}
@@ -207,21 +199,22 @@ class VGMdbAPI:
 
     def _get_discs(self, tl_span: etree._Element) -> list[Disc]:
         """
-        从 tl_span 元素获取 Disc 模型列表。
+        从 tl_span 元素获取 Disc 模型列表。\n
         :raises OngakuException:
         """
         logger.info(f"Will get discs.")
 
-        # 选择 table 和 table 的前一个 span
-        eles = tl_span.xpath(".//table | .//table/preceding-sibling::span[1]")
-        logger.info(list(e.tag for e in eles))
-        # eles 奇数个 或者 奇数位不是 span 或者 偶数位不是 table
-        if len(eles) & 1 or any(e.tag != "table" for e in eles[1::2]) or any(e.tag != "span" for e in eles[::2]):
+        # 选择 table 和 table 的前一个 span 构造 元素列表
+        # [span, table, ..., span, table]
+        elements = tl_span.xpath(".//table | .//table/preceding-sibling::span[1]")
+        logger.info(list(e.tag for e in elements))
+        # elements 奇数个 或者 奇数位不是 span 或者 偶数位不是 table
+        if len(elements) & 1 or any(e.tag != "table" for e in elements[1::2]) or any(e.tag != "span" for e in elements[::2]):
             logger.error(f"Failed to parse tracklist span.")
             raise OngakuException()
 
         discs = []
-        for i, (span, table) in enumerate(itertools.batched(eles, 2)):
+        for i, (span, table) in enumerate(itertools.batched(elements, 2)):
             disc_title = span.xpath("string(.)").strip()
             disc = Disc(discnumber=i+1, disc=disc_title, tracks=self._get_tracks(table))
             discs.append(disc)
@@ -233,7 +226,7 @@ class VGMdbAPI:
     @staticmethod
     def _get_tracks(table: etree._Element) -> list[Track]:
         """
-        从 table 元素获取 Track 模型列表。
+        从 table 元素获取 Track 模型列表。\n
         :raises OngakuException:
         """
         # https://vgmdb.net/album/135468
@@ -256,8 +249,8 @@ class VGMdbAPI:
     def _expand_catno(catno: str) -> list[str]:
         """
         将省略的 catno 扩展成 catno 列表。
-        catno 为空时返回空列表。
-        catno 无法解析时返回 [catno] 。
+        1. catno 为空时返回空列表。
+        2. catno 无法解析时返回 [catno] 。\n
         :param catno: 形如 SVWC-70509, SVWC-70509~12
         """
         if not catno or catno.upper() in ["N/A", "N／A"]:
@@ -293,31 +286,35 @@ class VGMdbAPI:
         :return: 标准格式，如 "2018-12-05"
         """
         months = ["_", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        # 匹配 如 "Dec 05, 2018"
         match = re.search(r"(\w{3})\s(\d{2}),\s(\d{4})", date)
         if match and match.group(1) in months:
             return f"{match.group(3)}-{str(months.index(match.group(1))).zfill(2)}-{match.group(2)}"
+        # 匹配 如 "Dec 2018"
         match = re.search(r"(\w{3})\s(\d{4})", date)
         if match and match.group(1) in months:
             return f"{match.group(2)}-{str(months.index(match.group(1))).zfill(2)}"
+        # 匹配 如 "2018"
         match = re.search(r"(\d{4})", date)
         if match:
             return match.group(1)
         logger.warning(f"Failed to parse date. {date}")
         return date
 
-    @retry(3, delay=5)
-    def __request_get(self, url: str) -> requests.Response:
+    def _cached_request_get(self, url: str) -> requests.Response:
         """
-        重写 request.get 。增加缓存，频率限制。
+        带缓存的 request.get 。
         """
         cache = Path(self._cache_dir, str(uuid.uuid5(uuid.NAMESPACE_URL, name=url)))
         if cache.exists():
             logger.debug(f"In cache. {url}")
             return pickle.loads(cache.read_bytes())
-        with self._request_lock:
-            wait = self._last_request_time + self._REQUEST_INTERVAL - time.time()
-            wait > 0 and time.sleep(wait)
-            resp = requests.get(url, timeout=self._REQUEST_TIMEOUT, headers=self._HEADERS)
+        resp = self._request_get(url)
         cache.write_bytes(pickle.dumps(resp))
         return resp
+    
+    @retry(10, delay=5)
+    @_rate_limiter
+    def _request_get(self, url: str) -> requests.Response:
+        return requests.get(url, timeout=VGMdbAPI._REQUEST_TIMEOUT, headers=VGMdbAPI._HEADERS)
 

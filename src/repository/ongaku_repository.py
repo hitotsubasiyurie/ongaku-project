@@ -5,11 +5,13 @@ from collections import defaultdict
 from enum import IntEnum, IntFlag, auto
 from pathlib import Path
 
-from src.common.logger import logger, logger_watched
-from src.common.exception import OngakuException
+import tomllib
+
+from src.logger import logger, logger_watched
+from src.common.ongaku_exception import OngakuException
 from src.common.json_encoder import CustomJSONEncoder
 from src.common.basemodels import Album, Track
-from src.common.utils import legalize_filename
+from src.utils import legalize_filename, dump_toml
 
 
 ALBUM_FILENAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"
@@ -41,9 +43,6 @@ def album_filename(album: Album) -> str:
     name = ALBUM_FILENAME.format(catalognumber=album.catalognumber, date=album.date, 
                                  album=album.album, trackcounts=len(album.tracks))
     name = legalize_filename(name)
-    # 文件名 长度 限制
-    if len(name) > 220:
-        name = name[:200] + str(uuid.uuid3(uuid.NAMESPACE_X500, name))
     return name
 
 
@@ -54,16 +53,21 @@ def track_filenames(album: Album) -> list[str]:
     return names
 
 
-def dump_album_json(album: Album, filepath: str = None) -> str:
-    content = json.dumps(album.to_dict(), ensure_ascii=False, indent=4, cls=CustomJSONEncoder)
-    filepath and Path(filepath).write_text(content, encoding="utf-8")
-    return content
+def dump_albums_to_toml(albums: list[Album], filepath: str) -> None:
+    ds = list(map(Album.model_dump, albums))
+    for d in ds:
+        d["tracks"] = [[t["tracknumber"], t["title"], t["artist"]] for t in d["tracks"]]
+    obj = {str(i+1): d for i, d in enumerate(ds)}
+    dump_toml(obj, filepath)
 
 
-def load_album_json(filepath: str) -> Album:
-    _dict: dict = json.loads(Path(filepath).read_text(encoding="utf-8"))
-    album = Album.from_dict(_dict)
-    return album
+def load_albums_from_toml(filepath: str) -> list[Album]:
+    obj = tomllib.loads(Path(filepath).read_text(encoding="utf-8"))
+    ds = obj.values()
+    for d in ds:
+        d["tracks"] = [{"tracknumber": t[0], "title": t[1], "artist": t[2]} for t in d["tracks"]]
+    albums = [Album(**d) for d in ds]
+    return albums
 
 
 class OngakuScanner:

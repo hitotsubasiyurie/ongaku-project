@@ -1,40 +1,46 @@
 
 
+## 初始化 数据库
 
 ```sh
-
+# 命令行 字符编码 UTF-8
 chcp 65001
 
-e:
+E:
 cd E:\tool\pgsql\bin
-set PGCLIENTENCODING=UTF8
 set PGDATA=D:\pgdata
-
-
+set PGCLIENTENCODING=UTF8
 
 
 # 初始化 数据目录
-pg_ctl initdb
+initdb --auth=trust --encoding=UTF8 --no-locale --nosync
 
+# 启动数据库
 pg_ctl start
 
+# 查看状态
 pg_ctl status
 
-# 登录数据库
-psql -d postgres 
+# 连接数据库
+psql -d postgres
+psql -d musicbrainz
 
 ```
 
 
+## 创建 表
+
 ```sql
+-- 创建 musicbrainz
+CREATE DATABASE musicbrainz;
+
+-- 进入 musicbrainz
+\c musicbrainz
+
+-- 启用扩展 pg_trgm
 CREATE EXTENSION pg_trgm;
 
-
-CREATE DATABASE musicbrainz;
-CREATE DATABASE musicbrainz2;
-
-\c musicbrainz2
-
+-- 创建 album
 CREATE TABLE album (
     id SERIAL PRIMARY KEY,
     release_id VARCHAR(255) NOT NULL DEFAULT '',
@@ -42,14 +48,12 @@ CREATE TABLE album (
     date VARCHAR(255) NOT NULL DEFAULT '',
     album TEXT NOT NULL DEFAULT '',
     tracks_json TEXT NOT NULL DEFAULT '',
-    themes TEXT[] NOT NULL DEFAULT '{}',
     links TEXT[] NOT NULL DEFAULT '{}',
     _date_min INTEGER NOT NULL DEFAULT 0,
     _date_max INTEGER NOT NULL DEFAULT 0,
     _tracks_count INTEGER NOT NULL DEFAULT 0,
     _tracks_abstract TEXT NOT NULL DEFAULT ''
 );
-
 
 
 -- 添加索引
@@ -63,40 +67,28 @@ CREATE INDEX idx_album_catalognumber_trgm ON album USING gin (catalognumber gin_
 CREATE INDEX idx_album_album_trgm ON album USING gin (album gin_trgm_ops);
 CREATE INDEX idx_album_tracks_abstract_trgm ON album USING gin (_tracks_abstract gin_trgm_ops);
 
+-- 退出
+\q
 
---- 导入 数据
-COPY album (release_id, catalognumber, date, album, tracks_json, themes, links, _date_min, _date_max, _tracks_count, _tracks_abstract)
-FROM 'D:\\dst.csv' 
-WITH (
-    FORMAT csv,
-    HEADER true,
-    DELIMITER ',',
-    QUOTE '"',
-    NULL '',
-    ENCODING 'UTF-8'
-);
 
---- 导出 数据
-COPY album (release_id, catalognumber, date, album, tracks_json, themes, links, _date_min, _date_max, _tracks_count, _tracks_abstract)
-TO 'D:\\dump.csv' 
-WITH (
-    FORMAT csv,
-    HEADER true,
-    DELIMITER ',',
-    QUOTE '"',
-    NULL '',
-    ENCODING 'UTF-8'
-);
+```
 
+
+## 查看 表
+
+```sql
+
+-- 扩展显示模式
+\x
+
+-- 查询 记录 总数
 SELECT count(*) FROM album;
 
-SELECT count(*) FROM album;
 
 DROP TABLE album;
 
-SELECT * FROM album
-WHERE random() < 0.01
-LIMIT 10;
+-- 随机 查看 10 条记录
+SELECT * FROM album WHERE random() < 0.01 LIMIT 10;
 
 
 ```

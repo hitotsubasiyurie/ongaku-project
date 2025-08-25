@@ -1,24 +1,41 @@
-import json
 from typing import Any
 from datetime import datetime
 
+import orjson
 import psycopg2
+from psycopg2 import extras
 
-from src.common.logger import logger
+from src.logger import logger
+from src.common.ongaku_exception import OngakuException
 from src.common.basemodels import Album, Track
 
 
 class MusicBrainzDatabase:
 
-    COLUMNS = ["release_id", "catalognumber", "date", "album", "tracks_json", "themes", "links", 
+    COLUMNS = ["id", 
+               "release_id", "catalognumber", "date", "album", "tracks_json", "links", 
                "_date_min", "_date_max", "_tracks_count", "_tracks_abstract"]
 
     def __init__(self) -> None:
-        conn = psycopg2.connect(database="musicbrainz", user="Administrator", client_encoding="utf8")
-        self.cur = conn.cursor()
+
+        self.conn = psycopg2.connect(database="musicbrainz", user="Administrator")
+        self.cur = self.conn.cursor()
+
+    def insert_albums(self, release_ids: list[str], albums: list[Album]) -> None:
+        sql = f'INSERT INTO album ({", ".join(self.COLUMNS[1:])}) VALUES %s;'
+        try:
+            values = [self._album_to_record(rid, a) for rid, a in zip(release_ids, albums)]
+            extras.execute_values(self.cur, sql, values, page_size=len(albums))
+            self.conn.commit()
+            logger.info(f"Inserted {len(albums)} albums.")
+        except Exception:
+            self.conn.rollback()
+            logger.error("Failed to insert.", exc_info=1)
+            raise OngakuException()
 
     def select_albums(
             self,
+            filter_id: str = None,
             filter_release_id: str = None,
             filter_catalognumber: str = None,
             filter_date: str = None,
@@ -28,14 +45,19 @@ class MusicBrainzDatabase:
             order_album: str = None,
             order_tracks_abstract: str = None,
             limit: int = 10,
-            allow_full_scan: bool = False) -> list[Album]:
+            allow_full_scan: bool = False) -> tuple[list[str], list[Album]]:
+        """
+        :return ids: 主键 id 列表
+        :return albums: Album 模型列表
+        """
 
-        if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count, 
+        if not any([filter_id, filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count, 
                     order_catalognumber, order_album, order_tracks_abstract]):
             logger.info("No valid conditions.")
             return []
         
-        if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count]):
+        # 拦截 全表扫描
+        if not any([filter_id, filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count]):
             if not allow_full_scan:
                 logger.info("No filter conditions, and not allow full scan. Return.")
                 return []
@@ -45,6 +67,10 @@ class MusicBrainzDatabase:
         where_clauses = []
         order_clauses = []
         query_params = []
+
+        if filter_id:
+            where_clauses.append("id = %s")
+            query_params.append(filter_id)
 
         if filter_release_id:
             where_clauses.append("release_id = %s")
@@ -92,12 +118,28 @@ class MusicBrainzDatabase:
         
         self.cur.execute(sql, query_params)
         records = self.cur.fetchall()
-        albums = [self._record_to_album(record) for record in records]
+
+        ids = [r[0] for r in records]
+        albums = list(map(self._record_to_album, records))
 
         logger.info(f"Got {len(albums)} albums.")
-        return albums
+        return ids, albums
 
     # 内部方法
+
+    @staticmethod
+    def _album_to_record(release_id: str, album: Album) -> tuple[Any]:
+        return (
+            release_id,
+            album.catalognumber,
+            album.date,
+            album.album,
+            orjson.dumps(album.model_dump()["tracks"]).decode("utf-8"),
+            "{" + ", ".join(album.links) + "}",
+            *MusicBrainzDatabase._date_str_to_range(album.date),
+            len(album.tracks),
+            MusicBrainzDatabase._abstract_tracks(album)
+        )
 
     @staticmethod
     def _record_to_album(record: tuple[Any]) -> Album:
@@ -105,9 +147,8 @@ class MusicBrainzDatabase:
             "catalognumber": record[2],
             "date": record[3],
             "album": record[4],
-            "tracks": json.loads(record[5]),
-            "themes": list(record[6]),
-            "links": list(record[7])
+            "tracks": orjson.loads(record[5]),
+            "links": list(record[6])
         }
         return Album(**data)
     
@@ -139,5 +180,8 @@ class MusicBrainzDatabase:
 
     @staticmethod
     def _abstract_tracks(album: Album) -> str:
+        """
+        摘要 tracks 信息。
+        """
         return "\n".join(f"{t.tracknumber}. {t.title}" for t in album.tracks)
 

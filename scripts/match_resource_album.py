@@ -15,12 +15,12 @@ from scipy.optimize import linear_sum_assignment
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.common.logger import logger
+from src.logger import logger
 from src.common.constants import METADATA_PATH, TMP_PATH
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.common.basemodels import Album, Track
-from src.common.utils import read_standard_tags
+from src.utils import read_audio_tags
 from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, OngakuScanner, 
     load_album_json, AUDIO_EXTS, track_filenames)
 
@@ -46,7 +46,7 @@ MATCHING_TRACK = "MATCHING_TRACK: "
 def analyze_resource_track(audio: str) -> Track:
     audio = Path(audio)
 
-    tags = read_standard_tags(audio)
+    tags = read_audio_tags(audio)
     tracknumber, title, artist = [tags[k] or "" for k in ["tracknumber", "title", "artist"]]
 
     if not all([tracknumber, title]):
@@ -68,7 +68,7 @@ def analyze_resource_album(directory: str) -> Album:
     directory = Path(directory)
     audios = list(itertools.chain.from_iterable(directory.rglob(f"*{ext}") for ext in AUDIO_EXTS))
 
-    tags = read_standard_tags(audios[0])
+    tags = read_audio_tags(audios[0])
     catalognumber, date, album = [tags[k] or "" for k in ["catalognumber", "date", "album"]]
     
     if match := re.search(r"^\[([A-Z0-9-]+)\]\s+\[([0-9.-]+)\]\s+(.+)$", directory.name):

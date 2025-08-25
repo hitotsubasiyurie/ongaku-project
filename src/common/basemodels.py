@@ -70,17 +70,6 @@ class Album(BaseModel):
 
     _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
 
-    def to_dict(self) -> dict[str, Any]:
-        _dict = self.model_dump()
-        _dict["tracks"] = list(map(Track.to_tuple, self.tracks))
-        return _dict
-
-    @staticmethod
-    def from_dict(_dict: dict[str, Any]) -> "Album":
-        _dict["tracks"] = list(map(Track.from_tuple, _dict.get("tracks", [])))
-        album = Album(**_dict)
-        return album
-
 
 class Disc(BaseModel):
     discnumber: _CustomInt = Field(default=0)
@@ -94,12 +83,4 @@ class Track(BaseModel):
     tracknumber: _CustomInt = Field(default=0)
     title: _CustomStr = Field(default="")
     artist: _CustomStr = Field(default="")
-
-    def to_tuple(self) -> list[Any]:
-        return [self.tracknumber, self.title, self.artist]
-
-    @staticmethod
-    def from_tuple(t: list) -> "Track":
-        return Track(tracknumber=t[0], title=t[1], artist=t[2])
-
 

@@ -14,11 +14,12 @@ from mutagen.id3 import ID3
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.common.logger import logger
+from src.logger import logger
 from src.common.constants import METADATA_PATH, TMP_PATH
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.common.basemodels import Album, Track
+from src.utils import legalize_filename
 from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, OngakuScanner, 
     load_album_json, AUDIO_EXTS, ALBUM_FILENAME, TRACK_FILENAME)
 
@@ -26,11 +27,9 @@ from src.ongaku_library.ongaku_library import (dump_album_json, album_filename, 
 
 if __name__ == "__main__":
 
-    search_album_pattern = ALBUM_FILENAME
-    search_track_pattern = TRACK_FILENAME
-
-    
-
+    name = "pposjdfsaodpfjsdpfs"*255 + ".flac"
+    print(legalize_filename(name))
+    print(len(legalize_filename(name)))
 
 
 

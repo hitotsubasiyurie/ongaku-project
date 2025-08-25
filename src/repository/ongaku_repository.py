@@ -70,6 +70,9 @@ def load_albums_from_toml(filepath: str) -> list[Album]:
     return albums
 
 
+
+
+
 class OngakuScanner:
 
     def __init__(self, metadata_dir: str, resource_dir: str = None) -> None:

@@ -8,6 +8,7 @@ from psycopg2 import extras
 from src.logger import logger
 from src.common.ongaku_exception import OngakuException
 from src.common.basemodels import Album, Track
+from src.common.basemodel_utils import abstract_tracks_info
 
 
 class MusicBrainzDatabase:
@@ -35,7 +36,6 @@ class MusicBrainzDatabase:
 
     def select_albums(
             self,
-            filter_id: str = None,
             filter_release_id: str = None,
             filter_catalognumber: str = None,
             filter_date: str = None,
@@ -47,17 +47,16 @@ class MusicBrainzDatabase:
             limit: int = 10,
             allow_full_scan: bool = False) -> tuple[list[str], list[Album]]:
         """
-        :return ids: 主键 id 列表
         :return albums: Album 模型列表
         """
 
-        if not any([filter_id, filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count, 
+        if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count, 
                     order_catalognumber, order_album, order_tracks_abstract]):
             logger.info("No valid conditions.")
             return []
         
         # 拦截 全表扫描
-        if not any([filter_id, filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count]):
+        if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count]):
             if not allow_full_scan:
                 logger.info("No filter conditions, and not allow full scan. Return.")
                 return []
@@ -67,10 +66,6 @@ class MusicBrainzDatabase:
         where_clauses = []
         order_clauses = []
         query_params = []
-
-        if filter_id:
-            where_clauses.append("id = %s")
-            query_params.append(filter_id)
 
         if filter_release_id:
             where_clauses.append("release_id = %s")
@@ -119,11 +114,10 @@ class MusicBrainzDatabase:
         self.cur.execute(sql, query_params)
         records = self.cur.fetchall()
 
-        ids = [r[0] for r in records]
         albums = list(map(self._record_to_album, records))
 
         logger.info(f"Got {len(albums)} albums.")
-        return ids, albums
+        return albums
 
     # 内部方法
 
@@ -138,7 +132,7 @@ class MusicBrainzDatabase:
             "{" + ", ".join(album.links) + "}",
             *MusicBrainzDatabase._date_str_to_range(album.date),
             len(album.tracks),
-            MusicBrainzDatabase._abstract_tracks(album)
+            abstract_tracks_info(album)
         )
 
     @staticmethod
@@ -177,11 +171,4 @@ class MusicBrainzDatabase:
             return _min.days, _max.days
         
         return 0, 0
-
-    @staticmethod
-    def _abstract_tracks(album: Album) -> str:
-        """
-        摘要 tracks 信息。
-        """
-        return "\n".join(f"{t.tracknumber}. {t.title}" for t in album.tracks)
 

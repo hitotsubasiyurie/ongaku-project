@@ -34,28 +34,29 @@ def _validate_string(value: Any) -> str:
     return value.strip()
 
 
-def _validate_strlist(value: Any) -> list:
+def _validate_strtuple(value: Any) -> tuple:
     """
     1. do_string
-    2. 列表排序、去重
+    2. 元组排序、去重
     """
     if not isinstance(value, Iterable) or isinstance(value, str):
         raise ValueError(f"value is not iterable: {value}")
-    value = list(sorted(set(map(_validate_string, value))))
+    value = tuple(sorted(set(map(_validate_string, value))))
     return value
 
 
-def _validate_tracks_field(tracks: list["Track"]) -> list["Track"]:
+def _validate_tracks_field(tracks: tuple["Track"]) -> tuple["Track"]:
     """
+    1. 列表转元组
     2. 按照 tracknumber 排序
     """
-    tracks = list(sorted(tracks, key=lambda t: t.tracknumber))
+    tracks = tuple(sorted(tracks, key=lambda t: t.tracknumber))
     return tracks
 
 
 _CustomInt = Annotated[int, BeforeValidator(_validate_int)]
 _CustomStr = Annotated[str, BeforeValidator(_validate_string)]
-_CustomStrList = Annotated[list[str], BeforeValidator(_validate_strlist)]
+_CustomStrTuple = Annotated[tuple[str, ...], BeforeValidator(_validate_strtuple)]
 
 
 class Album(BaseModel):
@@ -65,22 +66,31 @@ class Album(BaseModel):
     catalognumber: _CustomStr = Field(default="")
     date: _CustomStr = Field(default="", pattern=r"^$|^\d{4}$|^\d{4}-\d{1,2}$|^\d{4}-\d{1,2}-\d{1,2}$")
     album: _CustomStr = Field(default="")
-    tracks: list["Track"] = Field(default_factory=list)
-    links: _CustomStrList = Field(default_factory=list)
+    tracks: tuple["Track", ...] = Field(default_factory=tuple)
+    links: _CustomStrTuple = Field(default_factory=tuple)
 
     _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
+
+    def __hash__(self) -> int:
+        return hash((self.catalognumber, self.date, self.album, self.tracks, self.links))
 
 
 class Disc(BaseModel):
     discnumber: _CustomInt = Field(default=0)
     disc: _CustomStr = Field(default="")
-    tracks: list["Track"] = Field(default_factory=list)
+    tracks: tuple["Track", ...] = Field(default_factory=tuple)
 
     _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
+
+    def __hash__(self) -> int:
+        return hash((self.discnumber, self.disc, self.tracks))
 
 
 class Track(BaseModel):
     tracknumber: _CustomInt = Field(default=0)
     title: _CustomStr = Field(default="")
     artist: _CustomStr = Field(default="")
+
+    def __hash__(self) -> int:
+        return hash((self.tracknumber, self.title, self.artist))
 

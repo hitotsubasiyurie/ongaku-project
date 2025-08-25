@@ -87,22 +87,6 @@ def analyze_resource_album(directory: str) -> Album:
     return album_model
 
 
-def count_track_similarity(a: Track, b: Track) -> float:
-    ratio = SequenceMatcher(None, f"{a.tracknumber}. {a.title}", f"{b.tracknumber}. {b.title}").ratio()
-    if a.artist and b.artist:
-        ratio += SequenceMatcher(None, a.artist, b.artist).ratio()
-
-    return ratio
-
-
-def count_album_similarity(a: Album, b: Album, ) -> float:
-    ratio = (SequenceMatcher(None, a.catalognumber, b.catalognumber).ratio() + 
-             SequenceMatcher(None, a.date, b.date).ratio() + 
-             SequenceMatcher(None, a.album, b.album).ratio() + 
-             SequenceMatcher(None, MusicBrainzDatabase._abstract_tracks(a), 
-                             MusicBrainzDatabase._abstract_tracks(b)).ratio())
-
-    return ratio
 
 
 def generate_match_log(parent_resource: Path, resource_save_dir: Path, matching_log: Path, show_detail: bool) -> None:

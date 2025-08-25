@@ -1,9 +1,6 @@
 import sys
 import json
 import os
-import itertools
-from datetime import datetime
-from typing import Generator
 from pathlib import Path
 
 import orjson
@@ -88,8 +85,6 @@ def clean_mb_dir(link: dict, mb_dir: Path) -> None:
             f.unlink()
 
 
-def album_to_unique_str(a: Album) -> str:
-    return orjson.dumps([a.catalognumber, a.date, a.album, len(a.tracks)]).decode("utf-8")
 
 
 def generate_merge_log(src_albums: list[Album], merge_log_file: Path) -> None:
@@ -111,7 +106,7 @@ def generate_merge_log(src_albums: list[Album], merge_log_file: Path) -> None:
 
         filter_params = [src_album.catalognumber, src_album.date, 
                          sum(MusicBrainzDatabase._date_str_to_range(src_album.date))//2, len(src_album.tracks)]
-        order_params = [src_album.catalognumber, src_album.album, MusicBrainzDatabase._abstract_tracks(src_album)]
+        order_params = [src_album.catalognumber, src_album.album, abstract_tracks_info(src_album)]
 
         args1 = [x if int(b) else None for b, x in zip(filter_mask, filter_params)]
         args2 = [x if int(b) else None for b, x in zip(order_mask, order_params)]
@@ -137,7 +132,7 @@ if __name__ == "__main__":
     # input 输入
     
     metadata_dir = input(f"Please input metadata directory: ").strip("'\"")
-    theme = input(f"Please input theme: ").strip()
+    theme = input(f"Please input theme: ").strip() 
 
     if not metadata_dir or not theme:
         sys.exit(0)
@@ -149,7 +144,7 @@ if __name__ == "__main__":
 
     # 日志输出至文件
     if not _ongaku_logger.outfile:
-        _ongaku_logger.set_outfile(metadata_dir / f"{datetime.now().strftime("%Y-%d-%m-%H-%M-%S")}.log")
+        _ongaku_logger.set_outfile(metadata_dir / )
 
 
     database = MusicBrainzDatabase()

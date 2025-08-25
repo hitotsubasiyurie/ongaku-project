@@ -3,6 +3,7 @@ import logging
 import time
 from functools import wraps
 from typing import Callable
+from datetime import datetime
 
 
 class OngakuLogger:
@@ -19,14 +20,26 @@ class OngakuLogger:
         self.formatter = logging.Formatter(fmt)
 
         self.outfile = outfile
+        # TODO: 环境变量 ？
         if not self.outfile:
             tmp_path = os.getenv("ONGAKU_TMP_PATH")
             if tmp_path: self.outfile = os.path.join(tmp_path, "ongaku.log")
 
         self._set_handler()
 
-    def set_outfile(self, outfile: str = None) -> None:
-        self.outfile = outfile
+    def set_outfile(self, anypath: str = None) -> None:
+        """
+        重新设置日志输出文件位置。\n
+        :param anypath: None, 文件或目录
+        """
+        if not anypath:
+            self.outfile = None
+        elif os.path.isfile(anypath):
+            self.outfile = anypath
+        elif os.path.isdir(anypath):
+            name = f"{datetime.now().strftime("%Y-%d-%m-%H-%M-%S")}.log"
+            self.outfile = os.path.join(anypath, name)
+
         self._set_handler()
 
     # 内部方法

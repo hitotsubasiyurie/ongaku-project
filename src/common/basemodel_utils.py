@@ -11,6 +11,10 @@ def album_to_unique_str(a: Album) -> str:
     return orjson.dumps([a.catalognumber, a.date, a.album, len(a.tracks)]).decode("utf-8")
 
 
+def track_to_unique_str(t: Track) -> str:
+    return orjson.dumps([t.tracknumber, t.title, t.artist]).decode("utf-8")
+
+
 def abstract_tracks_info(album: Album) -> str:
     """
     摘要 tracks 信息。

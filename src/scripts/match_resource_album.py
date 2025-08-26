@@ -41,98 +41,8 @@ RESOURCE_TRACK = "RESOURCE_TRACK: "
 MATCHING_TRACK = "MATCHING_TRACK: "
 
 
-# 缓存
-@cache
-def analyze_resource_track(audio: str) -> Track:
-    audio = Path(audio)
-
-    tags = read_audio_tags(audio)
-    tracknumber, title, artist = [tags[k] or "" for k in ["tracknumber", "title", "artist"]]
-
-    if not all([tracknumber, title]):
-        if match := re.search(r"^(\d+).\s*(.+)$", audio.name):
-            # 空字符 或 包含其他非数字
-            if not tracknumber.isdigit(): tracknumber = match.group(1)
-            if not title: title = match.group(2)
-    
-    if not title: title = audio.name
-    tracknumber = int(tracknumber) if tracknumber.isdigit() else None
-    
-    return Track(tracknumber=tracknumber, title=title, artist=artist)
 
 
-def analyze_resource_album(directory: str) -> Album:
-    """
-    :param directory: 扁平专辑目录
-    """
-    directory = Path(directory)
-    audios = list(itertools.chain.from_iterable(directory.rglob(f"*{ext}") for ext in AUDIO_EXTS))
-
-    tags = read_audio_tags(audios[0])
-    catalognumber, date, album = [tags[k] or "" for k in ["catalognumber", "date", "album"]]
-    
-    if match := re.search(r"^\[([A-Z0-9-]+)\]\s+\[([0-9.-]+)\]\s+(.+)$", directory.name):
-        if not catalognumber: catalognumber = match.group(1)
-        if not date or len(date) < len(match.group(2)): date = match.group(2)
-        if not album: album = match.group(3)
-    if match := re.search(r"^\[([0-9.-]+)\]\s+(.+)$", directory.name):
-        if not date or len(date) < len(match.group(1)): date = match.group(1)
-        if not album: album = match.group(2)
-    if not album: album = directory.name
-
-    # date 字段替换常见字符
-    date = re.sub(r"[./]", "-", date)
-    album_model = Album(catalognumber=catalognumber, date=date, album=album, 
-                        tracks=list(sorted([analyze_resource_track(a) for a in audios], key=lambda a: a.tracknumber)))
-    return album_model
-
-
-
-
-def generate_match_log(parent_resource: Path, resource_save_dir: Path, matching_log: Path, show_detail: bool) -> None:
-    content = ""
-
-    # 不嵌套的文件夹 认为是专辑文件夹
-    resource_directorys = [d for d in parent_resource.rglob("*") 
-                           if d.is_dir() and all(f.is_file() for f in d.glob("*"))]
-    
-    resource_albums = list(map(analyze_resource_album, resource_directorys))
-
-    for res_dir, res_album in zip(resource_directorys, resource_albums):
-
-        # 筛选 tracks 数量一致，再进行匹配
-        to_search_albums = [a for a in theme_albums if len(res_album.tracks) == len(a.tracks)] or theme_albums
-        match_album = max(to_search_albums, key=lambda a: count_album_similarity(res_album, a))
-
-        audios = list(itertools.chain.from_iterable(res_dir.rglob(f"*{ext}") for ext in AUDIO_EXTS))
-        res_tracks = list(map(analyze_resource_track, audios))
-
-        sim_matrix = [[count_track_similarity(ta, tb) for tb in match_album.tracks] 
-                        for ta in res_tracks]
-        sim_matrix = numpy.asarray(sim_matrix)
-        row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
-        track_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
-
-        lines = []
-        lines.append(ALBUM_SIMILARITY + str(count_album_similarity(res_album, match_album))[:5])
-        lines.append(TRACK_SIMILARITY + str(track_similarity)[:5])
-        lines.append("")
-        lines.append(RESOURCE_DIRECTORY_ + str(res_dir))
-        lines.append(DESTINATE_DIRECTORY + str(resource_save_dir / album_filename(match_album)))
-        show_detail and lines.append(RESOURCE_ALBUM + json.dumps([res_album.catalognumber, res_album.date, res_album.album, len(res_album.tracks)], ensure_ascii=False))
-        show_detail and lines.append(MATCHING_ALBUM + json.dumps([match_album.catalognumber, match_album.date, match_album.album, len(match_album.tracks)], ensure_ascii=False))
-        lines.append("")
-        match_track_names = track_filenames(match_album)
-        for row, col in zip(row_ind, col_ind):
-            lines.append(RESOURCE_AUDIOFILE_ + audios[row].name)
-            lines.append(DESTINATE_AUDIOFILE + match_track_names[col])
-            show_detail and lines.append(RESOURCE_TRACK + json.dumps(res_tracks[row].to_tuple(), ensure_ascii=False))
-            show_detail and lines.append(MATCHING_TRACK + json.dumps(match_album.tracks[col].to_tuple(), ensure_ascii=False))
-            lines.append("")
-
-        content += SEPERATE.join(lines)
-    
-    matching_log.write_text(content, encoding="utf-8")
 
 
 def apply_matching_log(matching_log: Path, resource_save_dir: Path) -> None:
@@ -192,4 +102,10 @@ if __name__ == "__main__":
 
         elif action == 3:
             clean_resource_parent(resource_parent)
+
+# 扫描，构建物理资源专辑模型
+# 元数据文件 与 物理对应专辑模型 一一配对
+# 移动物理资源文件
+# 删除没有音频的文件夹，从下往上删除
+
 

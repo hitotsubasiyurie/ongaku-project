@@ -67,6 +67,37 @@ def generate_match_log(dst_file: Path, src_file: Path, match_log: Path) -> None:
     match_log.write_text(content, encoding="utf-8")
 
 
+def apply_match_log(dst_file: Path, src_file: Path, match_log: Path) -> None:
+
+    apply_mask = input("Please input metadata apply mask [catalognumber, date, album, tracks] (such as 0001): ").strip()
+    apply_when_none = (input("Please input if apply when dst value is None (Y/N) (default Y): ").strip() or "Y") == "Y"
+
+    if not apply_mask:
+        return
+
+    dst_albums, src_albums = load_albums_from_toml(dst_file), load_albums_from_toml(src_file)
+    dst_unique_str_to_albums = {album_to_unique_str(a): a for a in dst_albums}
+    src_unique_str_to_albums = {album_to_unique_str(a): a for a in src_albums}
+
+    for line in match_log.read_text(encoding="utf-8").split("\n"):
+        if line.startswith(SEPERATE):
+            dst, src = None, None
+        elif line.startswith(DST_ALBUM):
+            dst = dst_unique_str_to_albums[line.removeprefix(DST_ALBUM)]
+        elif line.startswith(YES_MERGE):
+            src = src_unique_str_to_albums[line.removeprefix(YES_MERGE)]
+
+            # 应用 元数据
+            for b, field in zip(apply_mask, ["catalognumber", "date", "album", "tracks"]):
+                if (int(b) and getattr(src, field)) or (apply_when_none and not getattr(dst, field)):
+                    setattr(dst, field, getattr(src, field))
+
+            src_albums.pop(src)
+
+    dump_albums_to_toml(dst_albums)
+    dump_albums_to_toml(src_albums)
+
+
 if __name__ == "__main__":
 
     # input 输入
@@ -90,12 +121,13 @@ if __name__ == "__main__":
     # 合并后 删除 src albums 
     while True:
 
-        os.system("cls")
-        print("Please input action number：")
+        print("Please input action number:")
         print("1. Generate match log")
+        print("2. Apply match log")
         action = int(input(""))
 
         if action == 1:
             generate_match_log(dst_file, src_file, match_log)
-
+        elif action == 2:
+            apply_match_log(dst_file, src_file, match_log)
 

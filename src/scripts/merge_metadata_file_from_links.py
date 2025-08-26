@@ -11,7 +11,7 @@ from scipy.optimize import linear_sum_assignment
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.logger import logger, _ongaku_logger
-from src.common.basemodels import Album
+from src.common.basemodels import Album, _validate_strtuple
 from src.common.basemodel_utils import count_album_similarity, album_to_unique_str
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
@@ -26,7 +26,7 @@ SRC_ALBUM = "SRC_ALBUM: "
 YES_MERGE = "YES_MERGE: "
 
 
-def generate_match_log(dst_file: Path, src_file: Path, match_log: Path) -> None:
+def generate_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
     content = ""
 
     skip_keyword = input("Please input link keyword to skip (such as 'musicbrainz') (default None): ").strip() or None
@@ -64,13 +64,13 @@ def generate_match_log(dst_file: Path, src_file: Path, match_log: Path) -> None:
         
         content += SEPERATE + "\n".join(lines)
 
-    match_log.write_text(content, encoding="utf-8")
+    merge_log.write_text(content, encoding="utf-8")
 
 
-def apply_match_log(dst_file: Path, src_file: Path, match_log: Path) -> None:
+def apply_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
 
     apply_mask = input("Please input metadata apply mask [catalognumber, date, album, tracks] (such as 0001): ").strip()
-    apply_when_none = (input("Please input if apply when dst value is None (Y/N) (default Y): ").strip() or "Y") == "Y"
+    apply_when_no_value = (input("Please input if apply when dst value is None (Y/N) (default Y): ").strip() or "Y") == "Y"
 
     if not apply_mask:
         return
@@ -79,7 +79,7 @@ def apply_match_log(dst_file: Path, src_file: Path, match_log: Path) -> None:
     dst_unique_str_to_albums = {album_to_unique_str(a): a for a in dst_albums}
     src_unique_str_to_albums = {album_to_unique_str(a): a for a in src_albums}
 
-    for line in match_log.read_text(encoding="utf-8").split("\n"):
+    for line in merge_log.read_text(encoding="utf-8").split("\n"):
         if line.startswith(SEPERATE):
             dst, src = None, None
         elif line.startswith(DST_ALBUM):
@@ -89,8 +89,11 @@ def apply_match_log(dst_file: Path, src_file: Path, match_log: Path) -> None:
 
             # 应用 元数据
             for b, field in zip(apply_mask, ["catalognumber", "date", "album", "tracks"]):
-                if (int(b) and getattr(src, field)) or (apply_when_none and not getattr(dst, field)):
+                if (int(b) and getattr(src, field)) or (apply_when_no_value and not getattr(dst, field)):
                     setattr(dst, field, getattr(src, field))
+
+            # 添加 links
+            dst.links = _validate_strtuple(dst.links + src.links)
 
             src_albums.pop(src)
 
@@ -105,29 +108,27 @@ if __name__ == "__main__":
     dst_file = input(f"Please input dst metadata file (merge to): ").strip("'\"")
     src_file = input(f"Please input src metadata file (merge from): ").strip("'\"")
 
-    if not src_file or not dst_file:
+    if not all([dst_file, src_file]):
         sys.exit(0)
 
     src_file, dst_file = Path(src_file), Path(dst_file)
 
-    match_log = dst_file.parent / "match.log"
+    merge_log = dst_file.parent / "merge.log"
 
     # 日志输出至目录
     if not _ongaku_logger.outfile:
         _ongaku_logger.set_outfile(dst_file.parent)
 
     # 循环交互
-    # 可以一批一批地合并
-    # 合并后 删除 src albums 
     while True:
 
         print("Please input action number:")
-        print("1. Generate match log")
-        print("2. Apply match log")
+        print("1. Generate merge log")
+        print("2. Apply merge log")
         action = int(input(""))
 
         if action == 1:
-            generate_match_log(dst_file, src_file, match_log)
+            generate_merge_log(dst_file, src_file, merge_log)
         elif action == 2:
-            apply_match_log(dst_file, src_file, match_log)
+            apply_merge_log(dst_file, src_file, merge_log)
 

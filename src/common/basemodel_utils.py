@@ -24,7 +24,8 @@ def abstract_tracks_info(album: Album) -> str:
 
 def count_track_similarity(a: Track, b: Track) -> float:
     """
-    计算两个 Track 的相似度。
+    计算两个 Track 的相似度。\n
+    :return ratio: 相似度，0 ~ 100
     """
     ratio = fuzz.ratio(f"{a.tracknumber}. {a.title}", f"{b.tracknumber}. {b.title}")
     if a.artist and b.artist:
@@ -35,12 +36,22 @@ def count_track_similarity(a: Track, b: Track) -> float:
 
 def count_album_similarity(a: Album, b: Album) -> float:
     """
-    计算两个 Album 的相似度。
+    计算两个 Album 的相似度。\n
+    :return ratio: 相似度，0 ~ 100
     """
+    if abs(len(a.tracks) - len(b.tracks)) == 0:
+        trackcount_sim = 100
+    elif abs(len(a.tracks) - len(b.tracks)) <= 3:
+        trackcount_sim = 80
+    elif abs(len(a.tracks) - len(b.tracks)) <= 5:
+        trackcount_sim = 60
+    else:
+        trackcount_sim = 0
     ratio = (fuzz.ratio(a.catalognumber, b.catalognumber) + 
              fuzz.ratio(a.date, b.date) + 
              fuzz.ratio(a.album, b.album) + 
-             fuzz.ratio(abstract_tracks_info(a), abstract_tracks_info(b)))
-    ratio = ratio / 4
+             fuzz.ratio(abstract_tracks_info(a), abstract_tracks_info(b)) + 
+             trackcount_sim)
+    ratio = ratio / 5
     return ratio
 

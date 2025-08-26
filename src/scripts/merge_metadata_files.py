@@ -19,10 +19,10 @@ from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_fr
 
 SEPERATE = f"\n{'-'*16} seperate {'-'*16}\n"
 
-SIMILARITY = "SIMILARITY: "
-
 DST_ALBUM = "DST_ALBUM: "
 SRC_ALBUM = "SRC_ALBUM: "
+SIMILARITY = "SIMILARITY: "
+
 YES_MERGE = "YES_MERGE: "
 
 
@@ -30,7 +30,7 @@ def generate_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
     content = ""
 
     skip_keyword = input("Please input link keyword to skip (such as 'musicbrainz') (default None): ").strip() or None
-    min_sim = float(input("Please input similarity threshold (default 0.1): ").strip() or 0)
+    min_sim = float(input("Please input similarity threshold (default 75) (recommend 90 -> 75): ").strip() or 75)
     enable_catno_filter = (input("Please input if filter catalognumber (Y/N) (default Y): ").strip() or "Y") == "Y"
 
     dst_albums = [a for a in load_albums_from_toml(dst_file) 
@@ -56,12 +56,15 @@ def generate_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
 
     for row, col in zip(row_ind, col_ind):
 
+        if sim_matrix[row][col] < min_sim:
+            continue
+
         lines = []
-        lines.append(SIMILARITY + format(sim_matrix[row][col], '.2f'))
         lines.append("")
         lines.append(DST_ALBUM + album_to_unique_str(dst_albums[row]))
         lines.append(SRC_ALBUM + album_to_unique_str(src_albums[col]))
-        
+        lines.append(SIMILARITY + format(sim_matrix[row][col], '.2f'))
+
         content += SEPERATE + "\n".join(lines)
 
     merge_log.write_text(content, encoding="utf-8")
@@ -95,10 +98,10 @@ def apply_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
             # 添加 links
             dst.links = _validate_strtuple(dst.links + src.links)
 
-            src_albums.pop(src)
+            src_albums.remove(src)
 
-    dump_albums_to_toml(dst_albums)
-    dump_albums_to_toml(src_albums)
+    dump_albums_to_toml(dst_albums, dst_file)
+    dump_albums_to_toml(src_albums, src_file)
 
 
 if __name__ == "__main__":

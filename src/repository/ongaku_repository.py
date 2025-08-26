@@ -62,7 +62,10 @@ def dump_albums_to_toml(albums: list[Album], filepath: str) -> None:
 
 
 def load_albums_from_toml(filepath: str) -> list[Album]:
-    obj = tomllib.loads(Path(filepath).read_text(encoding="utf-8"))
+    text = Path(filepath).read_text(encoding="utf-8")
+    if not text:
+        return []
+    obj = tomllib.loads(text)
     ds = obj.values()
     for d in ds:
         d["tracks"] = [{"tracknumber": t[0], "title": t[1], "artist": t[2]} for t in d["tracks"]]

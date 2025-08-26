@@ -2,6 +2,7 @@ import re
 import os
 import sys
 import time
+import shutil
 import itertools
 from pathlib import Path
 from functools import cache
@@ -23,7 +24,10 @@ from src.repository.ongaku_repository import (dump_albums_to_toml, load_albums_f
                                               track_filenames)
 
 
-SEPERATE = f"\n{'-'*16} seperate {'-'*16}\n"
+SEPERATE = f"{'-'*16} seperate {'-'*16}"
+
+NO_APPLY = "[_NO_APPLY_]"
+YES_APPLY = "[_YES_APPLY_]"
 
 ALBUM_SIMILARITY = "ALBUM_SIMILARITY: "
 TRACK_SIMILARITY = "TRACK_SIMILARITY: "
@@ -38,7 +42,6 @@ OLD_AUDIOFILE = "OLD_AUDIOFILE: "
 NEW_AUDIOFILE = "NEW_AUDIOFILE: "
 RESOURCE_TRACK = "RESOURCE_TRACK: "
 MATCHING_TRACK = "MATCHING_TRACK: "
-
 
 
 # 缓存
@@ -87,7 +90,19 @@ def analyze_resource_album(directory: str) -> Album:
     return album_model
 
 
-def generate_match_log(metadata_file: Path, old_parent_dir: Path, new_parent_dir: Path, match_log: Path) -> None:
+def generate_match_log() -> None:
+
+    # input 输入
+    metadata_file = input(f"Please input a metadata file: ").strip("'\"")
+    old_parent_dir = input(f"Please input old resource parent directory: ").strip("'\"")
+    new_parent_dir = input(f"Please input new resource parent directory: ").strip("'\"")
+
+    if not all([metadata_file, old_parent_dir, new_parent_dir]):
+        return
+
+    metadata_file, old_parent_dir, new_parent_dir = Path(metadata_file), Path(old_parent_dir), Path(new_parent_dir)
+
+    match_log = metadata_file.parent / "match.log"
     content = ""
 
     enable_tracknumber_filter = (input("Please input if filter tracks number (Y/N) (default Y): ").strip() or "Y") == "Y"
@@ -107,8 +122,10 @@ def generate_match_log(metadata_file: Path, old_parent_dir: Path, new_parent_dir
         if not to_search_albums:
             continue
 
+        # 单体相似度 最大 匹配 album
         match_album = max(to_search_albums, key=lambda a: count_album_similarity(res_album, a))
 
+        # 总和相似度 最大 匹配 tracks
         audios = list(itertools.chain.from_iterable(res_dir.rglob(f"*{ext}") for ext in AUDIO_EXTS))
         res_tracks = list(map(analyze_resource_track, audios))
 
@@ -119,11 +136,13 @@ def generate_match_log(metadata_file: Path, old_parent_dir: Path, new_parent_dir
         track_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
 
         lines = []
+        lines.append("")
+        lines.append(NO_APPLY)
         lines.append(ALBUM_SIMILARITY + format(count_album_similarity(res_album, match_album), '.2f'))
         lines.append(TRACK_SIMILARITY + format(track_similarity, '.2f'))
         lines.append("")
         lines.append(OLD_DIRECTORY + str(res_dir))
-        lines.append(NEW_DIRECTORY + str(old_parent_dir / album_filename(match_album)))
+        lines.append(NEW_DIRECTORY + str(new_parent_dir / album_filename(match_album)))
         lines.append("")
         lines.append(RESOURCE_ALBUM + album_to_unique_str(res_album))
         lines.append(MATCHING_ALBUM + album_to_unique_str(match_album))
@@ -131,33 +150,62 @@ def generate_match_log(metadata_file: Path, old_parent_dir: Path, new_parent_dir
         match_track_names = track_filenames(match_album)
         for row, col in zip(row_ind, col_ind):
             lines.append(OLD_AUDIOFILE + audios[row].name)
-            lines.append(NEW_AUDIOFILE + match_track_names[col])
+            lines.append(NEW_AUDIOFILE + match_track_names[col] + audios[row].suffix.lower())
             lines.append(RESOURCE_TRACK + track_to_unique_str(res_tracks[row]))
             lines.append(MATCHING_TRACK + track_to_unique_str(match_album.tracks[col]))
             lines.append("")
 
-        content += SEPERATE + "\n".join(lines)
+        content += "\n" + SEPERATE + "\n".join(lines) + "\n"
     
     match_log.write_text(content, encoding="utf-8")
 
 
-if __name__ == "__main__":
+def apply_match_log() -> None:
+    match_log = input(f"Please input match log: ").strip("'\"")
 
-    # input 输入
-    metadata_file = input(f"Please input a metadata file: ").strip("'\"")
+    if not match_log:
+        return
+    
+    match_log = Path(match_log)
+
+    for line in match_log.read_text(encoding="utf-8").split("\n"):
+        if line.startswith(SEPERATE):
+            apply, old_dir, new_dir, old_file, new_file = [None] * 5
+        elif line.startswith(YES_APPLY):
+            apply = True
+        elif line.startswith(OLD_DIRECTORY):
+            old_dir = line.removeprefix(OLD_DIRECTORY)
+        elif line.startswith(NEW_DIRECTORY):
+            new_dir = line.removeprefix(NEW_DIRECTORY)
+            if apply:
+                os.makedirs(new_dir, exist_ok=True)
+        elif line.startswith(OLD_AUDIOFILE):
+            old_file = line.removeprefix(OLD_AUDIOFILE)
+        elif line.startswith(NEW_AUDIOFILE):
+            new_file = line.removeprefix(NEW_AUDIOFILE)
+            if not apply:
+                continue
+            # 开始应用
+            old, new = Path(old_dir, old_file), Path(new_dir, new_file)
+            # TODO: 不同格式可能并存
+            not new.exists() and old.rename(new)
+
+
+def clean_old_parent_dir() -> None:
     old_parent_dir = input(f"Please input old resource parent directory: ").strip("'\"")
-    new_parent_dir = input(f"Please input new resource parent directory: ").strip("'\"")
 
-    if not all([metadata_file, old_parent_dir, new_parent_dir]):
-        sys.exit(0)
+    if not all([old_parent_dir]):
+        return
+    
+    old_parent_dir = Path(old_parent_dir)
 
-    metadata_file, old_parent_dir, new_parent_dir = Path(metadata_file), Path(old_parent_dir), Path(new_parent_dir)
+    # 从下往上 删除 没有音频文件的 目录
+    for d in reversed(list(filter(Path.is_dir, old_parent_dir.rglob("*")))):
+        if not list(itertools.chain.from_iterable(d.rglob(f"*{ext}") for ext in AUDIO_EXTS)):
+            shutil.rmtree(d)
 
-    match_log = metadata_file.parent / "match.log"
 
-    # 日志输出至目录
-    if not _ongaku_logger.outfile:
-        _ongaku_logger.set_outfile(metadata_file.parent)
+if __name__ == "__main__":
 
     # 循环交互
     while True:
@@ -165,12 +213,15 @@ if __name__ == "__main__":
         print("Please input action number:")
         print("1. Generate match log")
         print("2. Apply match log")
+        print("3. Clean old resource parent directory")
         action = int(input(""))
 
         if action == 1:
-            generate_match_log(metadata_file, old_parent_dir, new_parent_dir)
+            generate_match_log()
         elif action == 2:
-            apply_match_log(dst_file, src_file, merge_log)
+            apply_match_log()
+        elif action == 3:
+            clean_old_parent_dir()
 
 
 

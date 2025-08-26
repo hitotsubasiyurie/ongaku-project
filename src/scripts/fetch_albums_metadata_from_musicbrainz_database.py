@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     # input 输入
 
-    metadata_file = input(f"Please input a metadata file: ").strip("'\"")
+    metadata_file = input(f"Please input a metadata file to query: ").strip("'\"")
     filter_masks = input("Please input filter masks [catalognumber, date, date_int, track_count] (default 1101, 1100, 1001, 1000): ") or "1101, 1100, 1001, 1000"
     limit = int(input("Please input query result limit (default 10): ").strip() or 10)
     order_mask = input("Please input similarity order mask [catalognumber, album, tracks_abstract] (default 000): ").strip() or "000"
@@ -35,13 +35,13 @@ if __name__ == "__main__":
     database = MusicBrainzDatabase()
 
     # 跳过 已有 musicbrainz link 的专辑
-    albums = [a for a in load_albums_from_toml(metadata_file) 
+    to_query_albums = [a for a in load_albums_from_toml(metadata_file) 
               if all("musicbrainz" not in l for l in a.links)]
     
     result_albums = []
 
-    pbar = tqdm(total=len(albums), mininterval=0)
-    for album in albums:
+    pbar = tqdm(total=len(to_query_albums), mininterval=0)
+    for album in to_query_albums:
 
         filter_params = [album.catalognumber, album.date, 
                          sum(MusicBrainzDatabase._date_str_to_range(album.date))//2, len(album.tracks)]

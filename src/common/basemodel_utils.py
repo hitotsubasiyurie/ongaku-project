@@ -29,7 +29,7 @@ def count_track_similarity(a: Track, b: Track) -> float:
     """
     ratio = fuzz.ratio(f"{a.tracknumber}. {a.title}", f"{b.tracknumber}. {b.title}")
     if a.artist and b.artist:
-        ratio += fuzz.ratio(None, a.artist, b.artist)
+        ratio += fuzz.ratio(a.artist, b.artist)
         return ratio / 2
     return ratio
 

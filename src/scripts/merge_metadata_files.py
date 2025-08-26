@@ -17,22 +17,25 @@ from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
 
 
-SEPERATE = f"\n{'-'*16} seperate {'-'*16}\n"
+SEPERATE = f"{'-'*16} seperate {'-'*16}"
+
+NO_APPLY = "[_NO_APPLY_]"
+YES_APPLY = "[_YES_APPLY_]"
+SIMILARITY = "SIMILARITY: "
 
 DST_ALBUM = "DST_ALBUM: "
 SRC_ALBUM = "SRC_ALBUM: "
-SIMILARITY = "SIMILARITY: "
-
-YES_MERGE = "YES_MERGE: "
 
 
-def generate_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
+def generate_merge_log(dst_file: Path, src_file: Path) -> None:
+    merge_log = dst_file.parent / "merge.log"
     content = ""
 
-    skip_keyword = input("Please input link keyword to skip (such as 'musicbrainz') (default None): ").strip() or None
-    min_sim = float(input("Please input similarity threshold (default 75) (recommend 90 -> 75): ").strip() or 75)
+    skip_keyword = input("Please input link keyword to skip merge to (such as 'musicbrainz') (default None): ").strip() or None
+    min_sim = float(input("Please input similarity threshold (recommend 90 -> 80 -> 75) (default 90): ").strip() or 90)
     enable_catno_filter = (input("Please input if filter catalognumber (Y/N) (default Y): ").strip() or "Y") == "Y"
 
+    # 跳过 已存在 link keyword 的 目标专辑
     dst_albums = [a for a in load_albums_from_toml(dst_file) 
                   if not skip_keyword or all(skip_keyword not in l for l in a.links)]
     src_albums = load_albums_from_toml(src_file)
@@ -61,22 +64,28 @@ def generate_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
 
         lines = []
         lines.append("")
+        lines.append(NO_APPLY)
+        lines.append(SIMILARITY + format(sim_matrix[row][col], '.2f'))
+        lines.append("")
         lines.append(DST_ALBUM + album_to_unique_str(dst_albums[row]))
         lines.append(SRC_ALBUM + album_to_unique_str(src_albums[col]))
-        lines.append(SIMILARITY + format(sim_matrix[row][col], '.2f'))
-
-        content += SEPERATE + "\n".join(lines)
+        content += "\n" + SEPERATE + "\n".join(lines) + "\n"
 
     merge_log.write_text(content, encoding="utf-8")
 
+    print(f"Generated merge log successfully. {merge_log}")
 
-def apply_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
 
+def apply_merge_log(dst_file: Path, src_file: Path) -> None:
+
+    merge_log = input(f"Please input merge log: ").strip("'\"")
     apply_mask = input("Please input metadata apply mask [catalognumber, date, album, tracks] (such as 0001): ").strip()
     apply_when_no_value = (input("Please input if apply when dst value is None (Y/N) (default Y): ").strip() or "Y") == "Y"
 
-    if not apply_mask:
+    if not all([merge_log, apply_mask]):
         return
+    
+    merge_log = Path(merge_log)
 
     dst_albums, src_albums = load_albums_from_toml(dst_file), load_albums_from_toml(src_file)
     dst_unique_str_to_albums = {album_to_unique_str(a): a for a in dst_albums}
@@ -84,13 +93,16 @@ def apply_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
 
     for line in merge_log.read_text(encoding="utf-8").split("\n"):
         if line.startswith(SEPERATE):
-            dst, src = None, None
+            apply, dst, src = [None] * 3
+        elif line.startswith(YES_APPLY):
+            apply = True
         elif line.startswith(DST_ALBUM):
             dst = dst_unique_str_to_albums[line.removeprefix(DST_ALBUM)]
-        elif line.startswith(YES_MERGE):
-            src = src_unique_str_to_albums[line.removeprefix(YES_MERGE)]
-
-            # 应用 元数据
+        elif line.startswith(SRC_ALBUM):
+            src = src_unique_str_to_albums[line.removeprefix(SRC_ALBUM)]
+            if not apply:
+                continue
+            # 开始应用
             for b, field in zip(apply_mask, ["catalognumber", "date", "album", "tracks"]):
                 if (int(b) and getattr(src, field)) or (apply_when_no_value and not getattr(dst, field)):
                     setattr(dst, field, getattr(src, field))
@@ -98,6 +110,7 @@ def apply_merge_log(dst_file: Path, src_file: Path, merge_log: Path) -> None:
             # 添加 links
             dst.links = _validate_strtuple(dst.links + src.links)
 
+            # 源头 专辑 去除
             src_albums.remove(src)
 
     dump_albums_to_toml(dst_albums, dst_file)
@@ -116,8 +129,6 @@ if __name__ == "__main__":
 
     src_file, dst_file = Path(src_file), Path(dst_file)
 
-    merge_log = dst_file.parent / "merge.log"
-
     # 日志输出至目录
     if not _ongaku_logger.outfile:
         _ongaku_logger.set_outfile(dst_file.parent)
@@ -131,7 +142,7 @@ if __name__ == "__main__":
         action = int(input(""))
 
         if action == 1:
-            generate_merge_log(dst_file, src_file, merge_log)
+            generate_merge_log(dst_file, src_file)
         elif action == 2:
-            apply_merge_log(dst_file, src_file, merge_log)
+            apply_merge_log(dst_file, src_file)
 

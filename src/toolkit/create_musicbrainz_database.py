@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from src.logger import logger, _ongaku_logger
 from src.metadata_source.musicbrainz_api import MusicBrainzAPI
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
-from src.common.basemodels import Album
+from src.basemodels import Album
 
 
 def read_musicbrainz_tar_dump(tar_exe: str, tar_file: str) -> Generator[str, None, None]:

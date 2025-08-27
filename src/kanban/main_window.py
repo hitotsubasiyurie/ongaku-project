@@ -17,7 +17,7 @@ from src.kanban.link_combo_box import LinkComboBox
 from src.kanban.theme_box_widget import ThemeBoxWidget
 from src.kanban.track_table_view import TrackTableView
 from src.utils import strings_assignment
-from src.common.basemodels import Album
+from src.basemodels import Album
 from src.ongaku_library.ongaku_library import AUDIO_EXTS, IMG_EXTS, OngakuScanner, track_filenames
 
 

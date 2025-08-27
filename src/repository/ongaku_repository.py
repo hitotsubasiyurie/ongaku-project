@@ -8,9 +8,9 @@ from pathlib import Path
 import tomllib
 
 from src.logger import logger, logger_watched
-from src.common.ongaku_exception import OngakuException
-from src.common.json_encoder import CustomJSONEncoder
-from src.common.basemodels import Album, Track
+from src.ongaku_exception import OngakuException
+from tmp.json_encoder import CustomJSONEncoder
+from src.basemodels import Album, Track
 from src.utils import legalize_filename, dump_toml
 
 

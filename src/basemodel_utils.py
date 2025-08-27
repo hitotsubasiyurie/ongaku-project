@@ -3,7 +3,7 @@ from functools import cache
 import orjson
 from rapidfuzz import fuzz
 
-from src.common.basemodels import Album, Track
+from src.basemodels import Album, Track
 
 # 缓存
 @cache

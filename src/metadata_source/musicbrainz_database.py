@@ -6,9 +6,9 @@ import psycopg2
 from psycopg2 import extras
 
 from src.logger import logger
-from src.common.ongaku_exception import OngakuException
-from src.common.basemodels import Album, Track
-from src.common.basemodel_utils import abstract_tracks_info
+from src.ongaku_exception import OngakuException
+from src.basemodels import Album, Track
+from src.basemodel_utils import abstract_tracks_info
 
 
 class MusicBrainzDatabase:

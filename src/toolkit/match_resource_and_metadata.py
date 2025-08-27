@@ -16,8 +16,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.utils import read_audio_tags
 from src.logger import logger, _ongaku_logger
-from src.common.basemodels import Album, Track, _validate_strtuple
-from src.common.basemodel_utils import (count_album_similarity, count_track_similarity, album_to_unique_str, 
+from src.basemodels import Album, Track, _validate_strtuple
+from src.basemodel_utils import (count_album_similarity, count_track_similarity, album_to_unique_str, 
                                         track_to_unique_str)
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import (dump_albums_to_toml, load_albums_from_toml, AUDIO_EXTS, album_filename, 

@@ -7,7 +7,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.logger import logger, _ongaku_logger
-from src.common.ongaku_exception import OngakuException
+from src.ongaku_exception import OngakuException
 from src.metadata_source.vgmdb_api import VGMdbAPI
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
 

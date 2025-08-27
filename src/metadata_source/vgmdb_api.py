@@ -10,9 +10,9 @@ from collections import Counter
 import requests
 from lxml import etree
 
-from src.common.ongaku_exception import OngakuException
+from src.ongaku_exception import OngakuException
 from src.logger import logger, logger_watched
-from src.common.basemodels import Album, Disc, Track
+from src.basemodels import Album, Disc, Track
 from src.utils import retry, RateLimiter
 
 

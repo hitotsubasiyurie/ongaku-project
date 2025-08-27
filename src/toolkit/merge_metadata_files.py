@@ -11,8 +11,8 @@ from scipy.optimize import linear_sum_assignment
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.logger import logger, _ongaku_logger
-from src.common.basemodels import Album, _validate_strtuple
-from src.common.basemodel_utils import count_album_similarity, album_to_unique_str
+from src.basemodels import Album, _validate_strtuple
+from src.basemodel_utils import count_album_similarity, album_to_unique_str
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
 

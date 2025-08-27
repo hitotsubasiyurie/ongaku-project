@@ -8,7 +8,7 @@ from typing import Literal
 import requests
 
 from src.logger import logger, logger_watched
-from src.common.basemodels import Album, Disc, Track
+from src.basemodels import Album, Disc, Track
 from src.utils import retry, RateLimiter
 from src.metadata_source.vgmdb_api import VGMdbAPI
 

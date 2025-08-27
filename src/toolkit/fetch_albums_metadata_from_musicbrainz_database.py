@@ -7,7 +7,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.logger import logger, _ongaku_logger
-from src.common.basemodel_utils import abstract_tracks_info
+from src.basemodel_utils import abstract_tracks_info
 from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
 

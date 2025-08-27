@@ -1,9 +1,40 @@
 import os
-import logging
+import sys
 import time
+import gzip
+import shutil
+import logging
 from functools import wraps
 from typing import Callable
 from datetime import datetime
+from pathlib import Path
+from typing import TextIO
+from logging.handlers import RotatingFileHandler
+
+
+LOG_FILENAME = "ongaku.log"
+MAX_BYTES = 10 * 1024 * 1024
+
+
+class CompressingRotatingFileHandler(RotatingFileHandler):
+
+    def doRollover(self) -> None:
+        if self.stream:
+            self.stream.close()
+            self.stream = None
+
+        base_file = Path(self.baseFilename)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        rotated_file = base_file.parent / f"{base_file.stem}_{timestamp}{base_file.suffix}"
+
+        base_file.rename(rotated_file)
+        with rotated_file.open("rb") as f_in:
+            with gzip.open(str(rotated_file) + ".gz", "wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        rotated_file.unlink()
+
+        self.mode = "a"
+        self.stream = self._open()
 
 
 class OngakuLogger:
@@ -20,27 +51,42 @@ class OngakuLogger:
         self.formatter = logging.Formatter(fmt)
 
         self.outfile = outfile
-        # TODO: 环境变量 ？
-        if not self.outfile:
-            tmp_path = os.getenv("ONGAKU_TMP_PATH")
-            if tmp_path: self.outfile = os.path.join(tmp_path, "ongaku.log")
 
         self._set_handler()
 
-    def set_outfile(self, anypath: str = None) -> None:
+    def set_output(self, anypath: str = None) -> None:
         """
         重新设置日志输出文件位置。\n
-        :param anypath: None, 文件或目录
+        :param anypath: None、文件、目录
         """
-        if not anypath:
+        if not anypath or not os.path.exists(anypath):
             self.outfile = None
         elif os.path.isfile(anypath):
             self.outfile = anypath
         elif os.path.isdir(anypath):
-            name = f"{datetime.now().strftime("%Y-%d-%m-%H-%M-%S")}.log"
-            self.outfile = os.path.join(anypath, name)
+            self.outfile = os.path.join(anypath, LOG_FILENAME)
 
         self._set_handler()
+
+    def lprint(self, *values: object, sep: str | None = " ", end: str | None = "\n", 
+               file: TextIO | None = None, flush: bool) -> None:
+        """
+        print 函数，在调用之前先将内容写入日志文件。
+        """
+        message = sep.join(str(a) for a in values) + end
+
+        for h in self.logger.handlers:
+            if isinstance(h, logging.FileHandler):
+                h.acquire()
+                try:
+                    if h.stream is None:
+                        h.stream = h._open()
+                    h.stream.write(message)
+                    h.flush()
+                finally:
+                    h.release()
+
+        print(*values, sep=sep, end=end, file=file, flush=flush)
 
     # 内部方法
 
@@ -51,7 +97,7 @@ class OngakuLogger:
             h.close()
 
         if self.outfile:
-            handler = logging.FileHandler(self.outfile, "a", encoding="utf-8")
+            handler = CompressingRotatingFileHandler(self.outfile, mode="a", maxBytes=MAX_BYTES, encoding="utf-8")
         else:
             handler = logging.StreamHandler()
 
@@ -60,7 +106,10 @@ class OngakuLogger:
 
 
 _ongaku_logger = OngakuLogger()
+
 logger = _ongaku_logger.logger
+set_output = _ongaku_logger.set_output
+lprint = _ongaku_logger.lprint
 
 
 def logger_watched(level: int) -> Callable:

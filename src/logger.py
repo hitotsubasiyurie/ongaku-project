@@ -5,18 +5,17 @@ import gzip
 import shutil
 import logging
 from functools import wraps
-from typing import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import TextIO
+from typing import TextIO, Callable
 from logging.handlers import RotatingFileHandler
 
 
 LOG_FILENAME = "ongaku.log"
-MAX_BYTES = 10 * 1024 * 1024
+MAX_LOG_FILE_SIZE = 10 * 1024 * 1024
 
 
-class CompressingRotatingFileHandler(RotatingFileHandler):
+class CompressedRotatingFileHandler(RotatingFileHandler):
 
     def doRollover(self) -> None:
         if self.stream:
@@ -25,7 +24,7 @@ class CompressingRotatingFileHandler(RotatingFileHandler):
 
         base_file = Path(self.baseFilename)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        rotated_file = base_file.parent / f"{base_file.stem}_{timestamp}{base_file.suffix}"
+        rotated_file = base_file.with_name(f"{base_file.stem}_{timestamp}{base_file.suffix}")
 
         base_file.rename(rotated_file)
         with rotated_file.open("rb") as f_in:
@@ -35,6 +34,18 @@ class CompressingRotatingFileHandler(RotatingFileHandler):
 
         self.mode = "a"
         self.stream = self._open()
+
+
+class WithRawFormatter(logging.Formatter):
+
+    def __init__(self, fmt: str) -> None:
+        super().__init__(fmt)
+        self.raw_formatter = logging.Formatter("%(message)s")
+
+    def format(self, record: logging.LogRecord) -> str:
+        if record.raw_output:
+            return self.raw_formatter.format(record)
+        return super().format(record)
 
 
 class OngakuLogger:
@@ -48,7 +59,7 @@ class OngakuLogger:
         self.logger.setLevel(level)
 
         fmt= "[%(asctime)s][%(levelname)s] %(message)s [%(funcName)s, %(filename)s, line %(lineno)d][process %(process)d, thread %(thread)d]"
-        self.formatter = logging.Formatter(fmt)
+        self.formatter = WithRawFormatter(fmt)
 
         self.outfile = outfile
 
@@ -68,26 +79,6 @@ class OngakuLogger:
 
         self._set_handler()
 
-    def lprint(self, *values: object, sep: str | None = " ", end: str | None = "\n", 
-               file: TextIO | None = None, flush: bool) -> None:
-        """
-        print 函数，在调用之前先将内容写入日志文件。
-        """
-        message = sep.join(str(a) for a in values) + end
-
-        for h in self.logger.handlers:
-            if isinstance(h, logging.FileHandler):
-                h.acquire()
-                try:
-                    if h.stream is None:
-                        h.stream = h._open()
-                    h.stream.write(message)
-                    h.flush()
-                finally:
-                    h.release()
-
-        print(*values, sep=sep, end=end, file=file, flush=flush)
-
     # 内部方法
 
     def _set_handler(self) -> None:
@@ -97,7 +88,7 @@ class OngakuLogger:
             h.close()
 
         if self.outfile:
-            handler = CompressingRotatingFileHandler(self.outfile, mode="a", maxBytes=MAX_BYTES, encoding="utf-8")
+            handler = CompressedRotatingFileHandler(self.outfile, mode="a", maxBytes=MAX_LOG_FILE_SIZE, encoding="utf-8")
         else:
             handler = logging.StreamHandler()
 
@@ -108,8 +99,28 @@ class OngakuLogger:
 _ongaku_logger = OngakuLogger()
 
 logger = _ongaku_logger.logger
-set_output = _ongaku_logger.set_output
-lprint = _ongaku_logger.lprint
+set_logger_output = _ongaku_logger.set_output
+
+
+def lprint(*values: object, sep: str | None = " ", end: str | None = "\n", 
+            file: TextIO | None = None, flush: bool = False) -> None:
+    """
+    print 函数，在调用之前先将内容原样写入日志文件。
+    """
+    s = sep.join(str(a) for a in values) + end
+    logger.info(s, extra={"raw_output": True})
+
+    print(*values, sep=sep, end=end, file=file, flush=flush)
+
+
+def linput(prompt: object  = "") -> str:
+    """
+    input 函数，在调用之后将提示和输入原样写入日志文件。
+    """
+    s = input(prompt)
+    logger.info(prompt + s + "\n", extra={'raw_output': True})
+
+    return s
 
 
 def logger_watched(level: int) -> Callable:

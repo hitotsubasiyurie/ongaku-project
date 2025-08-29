@@ -17,12 +17,12 @@ from typing import Generator
 import orjson
 from tqdm import tqdm
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-from src.logger import logger, _ongaku_logger
-from src.metadata_source.musicbrainz_api import MusicBrainzAPI
-from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.basemodels import Album
+from src.logger import logger, lprint
+from src.toolkit.message import MESSAGE
+from src.toolkit.toolkit_utils import easy_linput
+from src.toolkit.metadata_source.musicbrainz_api import MusicBrainzAPI
+from src.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
 
 
 def read_musicbrainz_tar_dump(tar_exe: str, tar_file: str) -> Generator[str, None, None]:
@@ -47,22 +47,12 @@ def release_to_albums(recordings: dict, release: dict) -> list[Album]:
     return albums
 
 
-if __name__ == "__main__":
+def create_musicbrainz_database():
 
-    # input 输入
+    parent_directory: Path = easy_linput(MESSAGE.RT2DKKG4, return_type=Path)
+    tar_exe = easy_linput(MESSAGE.NLYCQM7M, return_type=str)
 
-    parent_directory = input(f"Please input dump files' directory: ").strip("'\"")
-    tar_exe  = input(f"Please input tar.exe path: ").strip("'\"")
-
-    if not parent_directory or not tar_exe:
-        sys.exit(0)
-
-    parent_directory = Path(parent_directory)
     recording_tar, release_tar = parent_directory / "recording.tar.xz", parent_directory / "release.tar.xz"
-
-    # 日志输出至文件
-    if not _ongaku_logger.outfile:
-        _ongaku_logger.set_outfile(parent_directory / f"{datetime.now().strftime("%Y-%d-%m-%H-%M-%S")}.log")
 
     # 错误 保存 文件
     wrong_release_wf = (parent_directory / "wrong_release.jsonl").open("a", encoding="utf-8")

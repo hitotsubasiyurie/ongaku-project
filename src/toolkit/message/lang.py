@@ -1,9 +1,9 @@
 from functools import cache
 from typing import Literal, Union, Type
 
-from src.toolkit.lang._en import Message as Message_en
-from src.toolkit.lang._zh import Message as Message_zh
-from src.toolkit.lang._ja import Message as Message_ja
+from src.toolkit.message._en import Message as Message_en
+from src.toolkit.message._zh import Message as Message_zh
+from src.toolkit.message._ja import Message as Message_ja
 
 
 MESSAGE: Union[Type[Message_en], Type[Message_zh], Type[Message_ja]] = Message_en

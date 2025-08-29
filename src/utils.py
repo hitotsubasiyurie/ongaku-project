@@ -11,8 +11,6 @@ from threading import Lock
 from typing import Callable, Generator, Mapping, Any
 from difflib import SequenceMatcher
 
-import numpy
-from scipy.optimize import linear_sum_assignment
 from mutagen.flac import FLAC
 from mutagen.mp3 import EasyMP3
 import tomli_w
@@ -82,24 +80,24 @@ def legalize_filename(name: str) -> str:
     return name
 
 
-def strings_assignment(strings_a: list[str], strings_b: list[str]) -> tuple[float, list[int], list[int]]:
-    """
-    字符串最大相似度分配。
-        b1 b2 b3 ... bm
-    a1
-    a2
-    a3
-    ...
-    an
-    :param strings_a: 字符串列表 [a1, a2, a3, ..., an]
-    :param strings_b: 字符串列表 [b1, b2, b3, ..., bm]
-    """
-    sim_matrix = [[SequenceMatcher(None, sa, sb).ratio() for sb in strings_b] 
-                   for sa in strings_a]
-    sim_matrix = numpy.asarray(sim_matrix)
-    row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
-    aver_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
-    return aver_similarity, row_ind, col_ind
+# def strings_assignment(strings_a: list[str], strings_b: list[str]) -> tuple[float, list[int], list[int]]:
+#     """
+#     字符串最大相似度分配。
+#         b1 b2 b3 ... bm
+#     a1
+#     a2
+#     a3
+#     ...
+#     an
+#     :param strings_a: 字符串列表 [a1, a2, a3, ..., an]
+#     :param strings_b: 字符串列表 [b1, b2, b3, ..., bm]
+#     """
+#     sim_matrix = [[SequenceMatcher(None, sa, sb).ratio() for sb in strings_b] 
+#                    for sa in strings_a]
+#     sim_matrix = numpy.asarray(sim_matrix)
+#     row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
+#     aver_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
+#     return aver_similarity, row_ind, col_ind
 
 
 def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:

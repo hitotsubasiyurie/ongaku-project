@@ -5,15 +5,16 @@ from pathlib import Path
 
 import orjson
 from tqdm import tqdm
-import numpy
-from scipy.optimize import linear_sum_assignment
+from munkres import Munkres
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.logger import logger, _ongaku_logger
+from src.logger import logger, lprint
+from src.toolkit.message import MESSAGE
+from src.toolkit.toolkit_utils import easy_linput
 from src.basemodels import Album, _validate_strtuple
 from src.basemodel_utils import count_album_similarity, album_to_unique_str
-from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
+from src.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
 
 
@@ -40,7 +41,7 @@ def generate_merge_log(dst_file: Path, src_file: Path) -> None:
                   if not skip_keyword or all(skip_keyword not in l for l in a.links)]
     src_albums = load_albums_from_toml(src_file)
 
-    sim_matrix = numpy.zeros((len(dst_albums), len(src_albums)), dtype=numpy.float32)
+    sim_matrix = [[0] * len(src_albums) for _ in range(len(dst_albums))]
     for i, da in enumerate(tqdm(dst_albums, desc="Count albums similarity", miniters=0)):
 
         # 提前拦截 catalognumber 相等的结果
@@ -48,16 +49,16 @@ def generate_merge_log(dst_file: Path, src_file: Path) -> None:
             matches = [(j, sa) for j, sa in enumerate(src_albums) if da.catalognumber == sa.catalognumber]
             if matches:
                 for j, sa in matches:
-                    sim_matrix[i, j] = count_album_similarity(da, sa)
+                    sim_matrix[i, j] = -count_album_similarity(da, sa)
                 continue
 
         for j, sa in enumerate(src_albums):
-            sim_matrix[i, j] = count_album_similarity(da, sa)
+            sim_matrix[i, j] = -count_album_similarity(da, sa)
 
     print("Matching the most similar album...")
-    row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
+    indexes = Munkres().compute(sim_matrix)
 
-    for row, col in zip(row_ind, col_ind):
+    for row, col in indexes:
 
         if sim_matrix[row][col] < min_sim:
             continue
@@ -117,7 +118,7 @@ def apply_merge_log(dst_file: Path, src_file: Path) -> None:
     dump_albums_to_toml(src_albums, src_file)
 
 
-if __name__ == "__main__":
+def merge_metadata_files():
 
     # input 输入
 
@@ -128,10 +129,6 @@ if __name__ == "__main__":
         sys.exit(0)
 
     src_file, dst_file = Path(src_file), Path(dst_file)
-
-    # 日志输出至目录
-    if not _ongaku_logger.outfile:
-        _ongaku_logger.set_outfile(dst_file.parent)
 
     # 循环交互
     while True:

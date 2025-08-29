@@ -9,17 +9,18 @@ from functools import cache
 
 import orjson
 from tqdm import tqdm
-import numpy
-from scipy.optimize import linear_sum_assignment
+from munkres import Munkres
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.utils import read_audio_tags
-from src.logger import logger, _ongaku_logger
+from src.logger import logger, lprint
+from src.toolkit.message import MESSAGE
+from src.toolkit.toolkit_utils import easy_linput
 from src.basemodels import Album, Track, _validate_strtuple
 from src.basemodel_utils import (count_album_similarity, count_track_similarity, album_to_unique_str, 
                                         track_to_unique_str)
-from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
+from src.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import (dump_albums_to_toml, load_albums_from_toml, AUDIO_EXTS, album_filename, 
                                               track_filenames)
 
@@ -129,11 +130,11 @@ def generate_match_log() -> None:
         audios = list(itertools.chain.from_iterable(res_dir.rglob(f"*{ext}") for ext in AUDIO_EXTS))
         res_tracks = list(map(analyze_resource_track, audios))
 
-        sim_matrix = [[count_track_similarity(ta, tb) for tb in match_album.tracks] 
-                        for ta in res_tracks]
-        sim_matrix = numpy.asarray(sim_matrix)
-        row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
-        track_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
+        m = Munkres()
+        matrix = [[-count_track_similarity(ta, tb) for tb in match_album.tracks]
+                   for ta in res_tracks]
+        indexes = m.compute(matrix)
+        track_similarity = sum(-matrix[row][col] for row, col in indexes) / len(indexes)
 
         lines = []
         lines.append("")
@@ -148,7 +149,7 @@ def generate_match_log() -> None:
         lines.append(MATCHING_ALBUM + album_to_unique_str(match_album))
         lines.append("")
         match_track_names = track_filenames(match_album)
-        for row, col in zip(row_ind, col_ind):
+        for row, col in indexes:
             lines.append(OLD_AUDIOFILE + audios[row].name)
             lines.append(NEW_AUDIOFILE + match_track_names[col] + audios[row].suffix.lower())
             lines.append(RESOURCE_TRACK + track_to_unique_str(res_tracks[row]))
@@ -205,7 +206,7 @@ def clean_old_parent_dir() -> None:
             shutil.rmtree(d)
 
 
-if __name__ == "__main__":
+def match_resource_and_metadata():
 
     # 循环交互
     while True:

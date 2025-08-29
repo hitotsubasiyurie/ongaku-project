@@ -10,7 +10,7 @@ import requests
 from src.logger import logger, logger_watched
 from src.basemodels import Album, Disc, Track
 from src.utils import retry, RateLimiter
-from src.metadata_source.vgmdb_api import VGMdbAPI
+from src.toolkit.metadata_source.vgmdb_api import VGMdbAPI
 
 
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')

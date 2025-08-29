@@ -4,25 +4,20 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.logger import logger, _ongaku_logger
+from src.logger import logger, lprint
+from src import global_settings
+from src.toolkit.message import MESSAGE
+from src.toolkit.toolkit_utils import easy_linput
 from src.ongaku_exception import OngakuException
-from src.metadata_source.vgmdb_api import VGMdbAPI
+from src.toolkit.metadata_source.vgmdb_api import VGMdbAPI
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
 
 
-if __name__ == "__main__":
+def fetch_albums_metadata_from_vgmdb():
 
-    # input 输入
-    
-    input_path = input(f"Please input a directory to save or a metadata file to append: ").strip("'\"")
-    cache_dir = input(f"Please input cache directory: ").strip("'\"")
-
-    if not all([input_path, cache_dir]):
-        sys.exit(0)
-    
-    input_path, cache_dir = Path(input_path), Path(cache_dir)
+    input_path: Path = easy_linput(MESSAGE.YHEH6TFR, return_type=Path)
+    input_url: str = easy_linput(MESSAGE.UZKMVOC1, return_type=str)
 
     if input_path.is_file():
         metadata_file = input_path
@@ -31,13 +26,11 @@ if __name__ == "__main__":
         metadata_file = input_path / f"Fetch-{int(time.time())}.toml"
 
     # 创建目录
-    cache_dir.mkdir(parents=True, exist_ok=True)
-
-    input_url = input("Please input VGMDB page url (frachise page, product page, search page): ")
-
-    # 日志输出至文件
-    if not _ongaku_logger.outfile:
-        _ongaku_logger.set_outfile(metadata_file.parent)
+    if global_settings.temp_directory:
+        cache_dir = Path(global_settings.temp_directory, "cache")
+        cache_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        cache_dir = None
 
     api = VGMdbAPI(cache_dir=cache_dir)
 

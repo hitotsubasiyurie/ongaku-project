@@ -4,33 +4,22 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-from src.logger import logger, _ongaku_logger
+from src.logger import logger, lprint
+from src.toolkit.message import MESSAGE
+from src.toolkit.toolkit_utils import easy_linput
 from src.basemodel_utils import abstract_tracks_info
-from src.metadata_source.musicbrainz_database import MusicBrainzDatabase
+from src.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
 
 
-if __name__ == "__main__":
+def fetch_albums_metadata_from_musicbrainz_database():
 
-    # input 输入
+    metadata_file: Path = easy_linput(MESSAGE.LLZ4XB9J, return_type=Path)
+    filter_masks: str = easy_linput(MESSAGE.M82LXNFV, default="1101, 1100, 1001, 1000", return_type=str)
+    limit: int = easy_linput(MESSAGE.ZG85TEHZ, default=10, return_type=int)
+    order_mask: str = easy_linput(MESSAGE.CCKZUKK1, default="000", return_type=str)
 
-    metadata_file = input(f"Please input a metadata file to query: ").strip("'\"")
-    filter_masks = input("Please input filter masks [catalognumber, date, date_int, track_count] (default 1101, 1100, 1001, 1000): ") or "1101, 1100, 1001, 1000"
-    limit = int(input("Please input query result limit (default 10): ").strip() or 10)
-    order_mask = input("Please input similarity order mask [catalognumber, album, tracks_abstract] (default 000): ").strip() or "000"
-
-    if not metadata_file:
-        sys.exit(0)
-
-    metadata_file = Path(metadata_file)
-
-    result_file = metadata_file.parent / f"Fetch-{int(time.time())}.toml"
-
-    # 日志输出至目录
-    if not _ongaku_logger.outfile:
-        _ongaku_logger.set_outfile(metadata_file.parent)
+    result_file = metadata_file.parent / f"Fetched_{int(time.time())}.toml"
 
     database = MusicBrainzDatabase()
 

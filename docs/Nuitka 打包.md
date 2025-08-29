@@ -11,7 +11,9 @@ set https_proxy=http://127.0.0.1:10808
 
 ```sh
 
-cd /d E:\my\ongaku-project
+conda activate env2
+
+cd /d E:\my\ongaku-project-nuitka
 
 set PYTHONPATH=E:\my\ongaku-project
 
@@ -20,5 +22,14 @@ python -m nuitka E:\my\ongaku-project\src\toolkit\main.py --onefile
 
 ```
 
+```sh
 
+nuitka --plugin-list
+
+
+
+
+
+
+```
 

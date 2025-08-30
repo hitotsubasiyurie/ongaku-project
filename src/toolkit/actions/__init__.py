@@ -1,8 +1,10 @@
 from src.toolkit.actions.cp_lr import hardlink_copy
 from src.toolkit.actions.create_musicbrainz_database import create_musicbrainz_database
 from src.toolkit.actions.fetch_albums_metadata_from_musicbrainz_database import fetch_albums_metadata_from_musicbrainz_database
-
-
+from src.toolkit.actions.fetch_albums_metadata_from_vgmdb import fetch_albums_metadata_from_vgmdb
+from src.toolkit.actions.merge_metadata_files import merge_metadata_files
+from src.toolkit.actions.recode import recode
+from src.toolkit.actions.match_resource_and_metadata import match_resource_and_metadata
 
 
 

@@ -1,6 +1,11 @@
-import msvcrt
 import os
+import msvcrt
 from pathlib import Path
+
+from src.logger import lprint
+from src.toolkit.toolkit_utils import easy_linput
+from src.toolkit.message import MESSAGE
+
 
 TEXT_ENCODINGS = ["ascii", "big5", "big5hkscs", "cp037", "cp273", "cp424", "cp437", "cp500", "cp720", "cp737", "cp775", 
                   "cp850", "cp852", "cp855", "cp856", "cp857", "cp858", "cp860", "cp861", "cp862", "cp863", "cp864", 
@@ -17,22 +22,23 @@ TEXT_ENCODINGS = ["ascii", "big5", "big5hkscs", "cp037", "cp273", "cp424", "cp43
 PREFERRED_ENCODINGS = ["utf_8_sig", "utf_8", "shift_jis", "shift_jis_2004", "big5hkscs", "cp932", "shift_jisx0213", 
                        "utf_16", "utf_16_le", "gbk", "gb18030"]
 
-if __name__ == "__main__":
+ENCODINGS = PREFERRED_ENCODINGS + list(set(TEXT_ENCODINGS) - set(PREFERRED_ENCODINGS))
 
-    directory = Path(input("输入父目录路径：").strip("'\""))
-    accept_suffix = [s.strip() for s in input("输入文件后缀（默认为 .cue）：").split(",") if s.strip()] or [".cue"]
-    result_prefix = input("输入结果文件前缀（默认为 【【yyyy yyyy 1111】】）：").strip() or "【【yyyy yyyy 1111】】"
 
-    # 接受后缀 跳过结果前缀 文件
+def recode():
+
+    directory: Path = easy_linput(MESSAGE.D1EG4CA9, return_type=Path)
+    suffixs_str: str = easy_linput(MESSAGE.DGO6VHRZ, default=".txt,.cue", return_type=str)
+
+    suffixs = set(map(str.lower, map(str.strip, suffixs_str.split(","))))
+
+    # 待处理文件
     files = [f for f in Path(directory).rglob("*") 
-             if f.is_file() and f.suffix.lower() in accept_suffix and not f.name.startswith(result_prefix)
-             and not (f.parent / f"{result_prefix}{f.name}").exists()]
-
-    encodings = PREFERRED_ENCODINGS + list(set(TEXT_ENCODINGS) - set(PREFERRED_ENCODINGS))
+             if f.is_file() and f.suffix.lower() in suffixs]
 
     # 文件索引，编码索引
     i, j = 0, 0
-    max_i, max_j = len(files) - 1, len(encodings) - 1
+    max_i, max_j = len(files) - 1, len(ENCODINGS) - 1
 
     # j 的方向，取值为 -1 或 1
     dir_j = 1
@@ -41,14 +47,13 @@ if __name__ == "__main__":
 
         try:
             # 文件 i 以编码 j 读取
-            text = files[i].read_text(encodings[j])
+            text = files[i].read_text(ENCODINGS[j])
             os.system("cls")
             print(text)
             print("-"*64)
-            print(f"{j}/{max_j} {encodings[j]}")
+            print(f"{j}/{max_j} {ENCODINGS[j]}")
             print(f"{i}/{max_i} {files[i]}")
-            print("\na: 上一个编码 d: 下一个编码\nw: 上一个文件 s: 下一个文件\np: 打开路径")
-            print("回车保存...")
+            print(MESSAGE.JABXWHDS)
         except Exception:
             j = max(0, min(j + dir_j, max_j))
             if (dir_j == -1 and j != 0) or (dir_j == 1 and j != max_j):
@@ -68,8 +73,7 @@ if __name__ == "__main__":
             dir_j = 1
             j = min(j + dir_j, max_j)
         elif inp == "\r":
-            newfile = files[i].parent / f"{result_prefix}{files[i].name}"
-            newfile.write_text(text, encoding="utf_8")
+            files[i].write_text(text, encoding="utf-8")
             i, j = min(i + 1, max_i), 0
             dir_j = 1
         elif inp == "p":

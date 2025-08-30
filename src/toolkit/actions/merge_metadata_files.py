@@ -7,11 +7,9 @@ import orjson
 from tqdm import tqdm
 from munkres import Munkres
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from src.logger import logger, lprint
 from src.toolkit.message import MESSAGE
-from src.toolkit.toolkit_utils import easy_linput
+from src.toolkit.toolkit_utils import easy_linput, loop_for_actions
 from src.basemodels import Album, _validate_strtuple
 from src.basemodel_utils import count_album_similarity, album_to_unique_str
 from src.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
@@ -27,14 +25,16 @@ SIMILARITY = "SIMILARITY: "
 DST_ALBUM = "DST_ALBUM: "
 SRC_ALBUM = "SRC_ALBUM: "
 
+src_file, dst_file = None, None
 
-def generate_merge_log(dst_file: Path, src_file: Path) -> None:
+
+def generate_merge_log() -> None:
     merge_log = dst_file.parent / "merge.log"
     content = ""
 
-    skip_keyword = input("Please input link keyword to skip merge to (such as 'musicbrainz') (default None): ").strip() or None
-    min_sim = float(input("Please input similarity threshold (recommend 90 -> 80 -> 75) (default 90): ").strip() or 90)
-    enable_catno_filter = (input("Please input if filter catalognumber (Y/N) (default Y): ").strip() or "Y") == "Y"
+    skip_keyword: str = easy_linput(MESSAGE.Q9YNQ293, default="", return_type=str)
+    min_sim: float = easy_linput(MESSAGE.R3VY3KF6, default=90, return_type=float)
+    enable_catno_filter: bool = easy_linput(MESSAGE.BHX8PWTM, default="Y", return_type=str)  == "Y"
 
     # 跳过 已存在 link keyword 的 目标专辑
     dst_albums = [a for a in load_albums_from_toml(dst_file) 
@@ -55,7 +55,7 @@ def generate_merge_log(dst_file: Path, src_file: Path) -> None:
         for j, sa in enumerate(src_albums):
             sim_matrix[i, j] = -count_album_similarity(da, sa)
 
-    print("Matching the most similar album...")
+    lprint(MESSAGE.V7VQSYWB)
     indexes = Munkres().compute(sim_matrix)
 
     for row, col in indexes:
@@ -74,19 +74,14 @@ def generate_merge_log(dst_file: Path, src_file: Path) -> None:
 
     merge_log.write_text(content, encoding="utf-8")
 
-    print(f"Generated merge log successfully. {merge_log}")
+    lprint(MESSAGE.NEJU5R13.format(merge_log))
 
 
-def apply_merge_log(dst_file: Path, src_file: Path) -> None:
+def apply_merge_log() -> None:
 
-    merge_log = input(f"Please input merge log: ").strip("'\"")
-    apply_mask = input("Please input metadata apply mask [catalognumber, date, album, tracks] (such as 0001): ").strip()
-    apply_when_no_value = (input("Please input if apply when dst value is None (Y/N) (default Y): ").strip() or "Y") == "Y"
-
-    if not all([merge_log, apply_mask]):
-        return
-    
-    merge_log = Path(merge_log)
+    merge_log: Path = easy_linput(MESSAGE.DERFEKFV, return_type=Path)
+    apply_mask: str = easy_linput(MESSAGE.J1H47YFK)
+    apply_when_no_value: bool = easy_linput(MESSAGE.PLCIYBZW, default="Y", return_type=str)  == "Y"
 
     dst_albums, src_albums = load_albums_from_toml(dst_file), load_albums_from_toml(src_file)
     dst_unique_str_to_albums = {album_to_unique_str(a): a for a in dst_albums}
@@ -117,29 +112,18 @@ def apply_merge_log(dst_file: Path, src_file: Path) -> None:
     dump_albums_to_toml(dst_albums, dst_file)
     dump_albums_to_toml(src_albums, src_file)
 
+    lprint(MESSAGE.JNAIXTGI)
+
 
 def merge_metadata_files():
+    global src_file, dst_file
+    src_file: Path = easy_linput(MESSAGE.BB8Z9OR4, return_type=Path)
+    dst_file: Path = easy_linput(MESSAGE.O7USULLZ, return_type=Path)
 
-    # input 输入
+    message2action = {
+        MESSAGE.VOLF5PUD: generate_merge_log,
+        MESSAGE.GCXAW6BC: apply_merge_log,
+        MESSAGE.CLZWFPBZ: None
+    }
 
-    dst_file = input(f"Please input dst metadata file (merge to): ").strip("'\"")
-    src_file = input(f"Please input src metadata file (merge from): ").strip("'\"")
-
-    if not all([dst_file, src_file]):
-        sys.exit(0)
-
-    src_file, dst_file = Path(src_file), Path(dst_file)
-
-    # 循环交互
-    while True:
-
-        print("Please input action number:")
-        print("1. Generate merge log")
-        print("2. Apply merge log")
-        action = int(input(""))
-
-        if action == 1:
-            generate_merge_log(dst_file, src_file)
-        elif action == 2:
-            apply_merge_log(dst_file, src_file)
-
+    loop_for_actions(message2action)

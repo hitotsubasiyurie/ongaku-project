@@ -1,17 +1,15 @@
 import os
-import sys
-import json
-from pathlib import Path
 
-from src.logger import set_logger_output, lprint
+from src.logger import logger, set_logger_output, lprint
 from src.global_settings import global_settings
-from src.toolkit.toolkit_utils import easy_linput
-from src.toolkit.message import MESSAGE, set_language, get_supported_language
-from src.toolkit.actions import hardlink_copy, create_musicbrainz_database
+from src.toolkit.message import MESSAGE, set_language, get_supported_languages
+from src.toolkit.actions import (hardlink_copy, create_musicbrainz_database, fetch_albums_metadata_from_vgmdb, 
+    fetch_albums_metadata_from_musicbrainz_database, match_resource_and_metadata, merge_metadata_files, recode)
+from src.toolkit.toolkit_utils import loop_for_actions
 
 
 def ask_for_lang() -> str:
-    langs = get_supported_language()
+    langs = get_supported_languages()
     langs_str = ", ".join(langs)
     while True:
         lang = input(f"Please choose a language [{langs_str}]:\n").strip()
@@ -29,7 +27,7 @@ def ask_for_temp_dir() -> str:
 
 def main():
 
-    if global_settings.language not in get_supported_language():
+    if global_settings.language not in get_supported_languages():
         global_settings.language = ask_for_lang()
     
     set_language(global_settings.language)
@@ -39,28 +37,21 @@ def main():
 
     set_logger_output(global_settings.temp_directory)
 
-    while True:
-        # lprint(MESSAGE.S0DMGK4)
-        action = easy_linput(return_type=int)
+    message2action = {
+        MESSAGE.AUP6NZT5: hardlink_copy,
+        MESSAGE.GB5JO189: recode,
+        MESSAGE.B2BHBP2H: match_resource_and_metadata,
+        MESSAGE.GBT3D4H8: fetch_albums_metadata_from_vgmdb,
+        MESSAGE.ER5LSXY9: create_musicbrainz_database,
+        MESSAGE.VKTS4CY7: fetch_albums_metadata_from_musicbrainz_database,
+        MESSAGE.ZJFV9Z1X: merge_metadata_files,
+        MESSAGE.CLZWFPBZ: None
+    }
 
-        if action == 1:
-            hardlink_copy()
-
+    loop_for_actions(message2action)
 
 
 if __name__ == "__main__":
     main()
-    
-
-
-# 1. 管理员权限
-
-
-
-
-
-
-
-
 
 

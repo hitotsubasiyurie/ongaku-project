@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import gzip
 import shutil
@@ -43,7 +42,7 @@ class WithRawFormatter(logging.Formatter):
         self.raw_formatter = logging.Formatter("%(message)s")
 
     def format(self, record: logging.LogRecord) -> str:
-        if record.raw_output:
+        if getattr(record, "raw_output", False):
             return self.raw_formatter.format(record)
         return super().format(record)
 

@@ -11,16 +11,14 @@ import orjson
 from tqdm import tqdm
 from munkres import Munkres
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from src.utils import read_audio_tags
 from src.logger import logger, lprint
 from src.toolkit.message import MESSAGE
-from src.toolkit.toolkit_utils import easy_linput
+from src.toolkit.toolkit_utils import easy_linput, loop_for_actions
 from src.basemodels import Album, Track, _validate_strtuple
 from src.basemodel_utils import (count_album_similarity, count_track_similarity, album_to_unique_str, 
                                         track_to_unique_str)
-from src.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
+from src.toolkit.metadata_source import MusicBrainzDatabase
 from src.repository.ongaku_repository import (dump_albums_to_toml, load_albums_from_toml, AUDIO_EXTS, album_filename, 
                                               track_filenames)
 
@@ -93,20 +91,13 @@ def analyze_resource_album(directory: str) -> Album:
 
 def generate_match_log() -> None:
 
-    # input 输入
-    metadata_file = input(f"Please input a metadata file: ").strip("'\"")
-    old_parent_dir = input(f"Please input old resource parent directory: ").strip("'\"")
-    new_parent_dir = input(f"Please input new resource parent directory: ").strip("'\"")
-
-    if not all([metadata_file, old_parent_dir, new_parent_dir]):
-        return
-
-    metadata_file, old_parent_dir, new_parent_dir = Path(metadata_file), Path(old_parent_dir), Path(new_parent_dir)
+    metadata_file: Path = easy_linput(MESSAGE.QD152EVN, return_type=Path)
+    old_parent_dir: Path = easy_linput(MESSAGE.I7EC4HDV, return_type=Path)
+    new_parent_dir: Path = easy_linput(MESSAGE.EPNYJ37J, return_type=Path)
+    enable_tracknumber_filter: bool = easy_linput(MESSAGE.NMN5NFSN, default="Y", return_type=str)  == "Y"
 
     match_log = metadata_file.parent / "match.log"
     content = ""
-
-    enable_tracknumber_filter = (input("Please input if filter tracks number (Y/N) (default Y): ").strip() or "Y") == "Y"
 
     theme_albums = load_albums_from_toml(metadata_file)
 
@@ -162,12 +153,7 @@ def generate_match_log() -> None:
 
 
 def apply_match_log() -> None:
-    match_log = input(f"Please input match log: ").strip("'\"")
-
-    if not match_log:
-        return
-    
-    match_log = Path(match_log)
+    match_log: Path = easy_linput(MESSAGE.NAWEVS2M, return_type=Path)
 
     for line in match_log.read_text(encoding="utf-8").split("\n"):
         if line.startswith(SEPERATE):
@@ -193,12 +179,7 @@ def apply_match_log() -> None:
 
 
 def clean_old_parent_dir() -> None:
-    old_parent_dir = input(f"Please input old resource parent directory: ").strip("'\"")
-
-    if not all([old_parent_dir]):
-        return
-    
-    old_parent_dir = Path(old_parent_dir)
+    old_parent_dir: Path = easy_linput(MESSAGE.R2BBVQAA, return_type=Path)
 
     # 从下往上 删除 没有音频文件的 目录
     for d in reversed(list(filter(Path.is_dir, old_parent_dir.rglob("*")))):
@@ -208,21 +189,14 @@ def clean_old_parent_dir() -> None:
 
 def match_resource_and_metadata():
 
-    # 循环交互
-    while True:
+    message2action = {
+        MESSAGE.U6RPQN91: generate_match_log,
+        MESSAGE.MJVYZVPO: apply_match_log,
+        MESSAGE.U6Q2O6NL: clean_old_parent_dir,
+        MESSAGE.CLZWFPBZ: None,
+    }
 
-        print("Please input action number:")
-        print("1. Generate match log")
-        print("2. Apply match log")
-        print("3. Clean old resource parent directory")
-        action = int(input(""))
-
-        if action == 1:
-            generate_match_log()
-        elif action == 2:
-            apply_match_log()
-        elif action == 3:
-            clean_old_parent_dir()
+    loop_for_actions(message2action)
 
 
 

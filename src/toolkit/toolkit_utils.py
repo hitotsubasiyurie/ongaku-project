@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Any, Type
+from typing import Any, Type, Callable
 
-from src.logger import linput
+from src.logger import linput, lprint, logger
+from src.toolkit.message import MESSAGE
 
 
 def easy_linput(prompt: object  = "", default: Any = None, return_type: Type = str) -> Any:
@@ -26,4 +27,21 @@ def easy_linput(prompt: object  = "", default: Any = None, return_type: Type = s
                 continue
 
 
+def loop_for_actions(message2action: dict[str, Callable]) -> None:
+    messages, actions = list(message2action.keys()), list(message2action.values())
+    while True:
+        lprint("\n".join(f"{i+1}. {m}" for i, m in enumerate(messages)))
+        number = easy_linput(MESSAGE.AW9FDB6V, return_type=int)
 
+        if not (0 <= number - 1 <= len(messages)):
+            continue
+
+        try:
+            lprint(f"{'-'*8} {messages[number - 1]} {'-'*8}")
+            func = actions[number - 1]
+            if not func:
+                return
+            func()
+            lprint("-"*32)
+        except Exception:
+            logger.error("", exc_info=1)

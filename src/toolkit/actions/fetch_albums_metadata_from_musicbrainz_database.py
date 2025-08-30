@@ -54,4 +54,4 @@ def fetch_albums_metadata_from_musicbrainz_database():
     
     dump_albums_to_toml(result_albums, result_file)
 
-    print(f"Fetched successfully. {result_file}")
+    lprint(MESSAGE.ZX1XSCFX.format(len(result_albums), result_file))

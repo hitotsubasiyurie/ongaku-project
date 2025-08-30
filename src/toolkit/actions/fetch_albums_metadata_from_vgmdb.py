@@ -1,12 +1,10 @@
-import sys
 import time
 from pathlib import Path
 
 from tqdm import tqdm
 
-
 from src.logger import logger, lprint
-from src import global_settings
+from src.global_settings import global_settings
 from src.toolkit.message import MESSAGE
 from src.toolkit.toolkit_utils import easy_linput
 from src.ongaku_exception import OngakuException
@@ -15,17 +13,18 @@ from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_fr
 
 
 def fetch_albums_metadata_from_vgmdb():
+    lprint(MESSAGE.K9FYO55X)
 
     input_path: Path = easy_linput(MESSAGE.YHEH6TFR, return_type=Path)
     input_url: str = easy_linput(MESSAGE.UZKMVOC1, return_type=str)
 
+    # 创建目录
     if input_path.is_file():
         metadata_file = input_path
     else:
         input_path.mkdir(parents=True, exist_ok=True)
         metadata_file = input_path / f"Fetch-{int(time.time())}.toml"
 
-    # 创建目录
     if global_settings.temp_directory:
         cache_dir = Path(global_settings.temp_directory, "cache")
         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -64,6 +63,6 @@ def fetch_albums_metadata_from_vgmdb():
         pbar.update()
 
     dump_albums_to_toml(albums, metadata_file)
-
-    print(f"Fetched successfully. {metadata_file}")
-
+    
+    pbar.close()
+    lprint(MESSAGE.W5OJ7854.format(len(albums), metadata_file))

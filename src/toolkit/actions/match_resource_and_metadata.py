@@ -9,7 +9,8 @@ from functools import cache
 
 import orjson
 from tqdm import tqdm
-from munkres import Munkres
+import numpy
+from scipy.optimize import linear_sum_assignment
 
 from src.utils import read_audio_tags
 from src.logger import logger, lprint
@@ -73,13 +74,21 @@ def analyze_resource_album(directory: str) -> Album:
     tags = read_audio_tags(audios[0])
     catalognumber, date, album = [tags[k] or "" for k in ["catalognumber", "date", "album"]]
     
+    # 匹配 [COCX-1052] [2021-01-02] xxx
     if match := re.search(r"^\[([A-Z0-9-]+)\]\s+\[([0-9.-]+)\]\s+(.+)$", directory.name):
         if not catalognumber: catalognumber = match.group(1)
         if not date or len(date) < len(match.group(2)): date = match.group(2)
         if not album: album = match.group(3)
+    # 匹配 [2021-01-02] xxx
     if match := re.search(r"^\[([0-9.-]+)\]\s+(.+)$", directory.name):
         if not date or len(date) < len(match.group(1)): date = match.group(1)
         if not album: album = match.group(2)
+    # 匹配 xxx [210102]
+    if match := re.search(r"^(.+)\[([0-9]{6})\]$", directory.name):
+        if not date: 
+            d = match.group(2)
+            date = f"20{d[:2]}-{d[2:4]}-{d[4:6]}"
+        if not album: album = match.group(1)
     if not album: album = directory.name
 
     # date 字段替换常见字符
@@ -121,11 +130,11 @@ def generate_match_log() -> None:
         audios = list(itertools.chain.from_iterable(res_dir.rglob(f"*{ext}") for ext in AUDIO_EXTS))
         res_tracks = list(map(analyze_resource_track, audios))
 
-        m = Munkres()
-        matrix = [[-count_track_similarity(ta, tb) for tb in match_album.tracks]
-                   for ta in res_tracks]
-        indexes = m.compute(matrix)
-        track_similarity = sum(-matrix[row][col] for row, col in indexes) / len(indexes)
+        sim_matrix = [[count_track_similarity(ta, tb) for tb in match_album.tracks] 
+                        for ta in res_tracks]
+        sim_matrix = numpy.asarray(sim_matrix)
+        row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
+        track_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
 
         lines = []
         lines.append("")
@@ -140,7 +149,7 @@ def generate_match_log() -> None:
         lines.append(MATCHING_ALBUM + album_to_unique_str(match_album))
         lines.append("")
         match_track_names = track_filenames(match_album)
-        for row, col in indexes:
+        for row, col in zip(row_ind, col_ind):
             lines.append(OLD_AUDIOFILE + audios[row].name)
             lines.append(NEW_AUDIOFILE + match_track_names[col] + audios[row].suffix.lower())
             lines.append(RESOURCE_TRACK + track_to_unique_str(res_tracks[row]))

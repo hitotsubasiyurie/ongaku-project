@@ -43,5 +43,6 @@ def loop_for_actions(message2action: dict[str, Callable]) -> None:
                 return
             func()
             lprint("-"*32)
-        except Exception:
+        except Exception as e:
+            lprint(f"Error: {e}")
             logger.error("", exc_info=1)

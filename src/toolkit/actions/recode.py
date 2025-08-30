@@ -78,5 +78,7 @@ def recode():
             dir_j = 1
         elif inp == "p":
             os.system(f"explorer {files[i].parent}")
+        elif inp == "q":
+            return
         else:
-            exit()
+            return

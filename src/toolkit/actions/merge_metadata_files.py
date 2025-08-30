@@ -5,7 +5,8 @@ from pathlib import Path
 
 import orjson
 from tqdm import tqdm
-from munkres import Munkres
+import numpy
+from scipy.optimize import linear_sum_assignment
 
 from src.logger import logger, lprint
 from src.toolkit.message import MESSAGE
@@ -25,7 +26,8 @@ SIMILARITY = "SIMILARITY: "
 DST_ALBUM = "DST_ALBUM: "
 SRC_ALBUM = "SRC_ALBUM: "
 
-src_file, dst_file = None, None
+dst_file: Path = None
+src_file: Path = None
 
 
 def generate_merge_log() -> None:
@@ -33,7 +35,7 @@ def generate_merge_log() -> None:
     content = ""
 
     skip_keyword: str = easy_linput(MESSAGE.Q9YNQ293, default="", return_type=str)
-    min_sim: float = easy_linput(MESSAGE.R3VY3KF6, default=90, return_type=float)
+    min_sim: float = easy_linput(MESSAGE.R3VY3KF6, default=90.0, return_type=float)
     enable_catno_filter: bool = easy_linput(MESSAGE.BHX8PWTM, default="Y", return_type=str)  == "Y"
 
     # 跳过 已存在 link keyword 的 目标专辑
@@ -41,7 +43,7 @@ def generate_merge_log() -> None:
                   if not skip_keyword or all(skip_keyword not in l for l in a.links)]
     src_albums = load_albums_from_toml(src_file)
 
-    sim_matrix = [[0] * len(src_albums) for _ in range(len(dst_albums))]
+    sim_matrix = numpy.zeros((len(dst_albums), len(src_albums)), dtype=numpy.float32)
     for i, da in enumerate(tqdm(dst_albums, desc="Count albums similarity", miniters=0)):
 
         # 提前拦截 catalognumber 相等的结果
@@ -49,16 +51,16 @@ def generate_merge_log() -> None:
             matches = [(j, sa) for j, sa in enumerate(src_albums) if da.catalognumber == sa.catalognumber]
             if matches:
                 for j, sa in matches:
-                    sim_matrix[i, j] = -count_album_similarity(da, sa)
+                    sim_matrix[i, j] = count_album_similarity(da, sa)
                 continue
 
         for j, sa in enumerate(src_albums):
-            sim_matrix[i, j] = -count_album_similarity(da, sa)
+            sim_matrix[i, j] = count_album_similarity(da, sa)
 
     lprint(MESSAGE.V7VQSYWB)
-    indexes = Munkres().compute(sim_matrix)
+    row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
 
-    for row, col in indexes:
+    for row, col in zip(row_ind, col_ind):
 
         if sim_matrix[row][col] < min_sim:
             continue
@@ -116,9 +118,9 @@ def apply_merge_log() -> None:
 
 
 def merge_metadata_files():
-    global src_file, dst_file
-    src_file: Path = easy_linput(MESSAGE.BB8Z9OR4, return_type=Path)
-    dst_file: Path = easy_linput(MESSAGE.O7USULLZ, return_type=Path)
+    global dst_file, src_file
+    dst_file = easy_linput(MESSAGE.BB8Z9OR4, return_type=Path)
+    src_file = easy_linput(MESSAGE.O7USULLZ, return_type=Path)
 
     message2action = {
         MESSAGE.VOLF5PUD: generate_merge_log,
@@ -127,3 +129,4 @@ def merge_metadata_files():
     }
 
     loop_for_actions(message2action)
+

@@ -27,14 +27,19 @@ ENCODINGS = PREFERRED_ENCODINGS + list(set(TEXT_ENCODINGS) - set(PREFERRED_ENCOD
 
 def recode():
 
+    lprint(MESSAGE.XQIIHSJN)
+
     directory: Path = easy_linput(MESSAGE.D1EG4CA9, return_type=Path)
     suffixs_str: str = easy_linput(MESSAGE.DGO6VHRZ, default=".txt,.cue", return_type=str)
-
-    suffixs = set(map(str.lower, map(str.strip, suffixs_str.split(","))))
+    accept_suffixs = set(map(str.lower, map(str.strip, suffixs_str.split(","))))
+    result_prefix: str = easy_linput(MESSAGE.O166KECP, default="__recoded_utf_8__", return_type=str)
 
     # 待处理文件
     files = [f for f in Path(directory).rglob("*") 
-             if f.is_file() and f.suffix.lower() in suffixs]
+             if f.is_file() and 
+             f.suffix.lower() in accept_suffixs and 
+             not f.name.startswith(result_prefix) and 
+             not (f.parent / f"{result_prefix}{f.name}").exists()]
 
     # 文件索引，编码索引
     i, j = 0, 0
@@ -73,7 +78,8 @@ def recode():
             dir_j = 1
             j = min(j + dir_j, max_j)
         elif inp == "\r":
-            files[i].write_text(text, encoding="utf-8")
+            newfile = files[i].parent / f"{result_prefix}{files[i].name}"
+            newfile.write_text(text, encoding="utf_8")
             i, j = min(i + 1, max_i), 0
             dir_j = 1
         elif inp == "p":

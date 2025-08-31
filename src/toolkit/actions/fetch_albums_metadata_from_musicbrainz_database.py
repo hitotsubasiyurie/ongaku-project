@@ -1,5 +1,4 @@
-import sys
-import time
+from datetime import datetime
 from pathlib import Path
 
 from tqdm import tqdm
@@ -15,11 +14,11 @@ from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_fr
 def fetch_albums_metadata_from_musicbrainz_database():
 
     metadata_file: Path = easy_linput(MESSAGE.LLZ4XB9J, return_type=Path)
-    filter_masks: str = easy_linput(MESSAGE.M82LXNFV, default="1101, 1100, 1001, 1000", return_type=str)
+    filter_masks: str = easy_linput(MESSAGE.M82LXNFV, default="1000, 0101", return_type=str)
     limit: int = easy_linput(MESSAGE.ZG85TEHZ, default=10, return_type=int)
-    order_mask: str = easy_linput(MESSAGE.CCKZUKK1, default="000", return_type=str)
+    order_mask: str = easy_linput(MESSAGE.CCKZUKK1, default="111", return_type=str)
 
-    result_file = metadata_file.parent / f"Fetched_{int(time.time())}.toml"
+    result_file = metadata_file.parent / f'"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"'
 
     database = MusicBrainzDatabase()
 

@@ -40,11 +40,11 @@ def main():
     message2action = {
         MESSAGE.AUP6NZT5: hardlink_copy,
         MESSAGE.GB5JO189: recode,
-        MESSAGE.B2BHBP2H: match_resource_and_metadata,
         MESSAGE.GBT3D4H8: fetch_albums_metadata_from_vgmdb,
-        MESSAGE.ER5LSXY9: create_musicbrainz_database,
         MESSAGE.VKTS4CY7: fetch_albums_metadata_from_musicbrainz_database,
         MESSAGE.ZJFV9Z1X: merge_metadata_files,
+        MESSAGE.B2BHBP2H: match_resource_and_metadata,
+        MESSAGE.ER5LSXY9: create_musicbrainz_database,
         MESSAGE.CLZWFPBZ: None
     }
 

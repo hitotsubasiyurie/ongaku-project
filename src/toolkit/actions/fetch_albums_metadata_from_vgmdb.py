@@ -1,5 +1,5 @@
-import time
 from pathlib import Path
+from datetime import datetime
 
 from tqdm import tqdm
 
@@ -13,6 +13,7 @@ from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_fr
 
 
 def fetch_albums_metadata_from_vgmdb():
+
     lprint(MESSAGE.K9FYO55X)
 
     input_path: Path = easy_linput(MESSAGE.YHEH6TFR, return_type=Path)
@@ -23,7 +24,7 @@ def fetch_albums_metadata_from_vgmdb():
         metadata_file = input_path
     else:
         input_path.mkdir(parents=True, exist_ok=True)
-        metadata_file = input_path / f"Fetch-{int(time.time())}.toml"
+        metadata_file = input_path / f'"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"'
 
     if global_settings.temp_directory:
         cache_dir = Path(global_settings.temp_directory, "cache")
@@ -41,8 +42,8 @@ def fetch_albums_metadata_from_vgmdb():
     elif "/search?" in input_url:
         a_ids = api.get_album_ids_from_search_page(input_url)
     else:
-        logger.error(f"Not supported url. {input_url}")
-        raise OngakuException()
+        lprint(MESSAGE.O9W853SZ)
+        return
     
     albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
 

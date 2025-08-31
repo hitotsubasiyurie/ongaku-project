@@ -118,6 +118,8 @@ def apply_merge_log() -> None:
 
 
 def merge_metadata_files():
+    lprint(MESSAGE.BGF1DM8D)
+
     global dst_file, src_file
     dst_file = easy_linput(MESSAGE.BB8Z9OR4, return_type=Path)
     src_file = easy_linput(MESSAGE.O7USULLZ, return_type=Path)

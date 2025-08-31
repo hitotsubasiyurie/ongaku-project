@@ -1,24 +1,17 @@
 import re
 import os
-import sys
-import time
 import shutil
 import itertools
 from pathlib import Path
 from functools import cache
 
-import orjson
-from tqdm import tqdm
-import numpy
-from scipy.optimize import linear_sum_assignment
-
 from src.utils import read_audio_tags
 from src.logger import logger, lprint
+from src.basemodels import Album, Track
+from src.basemodel_utils import (count_album_similarity, count_track_similarity, album_to_unique_str, 
+    track_to_unique_str, albums_assignment, tracks_assignment)
 from src.toolkit.message import MESSAGE
 from src.toolkit.toolkit_utils import easy_linput, loop_for_actions
-from src.basemodels import Album, Track, _validate_strtuple
-from src.basemodel_utils import (count_album_similarity, count_track_similarity, album_to_unique_str, 
-                                        track_to_unique_str)
 from src.toolkit.metadata_source import MusicBrainzDatabase
 from src.repository.ongaku_repository import (dump_albums_to_toml, load_albums_from_toml, AUDIO_EXTS, album_filename, 
                                               track_filenames)
@@ -52,14 +45,14 @@ def analyze_resource_track(audio: str) -> Track:
     tags = read_audio_tags(audio)
     tracknumber, title, artist = [tags[k] or "" for k in ["tracknumber", "title", "artist"]]
 
-    if not all([tracknumber, title]):
-        if match := re.search(r"^(\d+).\s*(.+)$", audio.name):
+    if not all([tracknumber.isdigit(), title]):
+        if match := re.search(r"^(\d+)\s*[.-]\s*(.+)$", audio.stem):
             # 空字符 或 包含其他非数字
             if not tracknumber.isdigit(): tracknumber = match.group(1)
             if not title: title = match.group(2)
     
-    if not title: title = audio.name
     tracknumber = int(tracknumber) if tracknumber.isdigit() else None
+    if not title: title = audio.name
     
     return Track(tracknumber=tracknumber, title=title, artist=artist)
 
@@ -93,8 +86,12 @@ def analyze_resource_album(directory: str) -> Album:
 
     # date 字段替换常见字符
     date = re.sub(r"[./]", "-", date)
-    album_model = Album(catalognumber=catalognumber, date=date, album=album, 
-                        tracks=list(sorted([analyze_resource_track(a) for a in audios], key=lambda a: a.tracknumber)))
+    try:
+        album_model = Album(catalognumber=catalognumber, date=date, album=album, 
+                            tracks=list(sorted([analyze_resource_track(a) for a in audios], key=lambda a: a.tracknumber)))
+    except Exception:
+        album_model = Album(catalognumber=catalognumber, date="", album=album, 
+                            tracks=list(sorted([analyze_resource_track(a) for a in audios], key=lambda a: a.tracknumber)))
     return album_model
 
 
@@ -103,7 +100,7 @@ def generate_match_log() -> None:
     metadata_file: Path = easy_linput(MESSAGE.QD152EVN, return_type=Path)
     old_parent_dir: Path = easy_linput(MESSAGE.I7EC4HDV, return_type=Path)
     new_parent_dir: Path = easy_linput(MESSAGE.EPNYJ37J, return_type=Path)
-    enable_tracknumber_filter: bool = easy_linput(MESSAGE.NMN5NFSN, default="Y", return_type=str)  == "Y"
+    filter_trackcount: bool = easy_linput(MESSAGE.NMN5NFSN, default="Y", return_type=str)  != "N"
 
     match_log = metadata_file.parent / "match.log"
     content = ""
@@ -112,29 +109,21 @@ def generate_match_log() -> None:
 
     # 不嵌套的文件夹 认为是专辑文件夹
     resource_directorys = [d for d in old_parent_dir.rglob("*") 
-                           if d.is_dir() and all(f.is_file() for f in d.glob("*"))]
+                           if d.is_dir() 
+                           and list(itertools.chain.from_iterable(d.rglob(f"*{ext}") for ext in AUDIO_EXTS))
+                           and all(f.is_file() for f in d.glob("*"))]
     
     resource_albums = list(map(analyze_resource_album, resource_directorys))
 
-    for res_dir, res_album in zip(resource_directorys, resource_albums):
+    for a_row, a_col in zip(*(albums_assignment(resource_albums, theme_albums, filter_trackcount=filter_trackcount)[:2])):
 
-        # 筛选 tracks 数量一致
-        to_search_albums = [a for a in theme_albums if len(res_album.tracks) == len(a.tracks)] if enable_tracknumber_filter else theme_albums
-        if not to_search_albums:
-            continue
+        res_album, res_dir = resource_albums[a_row], resource_directorys[a_row]
+        match_album = theme_albums[a_col]
 
-        # 单体相似度 最大 匹配 album
-        match_album = max(to_search_albums, key=lambda a: count_album_similarity(res_album, a))
-
-        # 总和相似度 最大 匹配 tracks
         audios = list(itertools.chain.from_iterable(res_dir.rglob(f"*{ext}") for ext in AUDIO_EXTS))
         res_tracks = list(map(analyze_resource_track, audios))
 
-        sim_matrix = [[count_track_similarity(ta, tb) for tb in match_album.tracks] 
-                        for ta in res_tracks]
-        sim_matrix = numpy.asarray(sim_matrix)
-        row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
-        track_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
+        row_ind, col_ind, track_similarity, _ = tracks_assignment(res_tracks, match_album.tracks)
 
         lines = []
         lines.append("")
@@ -183,8 +172,20 @@ def apply_match_log() -> None:
                 continue
             # 开始应用
             old, new = Path(old_dir, old_file), Path(new_dir, new_file)
-            # TODO: 不同格式可能并存
-            not new.exists() and old.rename(new)
+            if new.is_file():
+                lprint(MESSAGE.HLKQR6TI.format(new))
+                old.unlink()
+                continue
+            if new.suffix.lower() == ".flac" and new.with_suffix(".mp3").exists():
+                lprint(MESSAGE.YFH8PA2T.format(new.with_suffix(".mp3")))
+                new.with_suffix(".mp3").unlink()
+                old.rename(new)
+                continue
+            if new.suffix.lower() == ".mp3" and new.with_suffix(".flac").exists():
+                lprint(MESSAGE.HSUQBJV2.format(new.with_suffix(".flac")))
+                old.unlink()
+                continue
+            old.rename(new)
 
 
 def clean_old_parent_dir() -> None:
@@ -206,7 +207,4 @@ def match_resource_and_metadata():
     }
 
     loop_for_actions(message2action)
-
-
-
 

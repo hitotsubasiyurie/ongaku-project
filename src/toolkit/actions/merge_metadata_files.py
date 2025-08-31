@@ -9,11 +9,10 @@ import numpy
 from scipy.optimize import linear_sum_assignment
 
 from src.logger import logger, lprint
+from src.basemodels import Album, _validate_strtuple
+from src.basemodel_utils import count_album_similarity, album_to_unique_str, albums_assignment
 from src.toolkit.message import MESSAGE
 from src.toolkit.toolkit_utils import easy_linput, loop_for_actions
-from src.basemodels import Album, _validate_strtuple
-from src.basemodel_utils import count_album_similarity, album_to_unique_str
-from src.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
 from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
 
 
@@ -34,31 +33,17 @@ def generate_merge_log() -> None:
     merge_log = dst_file.parent / "merge.log"
     content = ""
 
-    skip_keyword: str = easy_linput(MESSAGE.Q9YNQ293, default="", return_type=str)
+    skip_keyword: str = easy_linput(MESSAGE.Q9YNQ293, return_type=str)
     min_sim: float = easy_linput(MESSAGE.R3VY3KF6, default=90.0, return_type=float)
-    enable_catno_filter: bool = easy_linput(MESSAGE.BHX8PWTM, default="Y", return_type=str)  == "Y"
+    filter_catno: bool = easy_linput(MESSAGE.BHX8PWTM, default="Y", return_type=str)  != "N"
+    filter_trackcount: bool = easy_linput(MESSAGE.NMN5NFSN, default="Y", return_type=str) != "N"
 
     # 跳过 已存在 link keyword 的 目标专辑
     dst_albums = [a for a in load_albums_from_toml(dst_file) 
-                  if not skip_keyword or all(skip_keyword not in l for l in a.links)]
+                  if all(skip_keyword not in l for l in a.links)]
     src_albums = load_albums_from_toml(src_file)
 
-    sim_matrix = numpy.zeros((len(dst_albums), len(src_albums)), dtype=numpy.float32)
-    for i, da in enumerate(tqdm(dst_albums, desc="Count albums similarity", miniters=0)):
-
-        # 提前拦截 catalognumber 相等的结果
-        if enable_catno_filter:
-            matches = [(j, sa) for j, sa in enumerate(src_albums) if da.catalognumber == sa.catalognumber]
-            if matches:
-                for j, sa in matches:
-                    sim_matrix[i, j] = count_album_similarity(da, sa)
-                continue
-
-        for j, sa in enumerate(src_albums):
-            sim_matrix[i, j] = count_album_similarity(da, sa)
-
-    lprint(MESSAGE.V7VQSYWB)
-    row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
+    row_ind, col_ind, _, sim_matrix = albums_assignment(dst_albums, src_albums, filter_catno, filter_trackcount)
 
     for row, col in zip(row_ind, col_ind):
 

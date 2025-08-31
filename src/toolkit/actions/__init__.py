@@ -5,6 +5,6 @@ from src.toolkit.actions.fetch_albums_metadata_from_vgmdb import fetch_albums_me
 from src.toolkit.actions.merge_metadata_files import merge_metadata_files
 from src.toolkit.actions.recode import recode
 from src.toolkit.actions.match_resource_and_metadata import match_resource_and_metadata
-
+from src.toolkit.actions.remove_files import remove_files
 
 

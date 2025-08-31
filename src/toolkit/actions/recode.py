@@ -30,7 +30,7 @@ def recode():
     lprint(MESSAGE.XQIIHSJN)
 
     directory: Path = easy_linput(MESSAGE.D1EG4CA9, return_type=Path)
-    suffixs_str: str = easy_linput(MESSAGE.DGO6VHRZ, default=".txt,.cue", return_type=str)
+    suffixs_str: str = easy_linput(MESSAGE.DGO6VHRZ, default=".cue", return_type=str)
     accept_suffixs = set(map(str.lower, map(str.strip, suffixs_str.split(","))))
     result_prefix: str = easy_linput(MESSAGE.O166KECP, default="__recoded_utf_8__", return_type=str)
 

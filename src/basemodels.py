@@ -59,7 +59,7 @@ _CustomStr = Annotated[str, BeforeValidator(_validate_string)]
 _CustomStrTuple = Annotated[tuple[str, ...], BeforeValidator(_validate_strtuple)]
 
 
-class Album(BaseModel):
+class Album(BaseModel, validate_assignment=True):
     """
     :param date: 仅允许四种模式： ["", "2005", "2005-01", "2005-01-01"]
     """
@@ -75,7 +75,7 @@ class Album(BaseModel):
         return hash((self.catalognumber, self.date, self.album, self.tracks, self.links))
 
 
-class Disc(BaseModel):
+class Disc(BaseModel, validate_assignment=True):
     discnumber: _CustomInt = Field(default=0)
     disc: _CustomStr = Field(default="")
     tracks: tuple["Track", ...] = Field(default_factory=tuple)
@@ -86,7 +86,7 @@ class Disc(BaseModel):
         return hash((self.discnumber, self.disc, self.tracks))
 
 
-class Track(BaseModel):
+class Track(BaseModel, validate_assignment=True):
     tracknumber: _CustomInt = Field(default=0)
     title: _CustomStr = Field(default="")
     artist: _CustomStr = Field(default="")

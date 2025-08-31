@@ -11,8 +11,10 @@ class Message:
 1. 原始路径和目标路径必须在同一磁盘
 2. 目标路径会自动创建，因此不应该存在
 
-原始路径：文件或文件夹，例如 D:\\1.txt ，例如 D:\\download
-目标路径：对应的路径，例如 D:\\2.txt ，例如 D:\\download_2
+原始路径：
+    文件或文件夹，例如 D:\\1.txt ，例如 D:\\download
+目标路径：
+    对应的路径，例如 D:\\2.txt ，例如 D:\\download_2
 """
     CGXLT9YQ = "请输入原始路径：\n"
     P8C3P4XW = "请输入目标路径：\n"
@@ -20,21 +22,34 @@ class Message:
     KOQD2Y16 = "硬链接拷贝已完成。{:d} 个文件，{:d} 个文件夹，耗时 {:.2f} 秒。\n"
 
     ####
+    WFSEKVW9 = "删除文件"
+    IXLSQ13W = """
+将会删除路径。不会挪至回收站，所以速度较快。
+"""
+    K1ZZWV8C = "请输入路径：\n"
+    PK7LLJJU = "【错误】路径不存在。"
+    YO8JFLU3 = "是否确认删除（Y/N）（默认N）："
+
+    ####
 
     GB5JO189 = "重新编码文本文件"
     XQIIHSJN = """
-父目录路径：将会处理整个目录中特定文件后缀的文件
-文件后缀列表：用英文逗号隔开，例如 .txt,.cue,.log
-保存文件前缀： D:\\download\\1.txt 重编码后会生成 D:\\download\\__recoded_utf_8__1.txt
+父目录路径：
+    将会处理整个目录中特定文件后缀的文件
+文件后缀列表：
+    用英文逗号隔开，例如 .txt,.cue,.log
+保存文件前缀： 
+    例如 __recoded_utf_8__
+    D:\\download\\1.txt 重编码后会生成 D:\\download\\__recoded_utf_8__1.txt
 
 """
     D1EG4CA9 = "请输入父目录路径：\n"
-    DGO6VHRZ = "请输入文件后缀列表（默认为 .cue ）\n："
+    DGO6VHRZ = "请输入文件后缀列表（默认为 .cue ）：\n"
     O166KECP = "请输入保存文件前缀（默认为 __recoded_utf_8__）：\n"
     JABXWHDS = """
 a: 上一个编码 d: 下一个编码
 w: 上一个文件 s: 下一个文件
-p: 打开路径
+p: 资源管理器打开路径
 q: 退出
 回车保存...
 """
@@ -115,8 +130,11 @@ catalognumber 必须相同：
 
     MJVYZVPO = "应用匹配日志"
     NAWEVS2M = "请输入匹配日志路径：\n"
+    HLKQR6TI = "目标已存在。跳过，删除源文件。{}"
+    YFH8PA2T = "目标存在 mp3 版本。删除，替换成 flac 版本。{}"
+    HSUQBJV2 = "目标存在 flac 版本。跳过，删除源文件。{}"
 
-    U6Q2O6NL = "清理目录，删除没有音频文件的文件夹"
+    U6Q2O6NL = "精简目录，删除没有音频文件的文件夹"
     R2BBVQAA = "请输入资源父目录：\n"
 
 
@@ -126,14 +144,7 @@ catalognumber 必须相同：
     RT2DKKG4 = "请输入 MusicBrainz 转储文件目录：\n"
     NLYCQM7M = "请输入 tar 可执行文件路径：\n"
 
-    WFSEKVW9 = ""
-    IXLSQ13W = ""
-    K1ZZWV8C = ""
-    PK7LLJJU = ""
-    YO8JFLU3 = ""
-    HLKQR6TI = ""
-    YFH8PA2T = ""
-    HSUQBJV2 = ""
+    
     HKGTWA9F = ""
     U5KEANSU = ""
     W1XYRJKP = ""

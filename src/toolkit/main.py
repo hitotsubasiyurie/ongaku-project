@@ -4,7 +4,8 @@ from src.logger import logger, set_logger_output, lprint
 from src.global_settings import global_settings
 from src.toolkit.message import MESSAGE, set_language, get_supported_languages
 from src.toolkit.actions import (hardlink_copy, create_musicbrainz_database, fetch_albums_metadata_from_vgmdb, 
-    fetch_albums_metadata_from_musicbrainz_database, match_resource_and_metadata, merge_metadata_files, recode)
+    fetch_albums_metadata_from_musicbrainz_database, match_resource_and_metadata, merge_metadata_files, recode,
+    remove_files)
 from src.toolkit.toolkit_utils import loop_for_actions
 
 
@@ -39,6 +40,7 @@ def main():
 
     message2action = {
         MESSAGE.AUP6NZT5: hardlink_copy,
+        MESSAGE.WFSEKVW9: remove_files,
         MESSAGE.GB5JO189: recode,
         MESSAGE.GBT3D4H8: fetch_albums_metadata_from_vgmdb,
         MESSAGE.VKTS4CY7: fetch_albums_metadata_from_musicbrainz_database,

@@ -24,7 +24,7 @@ def fetch_albums_metadata_from_vgmdb():
         metadata_file = input_path
     else:
         input_path.mkdir(parents=True, exist_ok=True)
-        metadata_file = input_path / f'"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"'
+        metadata_file = input_path / f"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"
 
     if global_settings.temp_directory:
         cache_dir = Path(global_settings.temp_directory, "cache")
@@ -62,7 +62,7 @@ def fetch_albums_metadata_from_vgmdb():
             raise e
         
         pbar.update()
-
+    
     dump_albums_to_toml(albums, metadata_file)
     
     pbar.close()

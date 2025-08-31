@@ -18,7 +18,7 @@ def fetch_albums_metadata_from_musicbrainz_database():
     limit: int = easy_linput(MESSAGE.ZG85TEHZ, default=10, return_type=int)
     order_mask: str = easy_linput(MESSAGE.CCKZUKK1, default="111", return_type=str)
 
-    result_file = metadata_file.parent / f'"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"'
+    result_file = metadata_file.parent / f"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"
 
     database = MusicBrainzDatabase()
 
@@ -40,8 +40,8 @@ def fetch_albums_metadata_from_musicbrainz_database():
         for filter_mask in map(str.strip, filter_masks.split(",")):
             args1 = [x if int(b) else None for b, x in zip(filter_mask, filter_params)]
 
-            # 允许 全表扫描
-            result_albums.extend(database.select_albums(None, *args1, *args2, limit=limit, allow_full_scan=True))
+            # 不允许 全表扫描
+            result_albums.extend(database.select_albums(None, *args1, *args2, limit=limit, allow_full_scan=False))
 
         pbar.update()
 

@@ -13,7 +13,7 @@ from src.basemodel_utils import (count_album_similarity, count_track_similarity,
 from src.toolkit.message import MESSAGE
 from src.toolkit.toolkit_utils import easy_linput, loop_for_actions
 from src.toolkit.metadata_source import MusicBrainzDatabase
-from src.repository.ongaku_repository import (dump_albums_to_toml, load_albums_from_toml, AUDIO_EXTS, album_filename, 
+from src.repository_utils import (dump_albums_to_toml, load_albums_from_toml, AUDIO_EXTS, album_filename, 
                                               track_filenames)
 
 
@@ -73,7 +73,7 @@ def analyze_resource_album(directory: str) -> Album:
         if not date or len(date) < len(match.group(2)): date = match.group(2)
         if not album: album = match.group(3)
     # 匹配 [2021-01-02] xxx
-    if match := re.search(r"^\[([0-9.-]+)\]\s+(.+)$", directory.name):
+    if match := re.search(r"^\[*([0-9.-]+)\]*\s+(.+)$", directory.name):
         if not date or len(date) < len(match.group(1)): date = match.group(1)
         if not album: album = match.group(2)
     # 匹配 xxx [210102]

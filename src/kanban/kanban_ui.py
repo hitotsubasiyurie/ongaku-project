@@ -9,19 +9,17 @@ from typing import Callable
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QPixmap, QResizeEvent
 from PySide6.QtWidgets import (QGraphicsOpacityEffect, QGridLayout, QLabel, QLineEdit, QMessageBox, 
-    QWidget, )
+     QWidget, )
 
-from src.kanban.album_table_view import AlbumTableView
-from src.kanban.check_message_box import CheckMessageBox
-from src.kanban.link_combo_box import LinkComboBox
-from src.kanban.theme_box_widget import ThemeBoxWidget
-from src.kanban.track_table_view import TrackTableView
+from src.kanban.widgets import (AlbumTableView, CheckMessageBox, LinkComboBox, ThemeBoxWidget, 
+                                TrackTableView)
 from src.utils import strings_assignment
 from src.basemodels import Album
-from src.ongaku_library.ongaku_library import AUDIO_EXTS, IMG_EXTS, OngakuScanner, track_filenames
+from src.kanban.kanban import AUDIO_EXTS, IMG_EXTS, KanBan, ThemeKanBan
+from src.repository_utils import track_filenames
 
 
-class MainWindow(QWidget):
+class KanBanUI(QWidget):
 
     def setup_ui(self) -> None:
         self.setWindowTitle("OngakuKanban")
@@ -42,8 +40,8 @@ class MainWindow(QWidget):
         self.link_box = LinkComboBox()
         grid_layout.addWidget(self.link_box, 0, 3, 1, 1)
 
-        self.theme_field = ThemeBoxWidget()
-        grid_layout.addWidget(self.theme_field, 0, 4, 1, 1)
+        self.theme_box = ThemeBoxWidget()
+        grid_layout.addWidget(self.theme_box, 0, 4, 1, 1)
 
         self.album_table_view = AlbumTableView()
         grid_layout.addWidget(self.album_table_view, 1, 0, 2, 3)
@@ -70,28 +68,28 @@ class MainWindow(QWidget):
         self.album_field.textEdited.connect(self._set_album_view)
         self.catno_field.textEdited.connect(self._set_album_view)
         self.date_field.textEdited.connect(self._set_album_view)
-        self.theme_field.selected_changed.connect(self._set_album_view)
+        self.theme_box.selected_changed.connect(self._on_theme_box_selected_changed)
         self.album_table_view.selected_changed.connect(self._on_album_view_selected)
         self.album_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
-        self.album_table_view.action_edit_clicked.connect(self._edit_album)
+        self.album_table_view.action_edit_clicked.connect(self._edit_metadata_file)
         self.album_table_view.action_locate_clicked.connect(self._locate_album)
-        self.album_table_view.action_group_clicked.connect(self._group_album)
 
         # 拦截 album_table 和 track_table 事件
         self.album_table_view.installEventFilter(self)
         self.track_table_view.installEventFilter(self)
         self.cover_label.installEventFilter(self)
 
-    def __init__(self, metadata_dir: str, resource_dir: str) -> None:
+    def __init__(self, kanban: KanBan) -> None:
         super().__init__()
 
-        self.ongaku_library = OngakuScanner(metadata_dir, resource_dir)
+        self.kanban: KanBan = kanban
+        self.current_theme_kanban: ThemeKanBan = None
 
         self.setup_ui()
         self.setup_event()
 
-        self._set_album_view()
+        self.theme_box.set_themes({k.theme_name: k.theme_completion for k in self.kanban.theme_kanbans})
 
     # 重写方法
 
@@ -113,34 +111,39 @@ class MainWindow(QWidget):
         if event.type() == QEvent.Type.KeyRelease:
             # F5 键释放时，刷新视图
             if event.key() == Qt.Key.Key_F5:
-                self.ongaku_library._scan_all()
+                self.ongaku_library.scan_all()
                 self._set_album_view()
             # 任何按键释放时，透明化 cover_label
             self.cover_effect.opacity() != 0.1 and self.cover_effect.setOpacity(0.1)
             return True
         return super().eventFilter(watched, event)
 
+    def _on_theme_box_selected_changed(self, *args, **kwargs) -> None:
+        self.current_theme_kanban = self.kanban.get_theme_kanban(self.theme_box.selected_theme)
+        self._set_album_view()
+
     def _set_album_view(self, *args, **kwargs) -> None:
+        # 未选择主题时，直接返回
+        if not self.current_theme_kanban:
+            self.album_table_view.set_albums([], [], [])
+            return
+        
         # 根据 搜索框 过滤 albums
         album_key = self.album_field.text().lower()
         catno_key = self.catno_field.text().lower()
         date_key = self.date_field.text().lower()
-        themes_key = self.theme_field.selected
 
-        albums = self.ongaku_library.get_albums()
-        metadata_states = self.ongaku_library.get_album_metadata_states()
-        resource_states = self.ongaku_library.get_album_resource_states()
+        albums = self.current_theme_kanban.albums
+        metadata_states = self.current_theme_kanban.metadata_states
+        resource_states = self.current_theme_kanban.resource_states
 
         tmp = [(a, ms, rs) for a, ms, rs in zip(albums, metadata_states, resource_states)
-               if album_key in a.album.lower() and catno_key in a.catalognumber.lower() \
-               and date_key in a.date.lower() and themes_key.issubset(a.themes)]
+               if album_key in a.album.lower() 
+               and catno_key in a.catalognumber.lower()
+               and date_key in a.date.lower()]
         
         albums, metadata_states, resource_states = list(zip(*tmp)) if tmp else [[], [], []]
         self.album_table_view.set_albums(albums, metadata_states, resource_states)
-        # 设置 theme view
-        themes = set(itertools.chain.from_iterable(a.themes for a in albums))
-        completions = self.ongaku_library.get_theme_completions()
-        self.theme_field.set_themes(themes, completions)
 
     def _on_album_view_selected(self, *args, **kwargs) -> None:
         rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
@@ -148,41 +151,28 @@ class MainWindow(QWidget):
 
         # 展示 已选 albums 的 links, themes
         self.link_box.set_links(list(set(itertools.chain.from_iterable(a.links for a in albums))))
-        self.theme_field.set_indicate_themes(set(itertools.chain.from_iterable(a.themes for a in albums)))
 
         # 展示 首个 album 的 track, cover
         a = albums[0]
-        self.track_table_view.set_tracks(a.tracks, self.ongaku_library.get_album_track_states(a))
-        if cover:= self.ongaku_library.get_album_covers(a):
+        self.track_table_view.set_tracks(a.tracks, self.current_theme_kanban.get_album_track_states(a))
+        if cover:= self.current_theme_kanban.get_album_cover(a):
             pix = QPixmap(cover)
             pix = pix.scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.cover_label.setPixmap(pix)
         else:
             self.cover_label.clear()
 
+    def _edit_metadata_file(self) -> None:
+        if self.current_theme_kanban:
+            os.startfile(self.current_theme_kanban.theme_metadata_file)
+
     def _locate_album(self) -> None:
         # 定位 首个 album 的 资源位置
         row = self.album_table_view.selectedIndexes()[0].row()
         a = self.album_table_view.model().albums[row]
-        if res_dir:= self.ongaku_library.get_album_resource_dirs(a):
+        res_dir = self.current_theme_kanban.get_album_res_dir(a)
+        if os.path.exists(res_dir):
             subprocess.run(f'explorer /select, "{res_dir}"')
-
-    def _edit_album(self) -> None:
-        # 编辑 首个 album 元数据文件
-        row = self.album_table_view.selectedIndexes()[0].row()
-        a = self.album_table_view.model().albums[row]
-        mdf = self.ongaku_library.get_album_metadata_files(a)
-        os.startfile(mdf)
-
-    def _group_album(self) -> None:
-        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
-        if not rows:
-            return
-        albums = [self.album_table_view.model().albums[r] for r in rows]
-        mdfs  = list(map(self.ongaku_library.get_album_metadata_files, albums))
-        group = Path(self.ongaku_library.metadata_dir, datetime.now().strftime("%Y%m%d%H%M%S"))
-        group.mkdir()
-        [os.symlink(f, group / os.path.basename(f)) for f in mdfs]
 
     def _show_check_message(self, title: str, text: str, on_yes_clicked: Callable = None, 
                             on_no_clicked: Callable = None) -> bool:
@@ -208,9 +198,7 @@ class MainWindow(QWidget):
         dropped_paths = list(map(Path, dropped_strs))
         exts = set(p.suffix.lower() for p in dropped_paths)
 
-        dst_dirs = [self.ongaku_library.get_album_resource_dirs(a) 
-                    or self.ongaku_library.get_album_dst_resource_dirs(a)
-                    for a in albums]
+        dst_dirs = [self.current_theme_kanban.get_album_res_dir(a) for a in albums]
         dst_dirs = list(map(Path, dst_dirs))
 
         # 拖入文件夹列表时
@@ -255,7 +243,7 @@ class MainWindow(QWidget):
             else:
                 self._putaway_track_files(dropped_paths, dst_dirs[0], albums[0])
         
-        self.ongaku_library._scan_all()
+        self.ongaku_library.scan_all()
         self._set_album_view()
 
     def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:

@@ -8,7 +8,7 @@ from src.toolkit.message import MESSAGE
 from src.toolkit.toolkit_utils import easy_linput
 from src.basemodel_utils import abstract_tracks_info
 from src.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
-from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
+from src.repository_utils import dump_albums_to_toml, load_albums_from_toml
 
 
 def fetch_albums_metadata_from_musicbrainz_database():

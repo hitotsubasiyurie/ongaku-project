@@ -8,12 +8,12 @@ class CompletionDelegate(QStyledItemDelegate):
 
     def __init__(self, completions: dict[str, float], parent: QWidget = None):
         super().__init__(parent)
-        self.completions = completions
+        self.theme2completions = completions
     
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         text = index.data()[1:]
-        if text in self.completions:
-            val = self.completions[text]
+        if text in self.theme2completions:
+            val = self.theme2completions[text]
             rect: QRect = option.rect
             comp_rect = QRect(rect.left(), rect.top(), int(rect.width() * val), rect.height())
             painter.fillRect(comp_rect, QColor(0xC1CAB7))
@@ -50,25 +50,24 @@ class ThemeBoxWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.themes: set[str] = set()
-        self.indicate: set[str] = set()
-        self.selected: set[str] = set()
+        self.theme2completions: dict[str, float] = {}
 
-        self.completions: dict[str, float] = {}
+        self.themes: list[str] = []
+        self.selected_theme: str = None
 
         self.setup_ui()
 
-    def set_themes(self, themes: set[str], completions: dict[str, float] = None) -> None:
-        # 清空 indicate
-        self.indicate = set()
-        self.themes = themes
-        self.completions = completions
-        self.delegate.completions = completions
+    def set_themes(self, theme2completions: dict[str, float]) -> None:
+        self.theme2completions = theme2completions
+        self.delegate.theme2completions = theme2completions
+
+        self.themes = list(theme2completions.keys())
+        self.selected_theme = None
+
         self._update_list_items()
 
-    def set_indicate_themes(self, indicate: list[str]) -> None:
-        self.indicate = indicate
-        self._update_list_items()
+        # 发出信号
+        self.selected_changed.emit()
 
     # 重写方法
 
@@ -86,10 +85,10 @@ class ThemeBoxWidget(QWidget):
     # 内部方法
 
     def _update_list_items(self) -> None:
-        # list_widget 展示优先级 selected > indicate > themes
-        a, b, c = self.selected, self.indicate - self.selected, self.themes - self.indicate - self.selected
-        a, b, c = [sorted(x, key=self.completions.get, reverse=True) for x in (a, b, c)]
-        tmp = ["⚫"+s for s in a] + ["⚪"+s for s in b] + [" "+s for s in c]
+        # list_widget 展示优先级 selected > themes
+        tmp = sorted(self.themes, key=lambda t: (t != self.selected_theme, -1*self.theme2completions.get(t)))
+        # 等宽 空白字符
+        tmp = [f"⚫{t}" if t == self.selected_theme else f"　{t}" for t in tmp]
         self.list_widget.clear()
         self.list_widget.addItems(tmp)
         # 滚动 list_widget 至顶
@@ -111,7 +110,10 @@ class ThemeBoxWidget(QWidget):
     def _on_list_item_clicked(self, item: QListWidgetItem) -> None:
         # list_widget 元素被双击时，选择/取消选择 元素
         text = item.text()[1:]
-        self.selected.remove(text) if text in self.selected else self.selected.add(text)
+        if self.selected_theme == text:
+            self.selected_theme = None
+        else:
+            self.selected_theme = text
         self._update_list_items()
         # 发出信号
         self.selected_changed.emit()

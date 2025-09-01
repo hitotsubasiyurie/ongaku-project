@@ -80,24 +80,24 @@ def legalize_filename(name: str) -> str:
     return name
 
 
-# def strings_assignment(strings_a: list[str], strings_b: list[str]) -> tuple[float, list[int], list[int]]:
-#     """
-#     字符串最大相似度分配。
-#         b1 b2 b3 ... bm
-#     a1
-#     a2
-#     a3
-#     ...
-#     an
-#     :param strings_a: 字符串列表 [a1, a2, a3, ..., an]
-#     :param strings_b: 字符串列表 [b1, b2, b3, ..., bm]
-#     """
-#     sim_matrix = [[SequenceMatcher(None, sa, sb).ratio() for sb in strings_b] 
-#                    for sa in strings_a]
-#     sim_matrix = numpy.asarray(sim_matrix)
-#     row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
-#     aver_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
-#     return aver_similarity, row_ind, col_ind
+def strings_assignment(strings_a: list[str], strings_b: list[str]) -> tuple[float, list[int], list[int]]:
+    """
+    字符串最大相似度分配。
+        b1 b2 b3 ... bm
+    a1
+    a2
+    a3
+    ...
+    an
+    :param strings_a: 字符串列表 [a1, a2, a3, ..., an]
+    :param strings_b: 字符串列表 [b1, b2, b3, ..., bm]
+    """
+    sim_matrix = [[SequenceMatcher(None, sa, sb).ratio() for sb in strings_b] 
+                   for sa in strings_a]
+    sim_matrix = numpy.asarray(sim_matrix)
+    row_ind, col_ind = linear_sum_assignment(sim_matrix, maximize=True)
+    aver_similarity = sim_matrix[row_ind, col_ind].sum() / len(row_ind)
+    return aver_similarity, row_ind, col_ind
 
 
 def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
@@ -138,12 +138,12 @@ def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
 def read_audio_tags(audio: str, standard: bool = True) -> dict[str, Any]:
     """
     读取音频标准元数据标签。\n
-    :param audio: 音频文件，格式 [".mp3", ".flac"]
-    :param standard: 是否返回标准化标签
-
     标准化标签：
     1. 包含键 ["catalognumber", "date", "album", "tracknumber", "title", "artist"]
-    2. 值为字符串，以 // 为多值连接符
+    2. 值为字符串，以 // 为多值连接符\n
+
+    :param audio: 音频文件，格式 [".mp3", ".flac"]
+    :param standard: 是否返回标准化标签
     """
     audio = Path(audio)
     if audio.suffix == ".flac":

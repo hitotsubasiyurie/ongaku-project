@@ -1,35 +1,31 @@
+import json
 from typing import Any
 
-from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QItemSelection, QMimeData, 
-    QRectF, )
-from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, )
+from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QMimeData,
+                            QSize, )
+from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QFont,
+                           QFontMetrics, )
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, )
 
-from src.ongaku_library.ongaku_library import MetadataState, ResourceState
-from src.basemodels import Album
+from src.kanban.kanban import ResourceState
+from src.basemodels import Track
 
 
-class AlbumTableItemModel(QAbstractItemModel):
+class TrackTableItemModel(QAbstractItemModel):
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.set_albums([], [], [])
+        self.set_tracks([], [])
 
-        # 模型 排序状态
-        self.sort_args = None
+    def set_tracks(self, tracks: list[Track], track_states: list[ResourceState]) -> None:
+        self.tracks: list[Track] = tracks
+        self.track_states: list[ResourceState] = track_states
 
-    def set_albums(self, albums: list[Album], metadata_states: list[MetadataState], 
-                   resource_states: list[ResourceState]) -> None:
-        self.albums: list[Album] = albums
-        self.metadata_states: list[MetadataState] = metadata_states
-        self.resource_states: list[ResourceState] = resource_states
-
-        self.headers = ["S", "ALBUM", "CATNO", "DATE"]
-        # (资源状态, 元数据状态) 排序优先级
-        self.table = [[(rs, ms), a.album, a.catalognumber, a.date] 
-                       for a, ms, rs in zip(self.albums, self.metadata_states, self.resource_states)]
+        self.headers = ["S", "TITLE"]
+        self.table = [[s, (t.title, t.artist)] 
+                       for t, s in zip(self.tracks, self.track_states)]
 
         self.row_cnt = len(self.table)
         self.col_cnt = len(self.headers)
@@ -63,22 +59,6 @@ class AlbumTableItemModel(QAbstractItemModel):
             return self.table[row][col]
         
         return None
-
-    # 排序
-
-    def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
-        if not self.albums:
-            return
-        # 数据仍然有效，只是布局变化
-        self.layoutAboutToBeChanged.emit()
-        # 原始数据 一起 排序
-        combined = sorted(zip(self.table, self.albums, self.metadata_states, self.resource_states), 
-                          key=lambda x: x[0][column], 
-                          reverse=(order==Qt.SortOrder.DescendingOrder))
-        self.table, self.albums, self.metadata_states, self.resource_states = map(list, zip(*combined))
-        self.layoutChanged.emit()
-        # 更新排序状态
-        self.sort_args = (column, order)
 
     # 表头
 
@@ -117,7 +97,7 @@ class AlbumTableItemModel(QAbstractItemModel):
         return True
 
 
-class AlbumStateItemDelegate(QStyledItemDelegate):
+class TrackStateItemDelegate(QStyledItemDelegate):
 
     RESOURCE_STATE_COLORS = {
         ResourceState.LOSSLESS: QColor(0x99CC66),
@@ -127,7 +107,7 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         painter.save()
-        rs, ms = index.data(Qt.ItemDataRole.DisplayRole)
+        rs = index.data(Qt.ItemDataRole.DisplayRole)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(self.RESOURCE_STATE_COLORS[rs])
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
@@ -135,51 +115,66 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
         rect: QRect = option.rect
         center = rect.center()
         radius = min(rect.width(), rect.height()) / 2 - 1
-        diameter = radius * 2
-        left, top = center.x() - radius, center.y() - radius
-
-        path = QPainterPath()
-        path.moveTo(center)
-
-        # 六种元数据状态 平分 360 度
-        # 正下方开始 顺时针旋转
-        path.arcTo(left, top, diameter, diameter, 270, -(bin(ms).count("1")*60))
-        path.lineTo(center)
-
-        path.closeSubpath()
-
-        painter.drawPath(path)
+        painter.drawEllipse(center, radius, radius)
         painter.restore()
 
-class AlbumTableView(QTableView):
 
-    selected_changed = Signal()
+class TrackTitleItemDelegate(QStyledItemDelegate):
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        painter.save()
+        title, artist = index.data(Qt.ItemDataRole.DisplayRole)
+        # 艺术家信息 增加缩进
+        artist = " "*6 + artist
+        rect: QRect = option.rect
+        width: int = rect.width()
+        font: QFont = option.font
+        # 0.5 字符 行距
+        title_rect = QRect(rect.left(), rect.top()+font.pixelSize()//2, rect.width(),
+                           self._get_content_height(font, width, title))
+        painter.drawText(title_rect, title)
+        
+        artist_rect = QRect(rect.left(), title_rect.bottom(), rect.width(),
+                            self._get_content_height(font, width, artist))
+        painter.setPen(QColor(0x666666))
+        painter.drawText(artist_rect, artist)
+        painter.restore()
+
+    def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
+        title, artist = index.data(Qt.ItemDataRole.DisplayRole)
+        artist = " "*6 + artist
+        font: QFont = option.font
+        width: int = option.rect.width()
+        # 0.5 字符 行距
+        height = (self._get_content_height(font, width, title) + self._get_content_height(font, width, artist)
+                  + font.pixelSize())
+        return QSize(width, height)
+
+    def setEditorData(self, editor: QWidget, index: QModelIndex) -> None:
+        # 被编辑时，展示 json 格式化内容
+        editor.setText(json.dumps(index.data(Qt.ItemDataRole.DisplayRole), ensure_ascii=False))
+
+    # 内部方法
+
+    @staticmethod
+    def _get_content_height(font: QFont, width: int, text: str) -> int:
+        metrics = QFontMetrics(font)
+        height = metrics.boundingRect(QRect(0, 0, width, 0), Qt.TextFlag.TextWordWrap, text).height()
+        return height
+
+
+class TrackTableView(QTableView):
+
     paths_dropped = Signal(list)
-    action_edit_clicked = Signal()
-    action_group_clicked = Signal()
-    action_locate_clicked = Signal()
-
-    def setup_context_menu(self) -> None:
-        # 初始化 右键菜单
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction("Open", self)
-        action.triggered.connect(self.action_edit_clicked.emit)
-        self.addAction(action)
-        action = QAction("Group Links", self)
-        action.triggered.connect(self.action_group_clicked.emit)
-        self.addAction(action)
-        action = QAction("Locate", self)
-        action.triggered.connect(self.action_locate_clicked.emit)
-        self.addAction(action)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        # 设置模型
-        model = AlbumTableItemModel()
+        # 初始化模型
+        model = TrackTableItemModel()
         self.setModel(model)
-        self.selectionModel().selectionChanged.connect(self._on_selection_changed)
-        self.setItemDelegateForColumn(0, AlbumStateItemDelegate(self))
+        self.setItemDelegateForColumn(0, TrackStateItemDelegate(self))
+        self.setItemDelegateForColumn(1, TrackTitleItemDelegate())
 
         # 表格无边框
         self.setShowGrid(False)
@@ -187,8 +182,6 @@ class AlbumTableView(QTableView):
         # 可编辑
         self.setEditTriggers(QTableView.EditTrigger.DoubleClicked)
         self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-        # 可排序
-        self.setSortingEnabled(True)
         # 像素滚动
         self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerPixel)
         # 允许拖入
@@ -201,32 +194,24 @@ class AlbumTableView(QTableView):
 
         # 设置行
         header = self.verticalHeader()
-        header.setDefaultSectionSize(font_size)
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         header.setSectionsClickable(False)
         header.setFrameShape(QFrame.Shape.NoFrame)
         
         # 设置列
         header = self.horizontalHeader()
-        column_size = [font_size, 0, font_size*8, font_size*6]
+        column_size = [font_size, 0]
         [self.setColumnWidth(i, w) for i, w in enumerate(column_size)]
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+        header.setSectionsClickable(False)
 
-        self.setup_context_menu()
-
-    def set_albums(self, albums: list[Album], metadata_states: list[MetadataState], 
-                   resource_states: list[ResourceState]) -> None:
-        model: AlbumTableItemModel = self.model()
+    def set_tracks(self, tracks: list[Track], track_states: list[ResourceState]) -> None:
+        model: TrackTableItemModel = self.model()
         # 所有数据都无效，重新加载
         model.beginResetModel()
-        model.set_albums(albums, metadata_states, resource_states)
+        model.set_tracks(tracks, track_states)
         model.endResetModel()
-
-        # 还原排序状态
-        model.sort(*(model.sort_args or (0, Qt.SortOrder.DescendingOrder)))
+        self.resizeRowsToContents()
 
     # 重写方法
 
@@ -239,13 +224,5 @@ class AlbumTableView(QTableView):
         paths = [u.toLocalFile() for u in event.mimeData().urls()]
         self.paths_dropped.emit(paths)
         event.acceptProposedAction()
-
-    # 内部方法
-
-    def _on_selection_changed(self, selected: QItemSelection, deselected: QItemSelection) -> None:
-        if not self.selectedIndexes():
-            return
-        # 有选中才发出信号
-        self.selected_changed.emit()
 
 

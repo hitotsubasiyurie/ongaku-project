@@ -13,7 +13,7 @@ from src.basemodels import Album, _validate_strtuple
 from src.basemodel_utils import count_album_similarity, album_to_unique_str, albums_assignment
 from src.toolkit.message import MESSAGE
 from src.toolkit.toolkit_utils import easy_linput, loop_for_actions
-from src.repository.ongaku_repository import dump_albums_to_toml, load_albums_from_toml
+from src.repository_utils import dump_albums_to_toml, load_albums_from_toml
 
 
 SEPERATE = f"{'-'*16} seperate {'-'*16}"

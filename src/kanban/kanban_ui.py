@@ -22,7 +22,7 @@ from src.repository_utils import track_filenames
 class KanBanUI(QWidget):
 
     def setup_ui(self) -> None:
-        self.setWindowTitle("OngakuKanban")
+        self.setWindowTitle("Kanban")
         
         # 初始化 UI
         grid_layout = QGridLayout()
@@ -90,6 +90,8 @@ class KanBanUI(QWidget):
         self.setup_event()
 
         self.theme_box.set_themes({k.theme_name: k.theme_completion for k in self.kanban.theme_kanbans})
+
+
 
     # 重写方法
 

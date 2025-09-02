@@ -13,9 +13,10 @@ from src.basemodel_utils import (count_album_similarity, count_track_similarity,
 from src.toolkit.message import MESSAGE
 from src.toolkit.toolkit_utils import easy_linput, loop_for_actions
 from src.toolkit.metadata_source import MusicBrainzDatabase
-from src.repository_utils import (dump_albums_to_toml, load_albums_from_toml, AUDIO_EXTS, album_filename, 
+from src.repository_utils import (dump_albums_to_toml, load_albums_from_toml, album_filename, 
                                               track_filenames)
 
+AUDIO_EXTS = {".mp3", ".flac"}
 
 SEPERATE = f"{'-'*16} seperate {'-'*16}"
 

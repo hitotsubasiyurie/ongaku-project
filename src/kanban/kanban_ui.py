@@ -2,6 +2,7 @@ import itertools
 import os
 import shutil
 import subprocess
+import random
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
@@ -12,7 +13,7 @@ from PySide6.QtWidgets import (QGraphicsOpacityEffect, QGridLayout, QLabel, QLin
      QWidget, )
 
 from src.kanban.widgets import (AlbumTableView, CheckMessageBox, LinkComboBox, ThemeBoxWidget, 
-                                TrackTableView)
+                                TrackTableView, ThemeComboBox)
 from src.utils import strings_assignment
 from src.basemodels import Album
 from src.kanban.kanban import AUDIO_EXTS, IMG_EXTS, KanBan, ThemeKanBan
@@ -89,9 +90,7 @@ class KanBanUI(QWidget):
         self.setup_ui()
         self.setup_event()
 
-        self.theme_box.set_themes({k.theme_name: k.theme_completion for k in self.kanban.theme_kanbans})
-
-
+        self._refresh_all()
 
     # 重写方法
 
@@ -113,12 +112,21 @@ class KanBanUI(QWidget):
         if event.type() == QEvent.Type.KeyRelease:
             # F5 键释放时，刷新视图
             if event.key() == Qt.Key.Key_F5:
-                self.ongaku_library.scan_all()
-                self._set_album_view()
+                self._refresh_all()
             # 任何按键释放时，透明化 cover_label
             self.cover_effect.opacity() != 0.1 and self.cover_effect.setOpacity(0.1)
             return True
         return super().eventFilter(watched, event)
+
+    def _refresh_all(self) -> None:
+        old_theme = self.theme_box.selected_theme
+        self.kanban.scan_all()
+        theme2completions = {k.theme_name: k.theme_completion for k in self.kanban.theme_kanbans}
+        self.theme_box.set_themes(theme2completions)
+        if old_theme in theme2completions:
+            self.theme_box.select_theme(old_theme)
+        else:
+            self.theme_box.select_theme(random.choice(self.kanban.theme_kanbans).theme_name)
 
     def _on_theme_box_selected_changed(self, *args, **kwargs) -> None:
         self.current_theme_kanban = self.kanban.get_theme_kanban(self.theme_box.selected_theme)

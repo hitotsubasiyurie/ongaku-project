@@ -52,8 +52,6 @@ class ThemeKanBan:
         # 缓存
         self._aid2n: dict[int, int] = None
 
-        self.scan_all()
-
     def get_album_res_dir(self, a: Album) -> str:
         return self.res_dirs[self._aid2n[id(a)]]
 
@@ -133,8 +131,6 @@ class KanBan:
 
         self._theme2kanban: dict[str, ThemeKanBan] = None
 
-        self.scan_all()
-
     def get_theme_kanban(self, theme: str) -> ThemeKanBan | None:
         return self._theme2kanban.get(theme)
 
@@ -145,5 +141,7 @@ class KanBan:
         theme_dirs = [os.path.join(self.resource_dir, f.stem) for f in theme_mdfs]
 
         self.theme_kanbans = [ThemeKanBan(f, d) for f, d in zip(theme_mdfs, theme_dirs)]
+
+        list(map(ThemeKanBan.scan_all, self.theme_kanbans))
 
         self._theme2kanban = {t.theme_name: t for t in self.theme_kanbans}

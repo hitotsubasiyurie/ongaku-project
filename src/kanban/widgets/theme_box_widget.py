@@ -19,6 +19,7 @@ class CompletionDelegate(QStyledItemDelegate):
             painter.fillRect(comp_rect, QColor(0xC1CAB7))
         super().paint(painter, option, index)
 
+
 class ThemeBoxWidget(QWidget):
 
     selected_changed = Signal()
@@ -69,12 +70,22 @@ class ThemeBoxWidget(QWidget):
         # 发出信号
         self.selected_changed.emit()
 
+    def select_theme(self, theme: str) -> None:
+        if theme not in self.themes:
+            return
+        self.selected_theme = theme
+        self._update_list_items()
+        # 发出信号
+        self.selected_changed.emit()
+
     # 重写方法
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         # line_edit 被点击时 弹出 list_widget
         if watched == self.line_edit and event.type() == QEvent.Type.MouseButtonRelease:
-            self.list_widget.isHidden() and self._show_list_widget()
+            if self.list_widget.isHidden():
+                self._show_list_widget()
+                self.list_widget.setFocus()
         # 所有部件失去焦点时，隐藏 list_widget
         if event.type() == QEvent.Type.FocusOut:
             if not any([self.line_edit.hasFocus(), self.list_widget.hasFocus(), self.hasFocus()]):

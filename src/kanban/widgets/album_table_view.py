@@ -182,6 +182,7 @@ class AlbumTableView(QTableView):
         self.setFrameShape(QFrame.Shape.NoFrame)
         # 可编辑
         self.setEditTriggers(QTableView.EditTrigger.DoubleClicked)
+        # 多选
         self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         # 可排序
         self.setSortingEnabled(True)

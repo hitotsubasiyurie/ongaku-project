@@ -1,6 +1,8 @@
 import os
-from enum import IntEnum, IntFlag, auto
 from pathlib import Path
+from typing import Callable
+from dataclasses import dataclass, field
+from enum import IntEnum, IntFlag, auto
 
 from src.logger import logger, logger_watched
 from src.basemodels import Album, Track
@@ -33,115 +35,147 @@ class MetadataState(IntFlag):
     COVER_EXIST = auto()
 
 
-class ThemeKanBan:
+@dataclass
+class AlbumKanBan:
+    """
+    :param album: 专辑模型
+    :param album_dir: 专辑目录路径
 
-    def __init__(self, theme_metadata_file: str, theme_directory: str = None) -> None:
-        self.theme_metadata_file = theme_metadata_file
-        self.theme_directory = theme_directory
+    :var cover: 封面路径
+    :var metadata_state: 专辑元数据状态
 
-        self.theme_name = Path(self.theme_metadata_file).stem
-        self.theme_completion: float = None
+    :var track_files: 音轨文件路径列表
+    :var track_stat_results: 音轨文件属性列表
 
-        self.albums: list[Album] = None
-        self.res_dirs: list[str] = None
-        self.covers: list[str | None] = None
-        self.metadata_states: list[MetadataState] = None
-        self.resource_states: list[ResourceState] = None
-        self.track_states: list[list[ResourceState]] = None
+    :var resource_state: 专辑资源状态
+    :var track_states: 专辑轨道资源状态列表
+    """
+
+    album: Album
+    album_dir: str
+
+    cover: str = field(init=False)
+    metadata_state: MetadataState = field(init=False)
+
+    track_files: list[str] = field(init=False)
+    track_stat_results: list[os.stat_result] = field(init=False)
+
+    album_res_state: ResourceState = field(init=False)
+    track_res_states: list[ResourceState] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self._analyze_resource()
+        self._analyze_metadata()
+
+    def _analyze_metadata(self) -> None:
+        is_img: Callable[[Path], bool] = lambda p: p.suffix.lower() in IMG_EXTS
+
+        if os.path.exists(self.album_dir):
+            self.cover = next((map(str, filter(is_img, Path(self.album_dir).rglob("cover.*")))), "")
+        else:
+            self.cover = ""
+
+        self.metadata_state = MetadataState(0)
         
-        # 缓存
-        self._aid2n: dict[int, int] = None
+        if self.album.album:
+            self.metadata_state |= MetadataState.TITLE_EXIST
+        if self.album.date:
+            self.metadata_state |= MetadataState.DATE_EXIST
+        if self.album.catalognumber:
+            self.metadata_state |= MetadataState.CATNO_EXIST
+        if self.album.tracks:
+            self.metadata_state |= MetadataState.TRACK_EXIST
+            if all(t.artist for t in self.album.tracks):
+                self.metadata_state |= MetadataState.ARTIST_EXIST
+        if self.album:
+            self.metadata_state |= MetadataState.COVER_EXIST
 
-    def get_album_res_dir(self, a: Album) -> str:
-        return self.res_dirs[self._aid2n[id(a)]]
+    def _analyze_resource(self) -> None:
+        if not self.album.tracks or not os.path.exists(self.album_dir):
+            self.album_res_state = ResourceState.MISSING
+            _len = len(self.album.tracks)
+            self.track_files, self.track_stat_results, self.track_res_states = [""] * _len, [None] * _len, [None] * _len
+            return
 
-    def get_album_cover(self, a: Album) -> str | None:
-        return self.covers[self._aid2n[id(a)]]
+        stem2ext = {p.stem: p.suffix for p in Path(self.album_dir).iterdir()}
 
-    def get_album_metadata_state(self, a: Album) -> MetadataState:
-        return self.metadata_states[self._aid2n[id(a)]]
+        self.track_files = [n + stem2ext[n] if n in stem2ext else "" for n in track_filenames(self.album)]
+        self.track_stat_results = [os.stat(f) if f else None for f in self.track_files]
 
-    def get_album_resource_state(self, a: Album) -> ResourceState:
-        return self.resource_states[self._aid2n[id(a)]]
-
-    def get_album_track_states(self, a: Album) -> list[ResourceState]:
-        return self.track_states[self._aid2n[id(a)]]
-
-    def scan_all(self) -> None:
-        self.albums = load_albums_from_toml(self.theme_metadata_file)
-        self._aid2n = {id(a): i for i, a in enumerate(self.albums)}
-
-        self.res_dirs = [os.path.join(self.theme_directory, legalize_filename(album_filename(a))) for a in self.albums]
-
-        self.resource_states, self.track_states = zip(*[self._scan_resource_state(a, d) for a, d in zip(self.albums, self.res_dirs)])
-
-        self.covers = [None if not os.path.exists(d) else 
-                       next((str(p) for p in Path(d).rglob("cover.*") if p.suffix.lower() in IMG_EXTS), None) 
-                       for d in self.res_dirs]
-        
-        self.metadata_states = [self._scan_metadata_state(a, c) for a, c in zip(self.albums, self.covers)]
-
-        self.theme_completion = sum(map(os.path.exists, self.res_dirs)) / len(self.albums)
-
-    # 内部方法
-
-    @staticmethod
-    def _scan_resource_state(album: Album, res_dir: str) -> tuple[ResourceState, list[ResourceState]]:
-        # 无 track 信息时为 MISSING
-        if not album.tracks:
-            return ResourceState.MISSING, []
-        
-        if not os.path.exists(res_dir):
-            return ResourceState.MISSING, [ResourceState.MISSING]*len(album.tracks)
-        
-        name2ext = {p.stem: p.suffix for p in Path(res_dir).iterdir()}
         _map = {"": ResourceState.MISSING, ".mp3": ResourceState.LOSSY, ".flac": ResourceState.LOSSLESS}
-        t_states = [_map[name2ext.get(n, "")] for n in track_filenames(album)]
-        a_state = min(t_states)
-
-        return a_state, t_states
-    
-    @staticmethod
-    def _scan_metadata_state(album: Album, cover: str | None) -> MetadataState:
-        state = MetadataState(0)
-        
-        if album.album:
-            state |= MetadataState.TITLE_EXIST
-        if album.date:
-            state |= MetadataState.DATE_EXIST
-        if album.catalognumber:
-            state |= MetadataState.CATNO_EXIST
-        if album.tracks:
-            state |= MetadataState.TRACK_EXIST
-            if all(t.artist for t in album.tracks):
-                state |= MetadataState.ARTIST_EXIST
-        if cover:
-            state |= MetadataState.COVER_EXIST
-        
-        return state
+        self.track_res_states = [_map[stem2ext.get(n, "")] for n in track_filenames(self.album)]
+        self.album_res_state = min(self.track_res_states)
 
 
+@dataclass
+class ThemeKanBan:
+    """
+    :param theme_metadata_file: 主题元数据文件
+    :param theme_directory: 主题资源目录
+
+    :var theme_name: 主题名
+    :var collection_progress: 资源收集进度
+    :var marking_progress: 标记进度
+
+    :var album_kanbans: 
+    """
+
+    theme_metadata_file: Path
+    theme_directory: Path
+
+    theme_name: str = field(init=False)
+    collection_progress: float = field(init=False)
+    marking_progress: float = field(init=False)
+
+    album_kanbans: list[AlbumKanBan] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.scan()
+
+    def scan(self) -> None:
+        self.theme_name = Path(self.theme_metadata_file).stem
+
+        albums = load_albums_from_toml(self.theme_metadata_file)
+        album_dirs = [os.path.join(self.theme_directory, legalize_filename(album_filename(a))) for a in albums]
+        self.album_kanbans = [AlbumKanBan(a, d) for a, d in zip(albums, album_dirs)]
+
+        if albums:
+            self.marking_progress = sum(bool(a.markinfo) for a in albums) / len(albums)
+            self.collection_progress = sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans) / len(albums)
+        else:
+            self.marking_progress = 0
+            self.collection_progress = 0
+
+
+@dataclass
 class KanBan:
+    """
+    :param metadata_dir: 元数据目录
+    :param resource_dir: 资源目录
 
-    def __init__(self, metadata_dir: str, resource_dir: str = None) -> None:
-        self.metadata_dir = metadata_dir
-        self.resource_dir = resource_dir
+    :var theme_kanbans: 
+    """
 
-        self.theme_kanbans: list[ThemeKanBan] = None
+    metadata_dir: str
+    resource_dir: str
 
-        self._theme2kanban: dict[str, ThemeKanBan] = None
+    theme_kanbans: list[ThemeKanBan] = field(init=False)
+
+    # 缓存
+    _theme2kanban: dict[str, ThemeKanBan] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.scan()
 
     def get_theme_kanban(self, theme: str) -> ThemeKanBan | None:
         return self._theme2kanban.get(theme)
 
-    @logger_watched(1)
-    def scan_all(self) -> None:
-
+    def scan(self) -> None:
         theme_mdfs = list(Path(self.metadata_dir).glob("*.toml"))
         theme_dirs = [os.path.join(self.resource_dir, f.stem) for f in theme_mdfs]
 
         self.theme_kanbans = [ThemeKanBan(f, d) for f, d in zip(theme_mdfs, theme_dirs)]
 
-        list(map(ThemeKanBan.scan_all, self.theme_kanbans))
-
         self._theme2kanban = {t.theme_name: t for t in self.theme_kanbans}
+
+

@@ -86,6 +86,8 @@ class ThemeBoxWidget(QWidget):
             if self.list_widget.isHidden():
                 self._show_list_widget()
                 self.list_widget.setFocus()
+            else:
+                self.list_widget.hide()
         # 所有部件失去焦点时，隐藏 list_widget
         if event.type() == QEvent.Type.FocusOut:
             if not any([self.line_edit.hasFocus(), self.list_widget.hasFocus(), self.hasFocus()]):

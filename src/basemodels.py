@@ -68,6 +68,7 @@ class Album(BaseModel, validate_assignment=True):
     album: _CustomStr = Field(default="")
     tracks: tuple["Track", ...] = Field(default_factory=tuple)
     links: _CustomStrTuple = Field(default_factory=tuple)
+    markinfo: _CustomStr = Field(default="")
 
     _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
 

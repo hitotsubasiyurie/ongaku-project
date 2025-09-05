@@ -164,8 +164,8 @@ class KanBanUI(QWidget):
 
         # 展示 首个 album 的 track, cover
         a = albums[0]
-        self.track_table_view.set_tracks(a.tracks, self.current_theme_kanban.get_album_track_states(a))
-        if cover:= self.current_theme_kanban.get_album_cover(a):
+        self.track_table_view.set_tracks(a.tracks, self.current_theme_kanban.get_track_states_by_album(a))
+        if cover:= self.current_theme_kanban.get_cover_by_album(a):
             pix = QPixmap(cover)
             pix = pix.scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.cover_label.setPixmap(pix)
@@ -180,9 +180,9 @@ class KanBanUI(QWidget):
         # 定位 首个 album 的 资源位置
         row = self.album_table_view.selectedIndexes()[0].row()
         a = self.album_table_view.model().albums[row]
-        res_dir = self.current_theme_kanban.get_album_res_dir(a)
+        res_dir = self.current_theme_kanban.get_res_dir_by_album(a)
         if os.path.exists(res_dir):
-            subprocess.run(f'explorer /select, "{res_dir}"')
+            subprocess.run(f'explorer "{res_dir}"')
 
     def _show_check_message(self, title: str, text: str, on_yes_clicked: Callable = None, 
                             on_no_clicked: Callable = None) -> bool:
@@ -208,7 +208,7 @@ class KanBanUI(QWidget):
         dropped_paths = list(map(Path, dropped_strs))
         exts = set(p.suffix.lower() for p in dropped_paths)
 
-        dst_dirs = [self.current_theme_kanban.get_album_res_dir(a) for a in albums]
+        dst_dirs = [self.current_theme_kanban.get_res_dir_by_album(a) for a in albums]
         dst_dirs = list(map(Path, dst_dirs))
 
         # 拖入文件夹列表时

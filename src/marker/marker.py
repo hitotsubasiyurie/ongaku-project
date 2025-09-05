@@ -34,7 +34,6 @@ class MarkerMainWindow(QWidget):
         self.next_btn = QPushButton("NEXT")
 
 
-
     def setup_event(self) -> None:
         # 初始化 事件
         pass

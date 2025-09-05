@@ -99,7 +99,8 @@ class AlbumKanBan:
 
         stem2ext = {p.stem: p.suffix for p in Path(self.album_dir).iterdir()}
 
-        self.track_files = [n + stem2ext[n] if n in stem2ext else "" for n in track_filenames(self.album)]
+        self.track_files = [os.path.join(self.album_dir, n+stem2ext[n]) if n in stem2ext else "" 
+                            for n in track_filenames(self.album)]
         self.track_stat_results = [os.stat(f) if f else None for f in self.track_files]
 
         _map = {"": ResourceState.MISSING, ".mp3": ResourceState.LOSSY, ".flac": ResourceState.LOSSLESS}
@@ -132,6 +133,7 @@ class ThemeKanBan:
     def __post_init__(self) -> None:
         self.scan()
 
+    @logger_watched(1)
     def scan(self) -> None:
         self.theme_name = Path(self.theme_metadata_file).stem
 
@@ -140,7 +142,7 @@ class ThemeKanBan:
         self.album_kanbans = [AlbumKanBan(a, d) for a, d in zip(albums, album_dirs)]
 
         if albums:
-            self.marking_progress = sum(bool(a.markinfo) for a in albums) / len(albums)
+            self.marking_progress = sum(bool(a.mark) for a in albums) / len(albums)
             self.collection_progress = sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans) / len(albums)
         else:
             self.marking_progress = 0
@@ -170,6 +172,7 @@ class KanBan:
     def get_theme_kanban(self, theme: str) -> ThemeKanBan | None:
         return self._theme2kanban.get(theme)
 
+    @logger_watched(2)
     def scan(self) -> None:
         theme_mdfs = list(Path(self.metadata_dir).glob("*.toml"))
         theme_dirs = [os.path.join(self.resource_dir, f.stem) for f in theme_mdfs]

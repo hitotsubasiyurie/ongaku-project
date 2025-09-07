@@ -94,7 +94,9 @@ class AlbumKanBan:
         if not self.album.tracks or not os.path.exists(self.album_dir):
             self.album_res_state = ResourceState.MISSING
             _len = len(self.album.tracks)
-            self.track_files, self.track_stat_results, self.track_res_states = [""] * _len, [None] * _len, [None] * _len
+            self.track_files = [""] * _len
+            self.track_stat_results = [None] * _len
+            self.track_res_states = [ResourceState.MISSING] * _len
             return
 
         stem2ext = {p.stem: p.suffix for p in Path(self.album_dir).iterdir()}
@@ -116,7 +118,7 @@ class ThemeKanBan:
 
     :var theme_name: 主题名
     :var collection_progress: 资源收集进度
-    :var marking_progress: 标记进度
+    :var mark_progress: 标记进度
 
     :var album_kanbans: 
     """
@@ -126,14 +128,13 @@ class ThemeKanBan:
 
     theme_name: str = field(init=False)
     collection_progress: float = field(init=False)
-    marking_progress: float = field(init=False)
+    mark_progress: float = field(init=False)
 
     album_kanbans: list[AlbumKanBan] = field(init=False)
 
     def __post_init__(self) -> None:
         self.scan()
 
-    @logger_watched(1)
     def scan(self) -> None:
         self.theme_name = Path(self.theme_metadata_file).stem
 
@@ -142,10 +143,10 @@ class ThemeKanBan:
         self.album_kanbans = [AlbumKanBan(a, d) for a, d in zip(albums, album_dirs)]
 
         if albums:
-            self.marking_progress = sum(bool(a.mark) for a in albums) / len(albums)
+            self.mark_progress = sum(bool(a.mark) for a in albums) / len(albums)
             self.collection_progress = sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans) / len(albums)
         else:
-            self.marking_progress = 0
+            self.mark_progress = 0
             self.collection_progress = 0
 
 

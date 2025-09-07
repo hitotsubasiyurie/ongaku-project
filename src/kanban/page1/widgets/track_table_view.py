@@ -8,70 +8,30 @@ from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragM
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, )
 
-from src.kanban.kanban import ResourceState
 from src.basemodels import Track
+from src.kanban.kanban import ResourceState, AlbumKanBan
+from src.kanban.page1.widgets.album_table_view import AlbumStateItemDelegate
+from src.kanban.widgets.custom_table_item_model import CustomTableItemModel
 
 
-class TrackTableItemModel(QAbstractItemModel):
+class TrackTableItemModel(CustomTableItemModel):
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.set_tracks([], [])
-
-    def set_tracks(self, tracks: list[Track], track_states: list[ResourceState]) -> None:
-        self.tracks: list[Track] = tracks
-        self.track_states: list[ResourceState] = track_states
-
         self.headers = ["S", "TITLE"]
-        self.table = [[s, (t.title, t.artist)] 
-                       for t, s in zip(self.tracks, self.track_states)]
+        self.col_cnt: int = len(self.headers)
+
+    def set_album_kanban(self, album_kanban: AlbumKanBan) -> None:
+        # 声明所有数据都无效，重新加载
+        self.beginResetModel()
+
+        ms = 0b111111
+        self.table = [[(rs, ms), (t.title, t.artist)]
+                      for rs, t in zip(album_kanban.track_res_states, album_kanban.album.tracks)]
 
         self.row_cnt = len(self.table)
-        self.col_cnt = len(self.headers)
-
-    # 只读
-
-    def index(self, row: int, column: int, parent: QModelIndex = QModelIndex()) -> QModelIndex:
-        # parent 无效时，指向 root item
-        if not parent.isValid() and row < self.row_cnt:
-            return self.createIndex(row, column)
-        return QModelIndex()
-
-    def parent(self, child: QModelIndex = QModelIndex()) -> QModelIndex:
-        return QModelIndex()
-
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        if not parent.isValid():
-            return self.row_cnt
-        return 0
-
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        return self.col_cnt
-
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
-        row, col = index.row(), index.column()
-        
-        if not index.isValid() or row >= self.row_cnt or col >= self.col_cnt:
-            return None
-        
-        if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
-            return self.table[row][col]
-        
-        return None
-
-    # 表头
-
-    def headerData(self, section: int, orientation: Qt.Orientation,
-                   role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
-        if role != Qt.ItemDataRole.DisplayRole:
-            return
-
-        # 列表头 展示索引 从 1 开始
-        if orientation == Qt.Orientation.Vertical:
-            return section + 1
-        
-        return self.headers[section] if section < len(self.headers) else None
+        self.endResetModel()
     
     # 可编辑
 
@@ -82,11 +42,7 @@ class TrackTableItemModel(QAbstractItemModel):
         
         return (Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
                 | Qt.ItemFlag.ItemIsDropEnabled)
-
-    def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
-        #  编辑无效
-        return True
-
+    
     # drop 支持
     
     def supportedDropActions(self) -> Qt.DropAction:
@@ -95,28 +51,6 @@ class TrackTableItemModel(QAbstractItemModel):
     def canDropMimeData(self, data: QMimeData, action: Qt.DropAction, row: int, column: int, parent: QModelIndex) \
             -> bool:
         return True
-
-
-class TrackStateItemDelegate(QStyledItemDelegate):
-
-    RESOURCE_STATE_COLORS = {
-        ResourceState.LOSSLESS: QColor(0x99CC66),
-        ResourceState.LOSSY: QColor(0xFFCC00),
-        ResourceState.MISSING: QColor(0xDDDDDD),
-    }
-
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
-        painter.save()
-        rs = index.data(Qt.ItemDataRole.DisplayRole)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(self.RESOURCE_STATE_COLORS[rs])
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        
-        rect: QRect = option.rect
-        center = rect.center()
-        radius = min(rect.width(), rect.height()) / 2 - 1
-        painter.drawEllipse(center, radius, radius)
-        painter.restore()
 
 
 class TrackTitleItemDelegate(QStyledItemDelegate):
@@ -171,10 +105,10 @@ class TrackTableView(QTableView):
         super().__init__(parent)
 
         # 初始化模型
-        model = TrackTableItemModel()
-        self.setModel(model)
-        self.setItemDelegateForColumn(0, TrackStateItemDelegate(self))
-        self.setItemDelegateForColumn(1, TrackTitleItemDelegate())
+        self.source_model = TrackTableItemModel()
+        self.setModel(self.source_model)
+        self.setItemDelegateForColumn(0, AlbumStateItemDelegate(self))
+        self.setItemDelegateForColumn(1, TrackTitleItemDelegate(self))
 
         # 表格无边框
         self.setShowGrid(False)
@@ -189,8 +123,8 @@ class TrackTableView(QTableView):
         self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)
         self.setDropIndicatorShown(True)
 
-        # 字体大小
-        font_size = self.font().pixelSize()
+        # 字体高度
+        fh = self.fontMetrics().height()
 
         # 设置行
         header = self.verticalHeader()
@@ -199,19 +133,11 @@ class TrackTableView(QTableView):
         
         # 设置列
         header = self.horizontalHeader()
-        column_size = [font_size, 0]
+        column_size = [fh*1.5, 0]
         [self.setColumnWidth(i, w) for i, w in enumerate(column_size)]
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionsClickable(False)
-
-    def set_tracks(self, tracks: list[Track], track_states: list[ResourceState]) -> None:
-        model: TrackTableItemModel = self.model()
-        # 所有数据都无效，重新加载
-        model.beginResetModel()
-        model.set_tracks(tracks, track_states)
-        model.endResetModel()
-        self.resizeRowsToContents()
 
     # 重写方法
 

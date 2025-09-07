@@ -1,22 +1,55 @@
 from PySide6.QtCore import (Qt, QObject, QEvent, Signal, QModelIndex, QRect, )
 from PySide6.QtGui import (QColor, QFocusEvent, QPainter, )
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAbstractScrollArea, QListWidgetItem, 
-    QStyledItemDelegate, QStyleOptionViewItem, )
+    QStyledItemDelegate, QStyleOptionViewItem, QStyle, )
+
+from src.kanban.kanban import KanBan
 
 
-class CompletionDelegate(QStyledItemDelegate):
+class ProgressDelegate(QStyledItemDelegate):
 
-    def __init__(self, completions: dict[str, float], parent: QWidget = None):
+    def __init__(self, parent: QWidget = None):
         super().__init__(parent)
-        self.theme2completions = completions
-    
+
+        self.coll_dict: dict[str, float] = {}
+        self.mark_dict: dict[str, float] = {}
+
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+
+        # 替换 item 状态
+        option = QStyleOptionViewItem(option)
+        option.state = QStyle.StateFlag.State_Enabled
+        
         text = index.data()[1:]
-        if text in self.theme2completions:
-            val = self.theme2completions[text]
-            rect: QRect = option.rect
-            comp_rect = QRect(rect.left(), rect.top(), int(rect.width() * val), rect.height())
-            painter.fillRect(comp_rect, QColor(0xC1CAB7))
+        rect: QRect = option.rect
+
+        painter.save()
+
+        # 颜色设计考虑 mark 进度一定更小
+        # collection_progress (半透明绿色)
+        if text in self.coll_dict:
+            val = self.coll_dict[text]
+            w = int(rect.width() * val)
+            comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
+            painter.fillRect(comp_rect, QColor(193, 202, 183, 100))
+            painter.setPen(QColor(0x2E7D32))
+            painter.drawLine(rect.left() + w, rect.top(), rect.left() + w, rect.bottom())
+
+        # mark_progress (半透明橙色)
+        if True or text in self.mark_dict:
+            # val = self.mark_dict[text]
+            import random
+            val = random.random()
+            w = int(rect.width() * val)
+            comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
+            painter.fillRect(comp_rect,QColor(255, 152, 0, 100))  # 橙色半透明
+            # 端点刻度线
+            painter.setPen(QColor(0xE65100))
+            painter.drawLine(rect.left() + w, rect.top(), rect.left() + w, rect.bottom())
+
+        painter.restore()
+
+        # 绘制文本（默认）
         super().paint(painter, option, index)
 
 
@@ -25,88 +58,64 @@ class ThemeBoxWidget(QWidget):
     selected_changed = Signal()
 
     def setup_ui(self):
+        # 字体高度
+        fh = self.fontMetrics().height()
+        self.setFixedWidth(fh*32)
+
         # 初始化 UI
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        self.line_edit = QLineEdit()
+        self.line_edit = QLineEdit(self)
+        self.line_edit.setFixedHeight(fh*1.5)
         layout.addWidget(self.line_edit)
-        self.line_edit.installEventFilter(self)
         self.line_edit.textEdited.connect(self._on_line_edit_text_changed)
 
         self.list_widget = QListWidget(self)
-        self.delegate = CompletionDelegate([])
+        self.delegate = ProgressDelegate()
         self.list_widget.setItemDelegate(self.delegate)
-        # 设置 弹出 非模态不阻塞
-        self.list_widget.setWindowFlag(Qt.WindowType.FramelessWindowHint | Qt.WindowType.ToolTip)
-        self.list_widget.setWindowModality(Qt.WindowModality.NonModal)
-        self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        layout.addWidget(self.list_widget)
+
         # 自适应高度
         self.list_widget.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
-        # 最大高度 40 行
-        self.list_widget.setMaximumHeight(self.font().pixelSize()*40)
         self.list_widget.itemDoubleClicked.connect(self._on_list_item_clicked)
-        self.list_widget.hide()
+
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.theme2completions: dict[str, float] = {}
-
-        self.themes: list[str] = []
+        self.theme_names: list[str] = []
         self.selected_theme: str = None
 
         self.setup_ui()
 
-    def set_themes(self, theme2completions: dict[str, float]) -> None:
-        self.theme2completions = theme2completions
-        self.delegate.theme2completions = theme2completions
+    def set_kanban(self, kanban: KanBan) -> None:
+        self.theme_names = [k.theme_name for k in kanban.theme_kanbans]
+        self.coll_dict = {k.theme_name: k.collection_progress for k in kanban.theme_kanbans}
+        self.mark_dict = {k.theme_name: k.mark_progress for k in kanban.theme_kanbans}
 
-        self.themes = list(theme2completions.keys())
-        self.selected_theme = None
+        self.delegate.coll_dict = self.coll_dict
+        self.delegate.mark_dict = self.mark_dict
 
         self._update_list_items()
-
-        # 发出信号
-        self.selected_changed.emit()
-
-    def select_theme(self, theme: str) -> None:
-        if theme not in self.themes:
-            return
-        self.selected_theme = theme
-        self._update_list_items()
-        # 发出信号
-        self.selected_changed.emit()
-
-    # 重写方法
-
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # line_edit 被点击时 弹出 list_widget
-        if watched == self.line_edit and event.type() == QEvent.Type.MouseButtonRelease:
-            if self.list_widget.isHidden():
-                self._show_list_widget()
-                self.list_widget.setFocus()
-            else:
-                self.list_widget.hide()
-        # 所有部件失去焦点时，隐藏 list_widget
-        if event.type() == QEvent.Type.FocusOut:
-            if not any([self.line_edit.hasFocus(), self.list_widget.hasFocus(), self.hasFocus()]):
-                not self.list_widget.isHidden() and self.list_widget.hide()
-        # 继续执行父类逻辑
-        return super().eventFilter(watched, event)
 
     # 内部方法
 
     def _update_list_items(self) -> None:
         # list_widget 展示优先级 selected > themes
-        tmp = sorted(self.themes, key=lambda t: (t != self.selected_theme, -1*self.theme2completions.get(t)))
+        tmp = sorted(self.theme_names, key=lambda t: (t != self.selected_theme, -1*self.coll_dict.get(t), self.mark_dict.get(t)))
         # 等宽 空白字符
-        tmp = [f"⚫{t}" if t == self.selected_theme else f"　{t}" for t in tmp]
+        tmp = [f"⚪️{t}" if t == self.selected_theme else f"　{t}" for t in tmp]
         self.list_widget.clear()
         self.list_widget.addItems(tmp)
         # 滚动 list_widget 至顶
         self.list_widget.scrollToTop()
         self._hide_list_items()
+
+        # 字体高度
+        fh = self.fontMetrics().height()
+        self.list_widget.setFixedHeight(min(len(tmp), 40)*fh*1.5)
+        self.adjustSize()
 
     def _hide_list_items(self, *args, **kwargs) -> None:
         # 根据 line_edit 内容，展示/隐藏 list_widget 元素
@@ -116,8 +125,6 @@ class ThemeBoxWidget(QWidget):
             item.setHidden(text not in item.text().lower())
 
     def _on_line_edit_text_changed(self, text: str) -> None:
-        # line_edit 被编辑时，展示 list_widget
-        self.list_widget.isHidden() and self._show_list_widget()
         self._hide_list_items()
 
     def _on_list_item_clicked(self, item: QListWidgetItem) -> None:
@@ -130,13 +137,6 @@ class ThemeBoxWidget(QWidget):
         self._update_list_items()
         # 发出信号
         self.selected_changed.emit()
-
-    def _show_list_widget(self) -> None:
-        pos = self.mapToGlobal(self.line_edit.geometry().bottomLeft())
-        self.list_widget.move(pos)
-        self.list_widget.show()
-        # 展示后 再减去 滚动条宽度
-        self.list_widget.setFixedWidth(self.width()-self.list_widget.verticalScrollBar().width())
 
 
 

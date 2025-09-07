@@ -1,98 +1,33 @@
+import re
 from typing import Any
 
 from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QItemSelection, QMimeData, 
-    QRectF, )
+    QRectF, QSortFilterProxyModel)
 from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, )
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
-                               QAbstractItemView, )
+    QAbstractItemView, QGridLayout, )
 
-from src.kanban.kanban import MetadataState, ResourceState
-from src.basemodels import Album
+from src.kanban.kanban import ResourceState, ThemeKanBan
+from src.kanban.widgets.custom_table_item_model import CustomTableItemModel, CustomTableSortFilterProxyModel
 
 
-class AlbumTableItemModel(QAbstractItemModel):
+class AlbumTableItemModel(CustomTableItemModel):
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.set_albums([], [], [])
+        self.headers: list[str] = ["S", "ALBUM", "CATNO", "DATE"]
+        self.col_cnt: int = len(self.headers)
 
-        # 模型 排序状态
-        self.sort_args = None
-
-    def set_albums(self, albums: list[Album], metadata_states: list[MetadataState], 
-                   resource_states: list[ResourceState]) -> None:
-        self.albums: list[Album] = albums
-        self.metadata_states: list[MetadataState] = metadata_states
-        self.resource_states: list[ResourceState] = resource_states
-
-        self.headers = ["S", "ALBUM", "CATNO", "DATE"]
-        # (资源状态, 元数据状态) 排序优先级
-        self.table = [[(rs, ms), a.album, a.catalognumber, a.date] 
-                       for a, ms, rs in zip(self.albums, self.metadata_states, self.resource_states)]
+    def set_theme_kanban(self, theme_kanban: ThemeKanBan) -> None:
+        # 声明所有数据都无效，重新加载
+        self.beginResetModel()
+        self.table = [[(k.album_res_state, k.metadata_state), k.album.album, k.album.catalognumber, k.album.date]
+                      for k in theme_kanban.album_kanbans]
 
         self.row_cnt = len(self.table)
-        self.col_cnt = len(self.headers)
+        self.endResetModel()
 
-    # 只读
-
-    def index(self, row: int, column: int, parent: QModelIndex = QModelIndex()) -> QModelIndex:
-        # parent 无效时，指向 root item
-        if not parent.isValid() and row < self.row_cnt:
-            return self.createIndex(row, column)
-        return QModelIndex()
-
-    def parent(self, child: QModelIndex = QModelIndex()) -> QModelIndex:
-        return QModelIndex()
-
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        if not parent.isValid():
-            return self.row_cnt
-        return 0
-
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        return self.col_cnt
-
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
-        row, col = index.row(), index.column()
-        
-        if not index.isValid() or row >= self.row_cnt or col >= self.col_cnt:
-            return None
-        
-        if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
-            return self.table[row][col]
-        
-        return None
-
-    # 排序
-
-    def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
-        if not self.albums:
-            return
-        # 数据仍然有效，只是布局变化
-        self.layoutAboutToBeChanged.emit()
-        # 原始数据 一起 排序
-        combined = sorted(zip(self.table, self.albums, self.metadata_states, self.resource_states), 
-                          key=lambda x: x[0][column], 
-                          reverse=(order==Qt.SortOrder.DescendingOrder))
-        self.table, self.albums, self.metadata_states, self.resource_states = map(list, zip(*combined))
-        self.layoutChanged.emit()
-        # 更新排序状态
-        self.sort_args = (column, order)
-
-    # 表头
-
-    def headerData(self, section: int, orientation: Qt.Orientation,
-                   role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
-        if role != Qt.ItemDataRole.DisplayRole:
-            return
-
-        # 列表头 展示索引 从 1 开始
-        if orientation == Qt.Orientation.Vertical:
-            return section + 1
-        
-        return self.headers[section] if section < len(self.headers) else None
-    
     # 可编辑
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
@@ -102,11 +37,7 @@ class AlbumTableItemModel(QAbstractItemModel):
         
         return (Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
                 | Qt.ItemFlag.ItemIsDropEnabled)
-
-    def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
-        #  编辑无效
-        return True
-
+    
     # drop 支持
     
     def supportedDropActions(self) -> Qt.DropAction:
@@ -117,10 +48,26 @@ class AlbumTableItemModel(QAbstractItemModel):
         return True
 
 
+class AlbumTableSortFilterProxyModel(CustomTableSortFilterProxyModel):
+
+    def lessThan(self, source_left: QModelIndex, source_right: QModelIndex) -> bool:
+        # 状态列 排序
+        col = source_left.column()
+        if col == 0:
+            ldata = self.sourceModel().data(source_left, Qt.ItemDataRole.DisplayRole)
+            rdata = self.sourceModel().data(source_right, Qt.ItemDataRole.DisplayRole)
+            return ldata > rdata
+
+        return super().lessThan(source_left, source_right)
+
+
 class AlbumStateItemDelegate(QStyledItemDelegate):
+    """
+    根据 ResourceState 绘制不同颜色，根据 MetadataState 绘制不同圆心角的扇形。
+    """
 
     RESOURCE_STATE_COLORS = {
-        ResourceState.LOSSLESS: QColor(0x99CC66),
+        ResourceState.LOSSLESS: QColor(46, 160, 67),
         ResourceState.LOSSY: QColor(0xFFCC00),
         ResourceState.MISSING: QColor(0xDDDDDD),
     }
@@ -151,6 +98,7 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
         painter.drawPath(path)
         painter.restore()
 
+
 class AlbumTableView(QTableView):
 
     selected_changed = Signal()
@@ -172,8 +120,11 @@ class AlbumTableView(QTableView):
         super().__init__(parent)
 
         # 设置模型
-        model = AlbumTableItemModel()
-        self.setModel(model)
+        self.source_model = AlbumTableItemModel(self)
+        self.proxy_model = AlbumTableSortFilterProxyModel(self)
+        self.proxy_model.setSourceModel(self.source_model)
+        self.setModel(self.proxy_model)
+
         self.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.setItemDelegateForColumn(0, AlbumStateItemDelegate(self))
 
@@ -193,37 +144,24 @@ class AlbumTableView(QTableView):
         self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)
         self.setDropIndicatorShown(True)
 
-        # 字体大小
-        font_size = self.font().pixelSize()
+        # 字体高度
+        fh = self.fontMetrics().height()
 
         # 设置行
         header = self.verticalHeader()
-        header.setDefaultSectionSize(font_size)
+        header.setDefaultSectionSize(fh)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         header.setSectionsClickable(False)
         header.setFrameShape(QFrame.Shape.NoFrame)
         
         # 设置列
         header = self.horizontalHeader()
-        column_size = [font_size, 0, font_size*8, font_size*6]
-        [self.setColumnWidth(i, w) for i, w in enumerate(column_size)]
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+        column_widths = [fh*1.5, 0, fh*6, fh*5]
+        [self.setColumnWidth(i, w) for i, w in enumerate(column_widths)]
+        column_modes = [QHeaderView.ResizeMode.Fixed if w else QHeaderView.ResizeMode.Stretch for w in column_widths]
+        [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
         self.setup_context_menu()
-
-    def set_albums(self, albums: list[Album], metadata_states: list[MetadataState], 
-                   resource_states: list[ResourceState]) -> None:
-        model: AlbumTableItemModel = self.model()
-        # 所有数据都无效，重新加载
-        model.beginResetModel()
-        model.set_albums(albums, metadata_states, resource_states)
-        model.endResetModel()
-
-        # 还原排序状态
-        model.sort(*(model.sort_args or (0, Qt.SortOrder.DescendingOrder)))
 
     # 重写方法
 
@@ -244,4 +182,5 @@ class AlbumTableView(QTableView):
             return
         # 有选中才发出信号
         self.selected_changed.emit()
+
 

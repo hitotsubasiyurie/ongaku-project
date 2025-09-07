@@ -1,0 +1,149 @@
+import itertools
+from typing import Any
+
+from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QItemSelection, QMimeData, 
+    QRectF, )
+from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, 
+    QBrush, )
+from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
+                               QAbstractItemView, )
+
+from src.basemodels import Album, Track
+from src.kanban.kanban import ThemeKanBan, ResourceState
+from src.kanban.widgets.custom_table_item_model import CustomTableItemModel, CustomTableSortFilterProxyModel
+
+
+class TrackTableItemModel(CustomTableItemModel):
+
+    def __init__(self, parent: QObject = None) -> None:
+        super().__init__(parent)
+
+        self.headers: list[str] = ["Size", "Title", "Artist", "Album", "Date", "Mark"]
+        self.col_cnt: int = len(self.headers)
+
+    def set_theme_kanban(self, theme_kanban: ThemeKanBan) -> None:
+        self.beginResetModel()
+        self.table = []
+        self.tracks_states = list(itertools.chain.from_iterable(k.track_res_states for k in theme_kanban.album_kanbans))
+        self.original_idx = []
+
+        for i, k in enumerate(theme_kanban.album_kanbans):
+            for j, t  in enumerate(k.album.tracks):
+                stat = k.track_stat_results[j]
+                size = "{:.2f} MiB".format(stat.st_size / 1024 / 1024) if stat else ""
+                self.table.append([size, t.title, t.artist, k.album.album, k.album.date, k.album.mark])
+                self.original_idx.append((i, j))
+
+        self.row_cnt = len(self.table)
+        self.endResetModel()
+
+    def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
+        row, col = index.row(), index.column()
+
+        if not index.isValid() or row >= self.row_cnt or col >= self.col_cnt:
+            return None
+        
+        # Size 列 资源状态 字体颜色
+        if role == Qt.ItemDataRole.ForegroundRole and col == 0:
+            if self.tracks_states[row] == ResourceState.LOSSY:
+                return QBrush(QColor(0xFFCC00))
+            elif self.tracks_states[row] == ResourceState.LOSSLESS:
+                return QBrush(QColor(46, 160, 67))
+        
+        # Size 列 文本右对齐
+        if role == Qt.ItemDataRole.TextAlignmentRole and col in [0]:
+            return Qt.AlignmentFlag.AlignRight
+        # Size, Date, Mark 列 文本居中
+        if role == Qt.ItemDataRole.TextAlignmentRole and col in [0, 4, 5]:
+            return Qt.AlignmentFlag.AlignCenter
+        
+        # 原始索引
+        if role == Qt.ItemDataRole.UserRole:
+            return self.original_idx[row]
+        
+        # 已有 Mark 信息 置灰
+        if  not row % 5:
+            if role == Qt.ItemDataRole.BackgroundRole:
+                return QBrush(QColor(20, 20, 20))
+            if role == Qt.ItemDataRole.ForegroundRole:
+                return QBrush(QColor(130, 130, 130))
+            
+
+
+        return super().data(index, role)
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        # Size 列 只可点击
+        if index.column() == 0:
+            return Qt.ItemFlag.ItemIsEnabled
+        
+        return super().flags(index)
+
+
+class TrackTableView(QTableView):
+
+    def setup_context_menu(self) -> None:
+        # 初始化 右键菜单
+        pass
+
+    def __init__(self, parent: QWidget = None) -> None:
+        super().__init__(parent)
+
+        # 设置模型
+        self.source_model = TrackTableItemModel(self)
+        self.proxy_model = CustomTableSortFilterProxyModel(self)
+        self.proxy_model.setSourceModel(self.source_model)
+        self.setModel(self.proxy_model)
+        # 排序、筛选 后 滚动至开头
+        self.proxy_model.layoutChanged.connect(self.scrollToTop)
+        self.proxy_model.rowsInserted.connect(self.scrollToTop)
+        self.proxy_model.rowsRemoved.connect(self.scrollToTop)
+
+        # 表格无边框
+        self.setShowGrid(False)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        # 可编辑
+        self.setEditTriggers(QTableView.EditTrigger.DoubleClicked)
+        # 多选
+        self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        # 可排序
+        self.setSortingEnabled(True)
+        # 像素滚动
+        self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerPixel)
+        # 隐藏滚动条
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        # 字体高度
+        fh = self.fontMetrics().height()
+
+        # 设置行
+        header = self.verticalHeader()
+        header.setDefaultSectionSize(fh)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        header.setSectionsClickable(False)
+        header.setFrameShape(QFrame.Shape.NoFrame)
+
+        # 设置 列
+        header = self.horizontalHeader()
+        column_widths = [fh*5, 0, fh*18, fh*18, fh*5, fh*2]
+        [self.setColumnWidth(i, w) for i, w in enumerate(column_widths)]
+        column_modes = [QHeaderView.ResizeMode.Fixed if w else QHeaderView.ResizeMode.Stretch for w in column_widths]
+        [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

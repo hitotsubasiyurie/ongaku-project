@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from PySide6.QtWidgets import QApplication
 
 from src.marker.track_table_widget import TrackTableView
-from src.kanban.kanban import ThemeKanBan
+from src.kanban.page1 import ThemeKanBan
 
 
 if __name__ == "__main__":

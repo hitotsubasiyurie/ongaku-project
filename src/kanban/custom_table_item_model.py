@@ -1,10 +1,10 @@
 import re
 from typing import Any
 
-from PySide6.QtCore import QModelIndex, Qt, QAbstractItemModel, QObject, QSortFilterProxyModel
+from PySide6.QtCore import (QModelIndex, Qt, QAbstractTableModel, QObject, QSortFilterProxyModel, QTimer)
 
 
-class CustomTableItemModel(QAbstractItemModel):
+class CustomTableItemModel(QAbstractTableModel):
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -15,15 +15,6 @@ class CustomTableItemModel(QAbstractItemModel):
         self.col_cnt: int = len(self.headers)
 
     # 只读
-
-    def index(self, row: int, column: int, parent: QModelIndex = QModelIndex()) -> QModelIndex:
-        # parent 无效时，指向 root item
-        if not parent.isValid() and row < self.row_cnt:
-            return self.createIndex(row, column)
-        return QModelIndex()
-
-    def parent(self, child: QModelIndex = QModelIndex()) -> QModelIndex:
-        return QModelIndex()
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if not parent.isValid():
@@ -73,6 +64,14 @@ class CustomTableSortFilterProxyModel(QSortFilterProxyModel):
         super().__init__(parent)
         self.filters: dict[int, re.Pattern] = {}
 
+        # 防抖定时器
+        self._filter_timer = QTimer(self)
+        # 仅超时一次
+        self._filter_timer.setSingleShot(True)
+        self._filter_timer.setInterval(500)
+        self._filter_timer.timeout.connect(self._apply_filters)
+
+
     def set_filter(self, column: int, text: str) -> None:
         if text:
             try:
@@ -81,11 +80,12 @@ class CustomTableSortFilterProxyModel(QSortFilterProxyModel):
                 self.filters.pop(column, None)
         else:
             self.filters.pop(column, None)
-        self.invalidateFilter()
+        
+        self._filter_timer.start()
 
     def unset_filter(self) -> None:
         self.filters = {}
-        self.invalidateFilter()
+        self._apply_filters()
 
     # 重写方法
 
@@ -111,3 +111,11 @@ class CustomTableSortFilterProxyModel(QSortFilterProxyModel):
             return section + 1
         
         return self.sourceModel().headerData(section, orientation, role)
+
+    # 内部方法
+
+    def _apply_filters(self) -> None:
+        self.setDynamicSortFilter(False)
+        self.invalidateFilter()
+        self.setDynamicSortFilter(True)
+

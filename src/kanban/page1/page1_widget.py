@@ -27,6 +27,8 @@ class PageWidget1(QWidget):
         # 初始化 UI
         grid_layout = QGridLayout()
         self.setLayout(grid_layout)
+        grid_layout.setSpacing(1)
+        grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.album_field = QLineEdit()
         grid_layout.addWidget(self.album_field, 0, 0, 1, 1)
@@ -84,10 +86,12 @@ class PageWidget1(QWidget):
         self.setup_ui()
         self.setup_event()
 
-    def set_theme_kanban(self, theme_kanban: ThemeKanBan) -> None:
+    def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
         self.album_table_view.source_model.set_theme_kanban(theme_kanban)
+        self.album_table_view.proxy_model.unset_filter()
         self.album_table_view.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
+        self.track_table_view.source_model.set_album_kanban(None)
 
     # 重写方法
 

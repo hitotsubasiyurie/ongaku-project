@@ -1,9 +1,10 @@
-from PySide6.QtCore import (Qt, QObject, QEvent, Signal, QModelIndex, QRect, )
-from PySide6.QtGui import (QColor, QFocusEvent, QPainter, )
+from PySide6.QtCore import (Qt, QObject, QEvent, Signal, QModelIndex, QRect, QSize, )
+from PySide6.QtGui import (QFocusEvent, QPainter, QFocusEvent, )
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAbstractScrollArea, QListWidgetItem, 
     QStyledItemDelegate, QStyleOptionViewItem, QStyle, )
 
 from src.kanban.kanban import KanBan
+from src.kanban.theme_colors import current_theme
 
 
 class ProgressDelegate(QStyledItemDelegate):
@@ -11,6 +12,7 @@ class ProgressDelegate(QStyledItemDelegate):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
 
+        self.fh = None
         self.coll_dict: dict[str, float] = {}
         self.mark_dict: dict[str, float] = {}
 
@@ -20,37 +22,32 @@ class ProgressDelegate(QStyledItemDelegate):
         option = QStyleOptionViewItem(option)
         option.state = QStyle.StateFlag.State_Enabled
         
-        text = index.data()[1:]
+        text = index.data()[2:]
         rect: QRect = option.rect
 
         painter.save()
 
-        # 颜色设计考虑 mark 进度一定更小
-        # collection_progress (半透明绿色)
         if text in self.coll_dict:
             val = self.coll_dict[text]
             w = int(rect.width() * val)
             comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
-            painter.fillRect(comp_rect, QColor(193, 202, 183, 100))
-            painter.setPen(QColor(0x2E7D32))
-            painter.drawLine(rect.left() + w, rect.top(), rect.left() + w, rect.bottom())
+            painter.fillRect(comp_rect, current_theme.THEME_PROGRESS_COLL_COLOR)
 
-        # mark_progress (半透明橙色)
-        if True or text in self.mark_dict:
-            # val = self.mark_dict[text]
-            import random
-            val = random.random()
+        if text in self.mark_dict:
+            val = self.mark_dict[text]
             w = int(rect.width() * val)
             comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
-            painter.fillRect(comp_rect,QColor(255, 152, 0, 100))  # 橙色半透明
-            # 端点刻度线
-            painter.setPen(QColor(0xE65100))
-            painter.drawLine(rect.left() + w, rect.top(), rect.left() + w, rect.bottom())
+            painter.fillRect(comp_rect, current_theme.THEME_PROGRESS_MARK_COLOR)
 
         painter.restore()
 
-        # 绘制文本（默认）
         super().paint(painter, option, index)
+
+    def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
+        # 1.5 倍高度
+        size = super().sizeHint(option, index)
+        size.setHeight(self.fh*1.5)
+        return size
 
 
 class ThemeBoxWidget(QWidget):
@@ -73,14 +70,21 @@ class ThemeBoxWidget(QWidget):
 
         self.list_widget = QListWidget(self)
         self.delegate = ProgressDelegate()
+        self.delegate.fh = fh
         self.list_widget.setItemDelegate(self.delegate)
         layout.addWidget(self.list_widget)
+
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # 自适应高度
         self.list_widget.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.list_widget.itemDoubleClicked.connect(self._on_list_item_clicked)
 
-
+        # 弹出窗口类型
+        self.setWindowFlags(Qt.WindowType.Popup)
+        
+    
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
@@ -104,8 +108,8 @@ class ThemeBoxWidget(QWidget):
     def _update_list_items(self) -> None:
         # list_widget 展示优先级 selected > themes
         tmp = sorted(self.theme_names, key=lambda t: (t != self.selected_theme, -1*self.coll_dict.get(t), self.mark_dict.get(t)))
-        # 等宽 空白字符
-        tmp = [f"⚪️{t}" if t == self.selected_theme else f"　{t}" for t in tmp]
+        # 等宽 空白字符 两个字符
+        tmp = [f"⚪️{t}" if t == self.selected_theme else f"　　{t}" for t in tmp]
         self.list_widget.clear()
         self.list_widget.addItems(tmp)
         # 滚动 list_widget 至顶
@@ -114,7 +118,7 @@ class ThemeBoxWidget(QWidget):
 
         # 字体高度
         fh = self.fontMetrics().height()
-        self.list_widget.setFixedHeight(min(len(tmp), 40)*fh*1.5)
+        self.list_widget.setFixedHeight(min(len(tmp), 10)*fh*1.75)
         self.adjustSize()
 
     def _hide_list_items(self, *args, **kwargs) -> None:
@@ -128,8 +132,10 @@ class ThemeBoxWidget(QWidget):
         self._hide_list_items()
 
     def _on_list_item_clicked(self, item: QListWidgetItem) -> None:
+        # 双击后 隐藏窗口
+        self.hide()
         # list_widget 元素被双击时，选择/取消选择 元素
-        text = item.text()[1:]
+        text = item.text()[2:]
         if self.selected_theme == text:
             self.selected_theme = None
         else:

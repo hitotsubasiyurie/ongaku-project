@@ -3,15 +3,16 @@ from typing import Any
 
 from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QMimeData,
                             QSize, )
-from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QFont,
+from PySide6.QtGui import (QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QFont,
                            QFontMetrics, )
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, )
 
 from src.basemodels import Track
 from src.kanban.kanban import ResourceState, AlbumKanBan
+from src.kanban.theme_colors import current_theme
 from src.kanban.page1.widgets.album_table_view import AlbumStateItemDelegate
-from src.kanban.widgets.custom_table_item_model import CustomTableItemModel
+from src.kanban.custom_table_item_model import CustomTableItemModel
 
 
 class TrackTableItemModel(CustomTableItemModel):
@@ -22,14 +23,18 @@ class TrackTableItemModel(CustomTableItemModel):
         self.headers = ["S", "TITLE"]
         self.col_cnt: int = len(self.headers)
 
-    def set_album_kanban(self, album_kanban: AlbumKanBan) -> None:
+    def set_album_kanban(self, album_kanban: AlbumKanBan = None) -> None:
+        max_ms = 0b111111
+
         # 声明所有数据都无效，重新加载
         self.beginResetModel()
-
-        ms = 0b111111
-        self.table = [[(rs, ms), (t.title, t.artist)]
-                      for rs, t in zip(album_kanban.track_res_states, album_kanban.album.tracks)]
-
+        
+        if album_kanban:
+            self.table = [[(rs, max_ms), (t.title, t.artist)]
+                        for rs, t in zip(album_kanban.track_res_states, album_kanban.album.tracks)]
+        else:
+            self.table = []
+        
         self.row_cnt = len(self.table)
         self.endResetModel()
     
@@ -70,7 +75,7 @@ class TrackTitleItemDelegate(QStyledItemDelegate):
         
         artist_rect = QRect(rect.left(), title_rect.bottom(), rect.width(),
                             self._get_content_height(font, width, artist))
-        painter.setPen(QColor(0x666666))
+        painter.setPen(current_theme.ARTIST_COLOR)
         painter.drawText(artist_rect, artist)
         painter.restore()
 
@@ -116,8 +121,8 @@ class TrackTableView(QTableView):
         # 可编辑
         self.setEditTriggers(QTableView.EditTrigger.DoubleClicked)
         self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
-        # 像素滚动
-        self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerPixel)
+        # 条目滚动 提高性能
+        self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerItem)
         # 允许拖入
         self.setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)

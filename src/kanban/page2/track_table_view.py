@@ -3,17 +3,29 @@ from typing import Any
 
 from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QItemSelection, QMimeData, 
     QRectF, )
-from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, 
+from PySide6.QtGui import (QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, 
     QBrush, )
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, )
 
 from src.basemodels import Album, Track
+from src.kanban.theme_colors import current_theme
 from src.kanban.kanban import ThemeKanBan, ResourceState
-from src.kanban.widgets.custom_table_item_model import CustomTableItemModel, CustomTableSortFilterProxyModel
+from src.kanban.custom_table_item_model import CustomTableItemModel, CustomTableSortFilterProxyModel
 
 
 class TrackTableItemModel(CustomTableItemModel):
+
+    RESOURCE_STATE_QBRUSHS = {
+        ResourceState.LOSSLESS: QBrush(current_theme.LOSSLESS_COLOR),
+        ResourceState.LOSSY: QBrush(current_theme.LOSSY_COLOR),
+        ResourceState.MISSING: QBrush(current_theme.MISSING_COLOR),
+    }
+
+    MARKED_QBRUSHES = {
+        Qt.ItemDataRole.BackgroundRole: QBrush(current_theme.MARKED_BACKGROUND_COLOR),
+        Qt.ItemDataRole.ForegroundRole: QBrush(current_theme.MARKED_FOREGROUND_COLOR)
+    }
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -21,20 +33,24 @@ class TrackTableItemModel(CustomTableItemModel):
         self.headers: list[str] = ["Size", "Title", "Artist", "Album", "Date", "Mark"]
         self.col_cnt: int = len(self.headers)
 
-    def set_theme_kanban(self, theme_kanban: ThemeKanBan) -> None:
+    def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.beginResetModel()
+
         self.table = []
-        self.tracks_states = list(itertools.chain.from_iterable(k.track_res_states for k in theme_kanban.album_kanbans))
         self.original_idx = []
-
-        for i, k in enumerate(theme_kanban.album_kanbans):
-            for j, t  in enumerate(k.album.tracks):
-                stat = k.track_stat_results[j]
-                size = "{:.2f} MiB".format(stat.st_size / 1024 / 1024) if stat else ""
-                self.table.append([size, t.title, t.artist, k.album.album, k.album.date, k.album.mark])
-                self.original_idx.append((i, j))
-
+        if theme_kanban:
+            self.tracks_states = list(itertools.chain.from_iterable(k.track_res_states for k in theme_kanban.album_kanbans))
+            for i, k in enumerate(theme_kanban.album_kanbans):
+                for j, t  in enumerate(k.album.tracks):
+                    stat = k.track_stat_results[j]
+                    size = "{:.2f} MiB".format(stat.st_size / 1024 / 1024) if stat else ""
+                    self.table.append([size, t.title, t.artist, k.album.album, k.album.date, k.album.mark])
+                    self.original_idx.append((i, j))
+        else:
+            self.tracks_states = []
+    
         self.row_cnt = len(self.table)
+
         self.endResetModel()
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
@@ -45,10 +61,7 @@ class TrackTableItemModel(CustomTableItemModel):
         
         # Size 列 资源状态 字体颜色
         if role == Qt.ItemDataRole.ForegroundRole and col == 0:
-            if self.tracks_states[row] == ResourceState.LOSSY:
-                return QBrush(QColor(0xFFCC00))
-            elif self.tracks_states[row] == ResourceState.LOSSLESS:
-                return QBrush(QColor(46, 160, 67))
+            return self.RESOURCE_STATE_QBRUSHS[self.tracks_states[row]]
         
         # Size 列 文本右对齐
         if role == Qt.ItemDataRole.TextAlignmentRole and col in [0]:
@@ -62,14 +75,9 @@ class TrackTableItemModel(CustomTableItemModel):
             return self.original_idx[row]
         
         # 已有 Mark 信息 置灰
-        if  not row % 5:
-            if role == Qt.ItemDataRole.BackgroundRole:
-                return QBrush(QColor(20, 20, 20))
-            if role == Qt.ItemDataRole.ForegroundRole:
-                return QBrush(QColor(130, 130, 130))
-            
-
-
+        if self.table[row][5] and role in self.MARKED_QBRUSHES:
+            return self.MARKED_QBRUSHES[role]
+        
         return super().data(index, role)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
@@ -108,8 +116,9 @@ class TrackTableView(QTableView):
         self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         # 可排序
         self.setSortingEnabled(True)
-        # 像素滚动
-        self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerPixel)
+        # 条目滚动 提高性能
+        self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerItem)
+
         # 隐藏滚动条
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 

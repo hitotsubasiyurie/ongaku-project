@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl, QModelIndex
-from PySide6.QtGui import QColor, QKeySequence, QShortcut
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, 
     QTableWidgetItem, QSlider, QPushButton, QLabel, QHeaderView, QStyleFactory, QGridLayout, 
     QLineEdit, QAbstractItemView, )
@@ -18,6 +18,8 @@ class PageWidget2(QWidget):
         # 初始化 UI
         grid_layout = QGridLayout()
         self.setLayout(grid_layout)
+        grid_layout.setSpacing(5)
+        grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.title_field = QLineEdit()
         grid_layout.addWidget(self.title_field, 0, 1, 1, 1)
@@ -46,9 +48,6 @@ class PageWidget2(QWidget):
         col_stretch = [1, 8, 4, 4, 1, 1]
         [s and grid_layout.setColumnStretch(i, s) for i, s in enumerate(col_stretch)]
 
-        grid_layout.setSpacing(5)
-        grid_layout.setContentsMargins(0, 0, 0, 0)
-
     def setup_event(self) -> None:
         # 初始化 事件
         self.title_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(1, t))
@@ -69,11 +68,15 @@ class PageWidget2(QWidget):
         self.setup_ui()
         self.setup_event()
 
+        # 内部属性
         self._playing_model_index: QModelIndex = None
 
-    def set_theme_kanban(self, theme_kanban: ThemeKanBan) -> None:
+    def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
+        self._playing_model_index = None
         self.track_table_view.source_model.set_theme_kanban(theme_kanban)
+        self.track_table_view.proxy_model.unset_filter()
+        self.track_table_view.proxy_model.sort(1, Qt.SortOrder.AscendingOrder)
 
     # 内部方法
 

@@ -6,10 +6,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QPalette, QColor, Qt
+
 
 from src.kanban.kanban import KanBan
 from src.kanban.kanban_ui import KanBanUI
+from src.kanban.theme_colors import current_theme
 
 
 if __name__ == "__main__":
@@ -17,23 +18,10 @@ if __name__ == "__main__":
     ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
     app = QApplication([])
-    dark_palette = QPalette()
+    current_theme.apply_theme(app)
 
-    # 背景和窗口
-    dark_palette.setColor(QPalette.ColorRole.Window, QColor(0, 0, 0))
-    dark_palette.setColor(QPalette.ColorRole.Base, QColor(30, 30, 30))
-    dark_palette.setColor(QPalette.ColorRole.Button, QColor(40, 40, 40))
-
-    dark_palette.setColor(QPalette.ColorRole.WindowText, QColor(204, 204, 204))
-    dark_palette.setColor(QPalette.ColorRole.Text, QColor(204, 204, 204))
-    dark_palette.setColor(QPalette.ColorRole.HighlightedText, QColor(204, 204, 204))
-
-    # 高亮 同 VSCode
-    dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(38, 79, 120))
-
-    app.setPalette(dark_palette)
     QApplication.setStyle("Fusion")
-    app.setStyleSheet(Path(__file__).with_name("widgets").joinpath("widgets.qss").read_text("utf-8"))
+    app.setStyleSheet(Path(__file__).with_name("widgets.qss").read_text("utf-8"))
     font = app.font()
     font.setPointSize(9)
     font.setFamily("JetBrains Mono")

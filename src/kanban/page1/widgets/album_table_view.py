@@ -3,12 +3,13 @@ from typing import Any
 
 from PySide6.QtCore import (QRect, QModelIndex, Qt, QAbstractItemModel, QObject, Signal, QItemSelection, QMimeData, 
     QRectF, QSortFilterProxyModel)
-from PySide6.QtGui import (QColor, QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, )
+from PySide6.QtGui import (QPainter, QDragEnterEvent, QDropEvent, QDragMoveEvent, QAction, QPainterPath, )
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
     QAbstractItemView, QGridLayout, )
 
 from src.kanban.kanban import ResourceState, ThemeKanBan
-from src.kanban.widgets.custom_table_item_model import CustomTableItemModel, CustomTableSortFilterProxyModel
+from src.kanban.theme_colors import current_theme
+from src.kanban.custom_table_item_model import CustomTableItemModel, CustomTableSortFilterProxyModel
 
 
 class AlbumTableItemModel(CustomTableItemModel):
@@ -19,13 +20,17 @@ class AlbumTableItemModel(CustomTableItemModel):
         self.headers: list[str] = ["S", "ALBUM", "CATNO", "DATE"]
         self.col_cnt: int = len(self.headers)
 
-    def set_theme_kanban(self, theme_kanban: ThemeKanBan) -> None:
+    def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         # 声明所有数据都无效，重新加载
         self.beginResetModel()
-        self.table = [[(k.album_res_state, k.metadata_state), k.album.album, k.album.catalognumber, k.album.date]
-                      for k in theme_kanban.album_kanbans]
 
+        if theme_kanban:
+            self.table = [[(k.album_res_state, k.metadata_state), k.album.album, k.album.catalognumber, k.album.date]
+                        for k in theme_kanban.album_kanbans]
+        else:
+            self.table = []
         self.row_cnt = len(self.table)
+        
         self.endResetModel()
 
     # 可编辑
@@ -67,9 +72,9 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
     """
 
     RESOURCE_STATE_COLORS = {
-        ResourceState.LOSSLESS: QColor(46, 160, 67),
-        ResourceState.LOSSY: QColor(0xFFCC00),
-        ResourceState.MISSING: QColor(0xDDDDDD),
+        ResourceState.LOSSLESS: current_theme.LOSSLESS_COLOR,
+        ResourceState.LOSSY: current_theme.LOSSY_COLOR,
+        ResourceState.MISSING: current_theme.MISSING_COLOR,
     }
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
@@ -137,8 +142,8 @@ class AlbumTableView(QTableView):
         self.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
         # 可排序
         self.setSortingEnabled(True)
-        # 像素滚动
-        self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerPixel)
+        # 条目滚动 提高性能
+        self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerItem)
         # 允许拖入
         self.setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)

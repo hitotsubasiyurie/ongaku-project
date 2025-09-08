@@ -77,6 +77,7 @@ class PageWidget2(QWidget):
         self.track_table_view.source_model.set_theme_kanban(theme_kanban)
         self.track_table_view.proxy_model.unset_filter()
         self.track_table_view.proxy_model.sort(1, Qt.SortOrder.AscendingOrder)
+        self.track_table_view.scrollToTop()
 
     # 内部方法
 

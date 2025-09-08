@@ -91,6 +91,7 @@ class PageWidget1(QWidget):
         self.album_table_view.source_model.set_theme_kanban(theme_kanban)
         self.album_table_view.proxy_model.unset_filter()
         self.album_table_view.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
+        self.album_table_view.scrollToTop()
         self.track_table_view.source_model.set_album_kanban(None)
 
     # 重写方法

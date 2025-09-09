@@ -1,5 +1,5 @@
 from PySide6.QtCore import (Qt, QObject, QEvent, Signal, QModelIndex, QRect, QSize, )
-from PySide6.QtGui import (QFocusEvent, QPainter, QFocusEvent, )
+from PySide6.QtGui import (QFocusEvent, QPainter, QFocusEvent, QFont, QFontMetrics)
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAbstractScrollArea, QListWidgetItem, 
     QStyledItemDelegate, QStyleOptionViewItem, QStyle, )
 
@@ -12,7 +12,6 @@ class ProgressDelegate(QStyledItemDelegate):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
 
-        self.fh = None
         self.coll_dict: dict[str, float] = {}
         self.mark_dict: dict[str, float] = {}
 
@@ -44,9 +43,10 @@ class ProgressDelegate(QStyledItemDelegate):
         super().paint(painter, option, index)
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
-        # 1.5 倍高度
+        font: QFont = option.font
+        fh = QFontMetrics(font).height()
         size = super().sizeHint(option, index)
-        size.setHeight(self.fh*1.5)
+        size.setHeight(fh)
         return size
 
 
@@ -70,7 +70,6 @@ class ThemeBoxWidget(QWidget):
 
         self.list_widget = QListWidget(self)
         self.delegate = ProgressDelegate()
-        self.delegate.fh = fh
         self.list_widget.setItemDelegate(self.delegate)
         layout.addWidget(self.list_widget)
 

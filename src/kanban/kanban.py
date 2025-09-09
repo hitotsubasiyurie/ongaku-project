@@ -87,7 +87,7 @@ class AlbumKanBan:
             self.metadata_state |= MetadataState.TRACK_EXIST
             if all(t.artist for t in self.album.tracks):
                 self.metadata_state |= MetadataState.ARTIST_EXIST
-        if self.album:
+        if self.cover:
             self.metadata_state |= MetadataState.COVER_EXIST
 
     def _analyze_resource(self) -> None:

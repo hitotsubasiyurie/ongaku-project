@@ -24,13 +24,13 @@ class TrackTableItemModel(CustomTableItemModel):
         self.col_cnt: int = len(self.headers)
 
     def set_album_kanban(self, album_kanban: AlbumKanBan = None) -> None:
-        max_ms = 0b111111
+        ms = 0b111110
 
         # 声明所有数据都无效，重新加载
         self.beginResetModel()
         
         if album_kanban:
-            self.table = [[(rs, max_ms), (t.title, t.artist)]
+            self.table = [[(rs, ms | bool(t.artist)), (t.title, t.artist)]
                         for rs, t in zip(album_kanban.track_res_states, album_kanban.album.tracks)]
         else:
             self.table = []
@@ -68,12 +68,13 @@ class TrackTitleItemDelegate(QStyledItemDelegate):
         rect: QRect = option.rect
         width: int = rect.width()
         font: QFont = option.font
+        fh = QFontMetrics(font).height()
         # 0.5 字符 行距
-        title_rect = QRect(rect.left(), rect.top()+font.pixelSize()//2, rect.width(),
+        title_rect = QRect(rect.left(), rect.top()+fh//4, rect.width(),
                            self._get_content_height(font, width, title))
         painter.drawText(title_rect, title)
         
-        artist_rect = QRect(rect.left(), title_rect.bottom(), rect.width(),
+        artist_rect = QRect(rect.left(), title_rect.bottom()+fh//4, rect.width(),
                             self._get_content_height(font, width, artist))
         painter.setPen(current_theme.ARTIST_COLOR)
         painter.drawText(artist_rect, artist)
@@ -83,10 +84,11 @@ class TrackTitleItemDelegate(QStyledItemDelegate):
         title, artist = index.data(Qt.ItemDataRole.DisplayRole)
         artist = " "*6 + artist
         font: QFont = option.font
+        fh = QFontMetrics(font).height()
         width: int = option.rect.width()
         # 0.5 字符 行距
         height = (self._get_content_height(font, width, title) + self._get_content_height(font, width, artist)
-                  + font.pixelSize())
+                  + fh//2)
         return QSize(width, height)
 
     def setEditorData(self, editor: QWidget, index: QModelIndex) -> None:
@@ -134,6 +136,8 @@ class TrackTableView(QTableView):
         # 设置行
         header = self.verticalHeader()
         header.setSectionsClickable(False)
+        # 行高使用 sizeHint
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         header.setFrameShape(QFrame.Shape.NoFrame)
         
         # 设置列

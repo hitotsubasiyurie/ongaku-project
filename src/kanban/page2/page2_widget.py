@@ -22,18 +22,23 @@ class PageWidget2(QWidget):
         grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.title_field = QLineEdit()
+        self.title_field.setPlaceholderText("Search title...")
         grid_layout.addWidget(self.title_field, 0, 1, 1, 1)
 
         self.artist_field = QLineEdit()
+        self.artist_field.setPlaceholderText("Search artist...")
         grid_layout.addWidget(self.artist_field, 0, 2, 1, 1)
 
         self.album_field = QLineEdit()
+        self.album_field.setPlaceholderText("Search album...")
         grid_layout.addWidget(self.album_field, 0, 3, 1, 1)
 
         self.date_field = QLineEdit()
+        self.date_field.setPlaceholderText("Search date...")
         grid_layout.addWidget(self.date_field, 0, 4, 1, 1)
 
         self.mark_field = QLineEdit()
+        self.mark_field.setPlaceholderText("Search mark...")
         grid_layout.addWidget(self.mark_field, 0, 5, 1, 1)
 
         self.track_table_view = TrackTableView()

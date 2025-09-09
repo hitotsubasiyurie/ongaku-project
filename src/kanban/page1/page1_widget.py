@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Callable
 
 from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtGui import QPixmap, QResizeEvent
+from PySide6.QtGui import QPixmap, QResizeEvent, QShortcut, QKeySequence
 from PySide6.QtWidgets import (QGraphicsOpacityEffect, QGridLayout, QLabel, QLineEdit, QMessageBox, 
      QWidget, )
 
@@ -78,6 +78,11 @@ class PageWidget1(QWidget):
         self.track_table_view.installEventFilter(self)
         self.cover_label.installEventFilter(self)
 
+    def setup_shortcut(self) -> None:
+        # 初始化 快捷键
+        QShortcut(QKeySequence("Esc"), self, activated=
+            lambda: [x.setText("") for x in [self.album_field, self.catno_field, self.date_field]])
+
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
@@ -85,6 +90,7 @@ class PageWidget1(QWidget):
 
         self.setup_ui()
         self.setup_event()
+        self.setup_shortcut()
 
     def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
@@ -112,9 +118,6 @@ class PageWidget1(QWidget):
             # 其余键按下时，拦截
             return True
         if event.type() == QEvent.Type.KeyRelease:
-            # F5 键释放时，刷新视图
-            if event.key() == Qt.Key.Key_F5:
-                pass
             # 任何按键释放时，透明化 cover_label
             self.cover_effect.opacity() != 0.1 and self.cover_effect.setOpacity(0.1)
             return True

@@ -2,7 +2,6 @@ QPushButton#FloatButton {
     background-color: rgba(0, 0, 0, 100); /* 半透明 */
     color: white;
     border-radius: 20px;
-    font-size: 18px;
 }
 
 QPushButton#FloatButton:hover {

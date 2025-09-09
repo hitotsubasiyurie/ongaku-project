@@ -1,5 +1,5 @@
 from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtGui import QPixmap, QResizeEvent
+from PySide6.QtGui import QPixmap, QResizeEvent, QShortcut, QKeySequence
 from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QStackedWidget, )
 
 from src.kanban.kanban import KanBan
@@ -41,9 +41,16 @@ class KanBanUI(QWidget):
 
     def setup_event(self) -> None:
         # 初始化 事件
-        self.page_btn.clicked.connect(self._on_page_btn_clicked)
+        self.page_btn.clicked.connect(self._toggle_page)
         self.theme_btn.clicked.connect(self._on_theme_btn_clicked)
         self.theme_box.selected_changed.connect(self._on_theme_box_selected)
+
+    def setup_shortcut(self) -> None:
+        # 初始化 快捷键
+        QShortcut(QKeySequence("Alt+Left"), self, activated=lambda : self._toggle_page(0))
+        QShortcut(QKeySequence("Alt+Right"), self, activated=lambda : self._toggle_page(1))
+        shortcut = QShortcut(QKeySequence("Tab"), self, activated=self._on_theme_btn_clicked)
+        shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -52,6 +59,7 @@ class KanBanUI(QWidget):
 
         self.setup_ui()
         self.setup_event()
+        self.setup_shortcut()
 
     def set_kanban(self, kanban: KanBan) -> None:
         self.kanban = kanban
@@ -76,12 +84,10 @@ class KanBanUI(QWidget):
             self.page_btn.move(0, 0)
             self.theme_btn.move(self.page_btn.width(), 0)
 
-    def _on_page_btn_clicked(self):
-        index = self.stack.currentIndex()
-        if index == 0:
-            self.stack.setCurrentIndex(1)
-        else:
-            self.stack.setCurrentIndex(0)
+    def _toggle_page(self, dst: int = None):
+        if not dst:
+            dst = 0 if self.stack.currentIndex() == 1 else 1
+        self.stack.setCurrentIndex(dst)
         self._locate_btns()
 
     def _on_theme_btn_clicked(self):

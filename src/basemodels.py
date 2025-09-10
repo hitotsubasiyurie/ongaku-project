@@ -68,7 +68,6 @@ class Album(BaseModel, validate_assignment=True):
     album: _CustomStr = Field(default="")
     tracks: tuple["Track", ...] = Field(default_factory=tuple)
     links: _CustomStrTuple = Field(default_factory=tuple)
-    mark: _CustomStr = Field(default="")
 
     _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
 
@@ -91,6 +90,7 @@ class Track(BaseModel, validate_assignment=True):
     tracknumber: _CustomInt = Field(default=0)
     title: _CustomStr = Field(default="")
     artist: _CustomStr = Field(default="")
+    mark: _CustomStr = Field(default="")
 
     def __hash__(self) -> int:
         return hash((self.tracknumber, self.title, self.artist))

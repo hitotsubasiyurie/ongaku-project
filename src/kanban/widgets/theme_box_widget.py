@@ -82,7 +82,6 @@ class ThemeBoxWidget(QWidget):
 
         # 弹出窗口类型
         self.setWindowFlags(Qt.WindowType.Popup)
-        
     
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)

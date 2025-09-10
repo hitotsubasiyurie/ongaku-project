@@ -44,7 +44,7 @@ def dump_albums_to_toml(albums: list[Album], filepath: str) -> None:
     """
     ds = list(map(Album.model_dump, albums))
     for d in ds:
-        d["tracks"] = [[t["tracknumber"], t["title"], t["artist"]] for t in d["tracks"]]
+        d["tracks"] = [[t["tracknumber"], t["title"], t["artist"], t["mark"]] for t in d["tracks"]]
     obj = {str(i+1): d for i, d in enumerate(ds)}
     dump_toml(obj, filepath)
 
@@ -59,7 +59,7 @@ def load_albums_from_toml(filepath: str) -> list[Album]:
     obj = tomllib.loads(text)
     ds = obj.values()
     for d in ds:
-        d["tracks"] = [{"tracknumber": t[0], "title": t[1], "artist": t[2]} for t in d["tracks"]]
+        d["tracks"] = [{"tracknumber": t[0], "title": t[1], "artist": t[2], "mark": t[3] if len(t) > 3 else ""} for t in d["tracks"]]
     albums = [Album(**d) for d in ds]
     return albums
 

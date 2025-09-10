@@ -7,7 +7,7 @@ from enum import IntEnum, IntFlag, auto
 from src.logger import logger, logger_watched
 from src.basemodels import Album, Track
 from src.utils import legalize_filename
-from src.repository_utils import load_albums_from_toml, album_filename, track_filenames
+from src.repository_utils import load_albums_from_toml, album_filename, track_filenames, dump_albums_to_toml
 
 
 AUDIO_EXTS = {".mp3", ".flac"}
@@ -141,13 +141,17 @@ class ThemeKanBan:
         albums = load_albums_from_toml(self.theme_metadata_file)
         album_dirs = [os.path.join(self.theme_directory, legalize_filename(album_filename(a))) for a in albums]
         self.album_kanbans = [AlbumKanBan(a, d) for a, d in zip(albums, album_dirs)]
-
+        
         if albums:
-            self.mark_progress = sum(bool(a.mark) for a in albums) / len(albums)
+            self.mark_progress = sum(bool(t.mark) for a in albums for t in a.tracks) / sum(len(a.tracks) for a in albums)
             self.collection_progress = sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans) / len(albums)
         else:
             self.mark_progress = 0
             self.collection_progress = 0
+
+    def save_metadata_file(self) -> None:
+        albums = [k.album for k in self.album_kanbans]
+        dump_albums_to_toml(albums, self.theme_metadata_file)
 
 
 @dataclass

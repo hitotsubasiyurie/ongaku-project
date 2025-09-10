@@ -44,7 +44,7 @@ class TrackTableItemModel(CustomTableItemModel):
                 for j, t  in enumerate(k.album.tracks):
                     stat = k.track_stat_results[j]
                     size = "{:.2f} MiB".format(stat.st_size / 1024 / 1024) if stat else ""
-                    self.table.append([size, t.title, t.artist, k.album.album, k.album.date, k.album.mark])
+                    self.table.append([size, t.title, t.artist, k.album.album, k.album.date, t.mark])
                     self.original_idx.append((i, j))
         else:
             self.tracks_states = []
@@ -78,6 +78,9 @@ class TrackTableItemModel(CustomTableItemModel):
         if self.table[row][5] and role in self.MARKED_QBRUSHES:
             return self.MARKED_QBRUSHES[role]
         
+        if col == 5 and self.table[row][col] == "1" and role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
+            return "❤️"
+        
         return super().data(index, role)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
@@ -90,9 +93,20 @@ class TrackTableItemModel(CustomTableItemModel):
 
 class TrackTableView(QTableView):
 
+    favourite_selected = Signal()
+    unfavourite_selected = Signal()
+
     def setup_context_menu(self) -> None:
         # 初始化 右键菜单
-        pass
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        action = QAction("❤ Favourite", self)
+        action.triggered.connect(self.favourite_selected.emit)
+        self.addAction(action)
+        action = QAction("♡ Listened", self)
+        action.triggered.connect(self.unfavourite_selected.emit)
+        self.addAction(action)
+        action = QAction("Clear", self)
+        self.addAction(action)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -139,6 +153,7 @@ class TrackTableView(QTableView):
         column_modes = [QHeaderView.ResizeMode.Fixed if w else QHeaderView.ResizeMode.Stretch for w in column_widths]
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
+        self.setup_context_menu()
 
 
 

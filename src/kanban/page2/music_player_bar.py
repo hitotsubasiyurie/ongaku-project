@@ -28,7 +28,7 @@ class MusicPlayerBar(QWidget):
         self.slider = ClickableSlider(Qt.Orientation.Horizontal)
         self.slider.setFixedHeight(fh)
 
-        self.time_label = QLabel("00:00/00:00")
+        self.time_label = QLabel()
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.time_label.setFixedSize(fh * 6, fh * 1.5)
 

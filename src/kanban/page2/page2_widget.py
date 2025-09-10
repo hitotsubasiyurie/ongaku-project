@@ -61,6 +61,8 @@ class PageWidget2(QWidget):
         self.date_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(4, t))
         self.mark_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(5, t))
         self.track_table_view.doubleClicked.connect(self._on_track_table_double_clicked)
+        self.track_table_view.favourite_selected.connect(lambda: self._update_track_mark(True))
+        self.track_table_view.unfavourite_selected.connect(lambda: self._update_track_mark(False))
         self.music_player_bar.playback_finished.connect(self._play_next)
         self.music_player_bar.prev_btn.clicked.connect(self._play_prev)
         self.music_player_bar.next_btn.clicked.connect(self._play_next)
@@ -73,6 +75,12 @@ class PageWidget2(QWidget):
         QShortcut(QKeySequence("Alt+Down"), self, activated=self._play_next)
         QShortcut(QKeySequence("Esc"), self, activated=
                   lambda: [x.setText("") for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
+        shortcut = QShortcut(QKeySequence("."), self, activated=
+                             lambda: self._playing_model_index and self._playing_model_index.isValid() 
+                             and self.track_table_view.selectRow(self._playing_model_index.row()))
+        shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
+        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._update_track_mark(False))
+        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._update_track_mark(True))
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -97,6 +105,21 @@ class PageWidget2(QWidget):
 
     # 内部方法
 
+    def _update_track_mark(self, favourite: bool, force: bool = True) -> None:
+        rows = list(sorted(set(i.row() for i in map(self.track_table_view.proxy_model.mapToSource, self.track_table_view.selectedIndexes()))))
+        for r in rows:
+            if self.track_table_view.source_model.table[r][5] and not force:
+                continue
+            # 更新 看板
+            i, j = self.track_table_view.source_model.original_idx[r]
+            self.theme_kanban.album_kanbans[i].album.tracks[j].mark = str(int(favourite))
+            # 更新 视图
+            self.track_table_view.source_model.table[r][5] = str(int(favourite))
+            ix = self.track_table_view.source_model.index(r, 5)
+            self.track_table_view.source_model.dataChanged.emit(ix, ix)
+        # 保存文件
+        self.theme_kanban.save_metadata_file()
+
     def _play(self) -> None:
         while self._playing_model_index and self._playing_model_index.isValid():
             i, j = self.track_table_view.proxy_model.data(self._playing_model_index, Qt.ItemDataRole.UserRole)
@@ -107,11 +130,12 @@ class PageWidget2(QWidget):
                 continue
 
             self.music_player_bar.set_media(file)
-            # 聚焦 track table 选中 当前播放行
-            self.track_table_view.setFocus()
+            # track table 选中 当前播放行
             self.track_table_view.scrollTo(self._playing_model_index, QAbstractItemView.ScrollHint.PositionAtCenter)
             self.track_table_view.clearSelection()
             self.track_table_view.selectRow(self._playing_model_index.row())
+            # 更新 track mark
+            self._update_track_mark(False, force=False)
             return
 
         # index 无效 清空播放器

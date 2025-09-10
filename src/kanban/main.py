@@ -27,7 +27,8 @@ if __name__ == "__main__":
     font.setFamily("JetBrains Mono")
     app.setFont(font)
     widget = KanBanUI()
-    widget.set_kanban(KanBan(r"D:\ongaku-metadata", r"D:\移动云盘同步盘\ongaku-resource"))
+    kanban = KanBan(r"D:\ongaku-metadata", r"D:\移动云盘同步盘\ongaku-resource")
+    widget.set_kanban(kanban)
     screen = app.screens()[0]
     screen_geometry = screen.availableGeometry()
     width = screen_geometry.width()
@@ -36,9 +37,6 @@ if __name__ == "__main__":
     widget.move(screen_geometry.left(), screen_geometry.top())
     widget.show()
     sys.exit(app.exec())
-
-
-
 
 
 

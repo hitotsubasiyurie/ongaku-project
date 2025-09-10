@@ -2,7 +2,7 @@ from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QPixmap, QResizeEvent, QShortcut, QKeySequence
 from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QStackedWidget, )
 
-from src.kanban.kanban import KanBan
+from src.kanban.kanban import KanBan, ThemeKanBan
 from src.kanban.page1.page1_widget import PageWidget1
 from src.kanban.page2.page2_widget import PageWidget2
 from src.kanban.widgets.theme_box_widget import ThemeBoxWidget
@@ -51,11 +51,13 @@ class KanBanUI(QWidget):
         QShortcut(QKeySequence("Alt+Right"), self, activated=lambda : self._toggle_page(1))
         shortcut = QShortcut(QKeySequence("Tab"), self, activated=self._on_theme_btn_clicked)
         shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
+        shortcut = QShortcut(QKeySequence("F5"), self, activated=self.refresh_current_theme_kanban)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.kanban: KanBan = None
+        self.current_theme_kanban: ThemeKanBan = None
 
         self.setup_ui()
         self.setup_event()
@@ -64,6 +66,13 @@ class KanBanUI(QWidget):
     def set_kanban(self, kanban: KanBan) -> None:
         self.kanban = kanban
         self.theme_box.set_kanban(kanban)
+
+    def refresh_current_theme_kanban(self) -> None:
+        if not self.current_theme_kanban:
+            return
+        self.current_theme_kanban.scan()
+        self.page1.set_theme_kanban(self.current_theme_kanban)
+        self.page2.set_theme_kanban(self.current_theme_kanban)
 
     # 重写方法
 
@@ -99,9 +108,9 @@ class KanBanUI(QWidget):
             self.theme_box.hide()
 
     def _on_theme_box_selected(self) -> None:
-        theme_kanban = self.kanban.get_theme_kanban(self.theme_box.selected_theme)
-        self.page1.set_theme_kanban(theme_kanban)
-        self.page2.set_theme_kanban(theme_kanban)
+        self.current_theme_kanban = self.kanban.get_theme_kanban(self.theme_box.selected_theme)
+        self.page1.set_theme_kanban(self.current_theme_kanban)
+        self.page2.set_theme_kanban(self.current_theme_kanban)
 
 
 

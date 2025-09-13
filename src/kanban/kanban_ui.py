@@ -71,6 +71,7 @@ class KanBanUI(QWidget):
         if not self.current_theme_kanban:
             return
         self.current_theme_kanban.scan()
+        self.theme_box.set_kanban(self.kanban)
         self.page1.set_theme_kanban(self.current_theme_kanban)
         self.page2.set_theme_kanban(self.current_theme_kanban)
 

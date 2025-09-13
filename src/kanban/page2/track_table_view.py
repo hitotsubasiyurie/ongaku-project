@@ -95,6 +95,7 @@ class TrackTableView(QTableView):
 
     favourite_selected = Signal()
     unfavourite_selected = Signal()
+    clear_selected = Signal()
 
     def setup_context_menu(self) -> None:
         # 初始化 右键菜单
@@ -106,6 +107,7 @@ class TrackTableView(QTableView):
         action.triggered.connect(self.unfavourite_selected.emit)
         self.addAction(action)
         action = QAction("Clear", self)
+        action.triggered.connect(self.clear_selected.emit)
         self.addAction(action)
 
     def __init__(self, parent: QWidget = None) -> None:

@@ -97,6 +97,8 @@ class PageWidget1(QWidget):
 
     def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
+        # 清空搜索框
+        [x.setText("") for x in [self.album_field, self.catno_field, self.date_field]]
         self.album_table_view.source_model.set_theme_kanban(theme_kanban)
         self.album_table_view.proxy_model.unset_filter()
         self.album_table_view.proxy_model.sort(0, Qt.SortOrder.AscendingOrder)

@@ -61,8 +61,9 @@ class PageWidget2(QWidget):
         self.date_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(4, t))
         self.mark_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(5, t))
         self.track_table_view.doubleClicked.connect(self._on_track_table_double_clicked)
-        self.track_table_view.favourite_selected.connect(lambda: self._update_track_mark(True))
-        self.track_table_view.unfavourite_selected.connect(lambda: self._update_track_mark(False))
+        self.track_table_view.favourite_selected.connect(lambda: self._update_track_mark("1"))
+        self.track_table_view.unfavourite_selected.connect(lambda: self._update_track_mark("0"))
+        self.track_table_view.clear_selected.connect(lambda: self._update_track_mark(""))
         self.music_player_bar.playback_finished.connect(self._play_next)
         self.music_player_bar.prev_btn.clicked.connect(self._play_prev)
         self.music_player_bar.next_btn.clicked.connect(self._play_next)
@@ -77,10 +78,11 @@ class PageWidget2(QWidget):
                   lambda: [x.setText("") for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
         shortcut = QShortcut(QKeySequence("."), self, activated=
                              lambda: self._playing_model_index and self._playing_model_index.isValid() 
-                             and self.track_table_view.selectRow(self._playing_model_index.row()))
+                             and [self.track_table_view.selectRow(self._playing_model_index.row()), 
+                                  self.track_table_view.setCurrentIndex(self.track_table_view.selectedIndexes()[0])])
         shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
-        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._update_track_mark(False))
-        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._update_track_mark(True))
+        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._update_track_mark("0"))
+        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._update_track_mark("1"))
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -98,6 +100,8 @@ class PageWidget2(QWidget):
     def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
         self._playing_model_index = None
+        # 清空搜索框
+        [x.setText("") for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]]
         self.track_table_view.source_model.set_theme_kanban(theme_kanban)
         self.track_table_view.proxy_model.unset_filter()
         self.track_table_view.proxy_model.sort(1, Qt.SortOrder.AscendingOrder)
@@ -105,16 +109,16 @@ class PageWidget2(QWidget):
 
     # 内部方法
 
-    def _update_track_mark(self, favourite: bool, force: bool = True) -> None:
+    def _update_track_mark(self, mark: str, force: bool = True) -> None:
         rows = list(sorted(set(i.row() for i in map(self.track_table_view.proxy_model.mapToSource, self.track_table_view.selectedIndexes()))))
         for r in rows:
             if self.track_table_view.source_model.table[r][5] and not force:
                 continue
             # 更新 看板
             i, j = self.track_table_view.source_model.original_idx[r]
-            self.theme_kanban.album_kanbans[i].album.tracks[j].mark = str(int(favourite))
+            self.theme_kanban.album_kanbans[i].album.tracks[j].mark = mark
             # 更新 视图
-            self.track_table_view.source_model.table[r][5] = str(int(favourite))
+            self.track_table_view.source_model.table[r][5] = mark
             ix = self.track_table_view.source_model.index(r, 5)
             self.track_table_view.source_model.dataChanged.emit(ix, ix)
         # 保存文件
@@ -135,7 +139,7 @@ class PageWidget2(QWidget):
             self.track_table_view.clearSelection()
             self.track_table_view.selectRow(self._playing_model_index.row())
             # 更新 track mark
-            self._update_track_mark(False, force=False)
+            self._update_track_mark("0", force=False)
             return
 
         # index 无效 清空播放器

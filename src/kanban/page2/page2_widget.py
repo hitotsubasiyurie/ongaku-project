@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
 from src.kanban.kanban import ThemeKanBan
 from src.kanban.page2.track_table_view import TrackTableView
 from src.kanban.page2.music_player_bar import MusicPlayerBar
+from src.logger import logger_watched
 
 
 class PageWidget2(QWidget):
@@ -55,11 +56,11 @@ class PageWidget2(QWidget):
 
     def setup_event(self) -> None:
         # 初始化 事件
-        self.title_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(1, t))
-        self.artist_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(2, t))
-        self.album_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(3, t))
-        self.date_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(4, t))
-        self.mark_field.textEdited.connect(lambda t: self.track_table_view.proxy_model.set_filter(5, t))
+        self.title_field.textChanged.connect(lambda t: self.track_table_view.proxy_model.set_filter(1, t))
+        self.artist_field.textChanged.connect(lambda t: self.track_table_view.proxy_model.set_filter(2, t))
+        self.album_field.textChanged.connect(lambda t: self.track_table_view.proxy_model.set_filter(3, t))
+        self.date_field.textChanged.connect(lambda t: self.track_table_view.proxy_model.set_filter(4, t))
+        self.mark_field.textChanged.connect(lambda t: self.track_table_view.proxy_model.set_filter(5, t))
         self.track_table_view.doubleClicked.connect(self._on_track_table_double_clicked)
         self.track_table_view.favourite_selected.connect(lambda: self._update_track_mark("1"))
         self.track_table_view.unfavourite_selected.connect(lambda: self._update_track_mark("0"))
@@ -75,7 +76,7 @@ class PageWidget2(QWidget):
         QShortcut(QKeySequence("Alt+Up"), self, activated=self._play_prev)
         QShortcut(QKeySequence("Alt+Down"), self, activated=self._play_next)
         QShortcut(QKeySequence("Esc"), self, activated=
-                  lambda: [x.setText("") for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
+                  lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
         shortcut = QShortcut(QKeySequence("."), self, activated=
                              lambda: self._playing_model_index and self._playing_model_index.isValid() 
                              and [self.track_table_view.selectRow(self._playing_model_index.row()), 
@@ -97,6 +98,7 @@ class PageWidget2(QWidget):
         self._playing_direction: int = 1
         self._playing_model_index: QModelIndex = None
 
+    @logger_watched(1)
     def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
         self._playing_model_index = None

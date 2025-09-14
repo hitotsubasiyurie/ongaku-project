@@ -11,6 +11,8 @@ from src.kanban.widgets.theme_box_widget import ThemeBoxWidget
 class KanBanUI(QWidget):
 
     def setup_ui(self) -> None:
+        self.setWindowTitle("KanBan")
+        self.setWindowIcon(QPixmap(r"C:\Users\Administrator\Desktop\208169483.png"))
         # 字体高度
         fh = self.fontMetrics().height()
 
@@ -29,12 +31,12 @@ class KanBanUI(QWidget):
         self.stack.addWidget(self.page2)
 
         self.page_btn = QPushButton(">", parent=self)
-        self.page_btn.setFixedSize(fh*2, fh*2)
         self.page_btn.setObjectName("FloatButton")
+        self.page_btn.setFixedSize(fh*2, fh*2)
 
         self.theme_btn = QPushButton("≡", parent=self)
-        self.theme_btn.setFixedSize(fh*2, fh*2)
         self.theme_btn.setObjectName("FloatButton")
+        self.theme_btn.setFixedSize(fh*2, fh*2)
 
         self.theme_box = ThemeBoxWidget(self)
         self.theme_box.hide()

@@ -18,9 +18,8 @@ if __name__ == "__main__":
     ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
     app = QApplication([])
-    current_theme.apply_theme(app)
-
     QApplication.setStyle("Fusion")
+    current_theme.apply_theme(app)
     app.setStyleSheet(Path(__file__).with_name("widgets.qss").read_text("utf-8"))
     font = app.font()
     font.setPointSize(9)

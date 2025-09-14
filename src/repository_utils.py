@@ -5,7 +5,7 @@ from collections import defaultdict
 from enum import IntEnum, IntFlag, auto
 from pathlib import Path
 
-import tomllib
+import rtoml
 
 from src.logger import logger, logger_watched
 from src.ongaku_exception import OngakuException
@@ -56,7 +56,7 @@ def load_albums_from_toml(filepath: str) -> list[Album]:
     text = Path(filepath).read_text(encoding="utf-8")
     if not text:
         return []
-    obj = tomllib.loads(text)
+    obj = rtoml.load(text)
     ds = obj.values()
     for d in ds:
         d["tracks"] = [{"tracknumber": t[0], "title": t[1], "artist": t[2], "mark": t[3] if len(t) > 3 else ""} for t in d["tracks"]]

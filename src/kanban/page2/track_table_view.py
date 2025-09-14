@@ -66,8 +66,8 @@ class TrackTableItemModel(CustomTableItemModel):
         # Size 列 文本右对齐
         if role == Qt.ItemDataRole.TextAlignmentRole and col in [0]:
             return Qt.AlignmentFlag.AlignRight
-        # Size, Date, Mark 列 文本居中
-        if role == Qt.ItemDataRole.TextAlignmentRole and col in [0, 4, 5]:
+        # Date, Mark 列 文本居中
+        if role == Qt.ItemDataRole.TextAlignmentRole and col in [4, 5]:
             return Qt.AlignmentFlag.AlignCenter
         
         # 原始索引
@@ -106,7 +106,7 @@ class TrackTableView(QTableView):
         action = QAction("♡ Listened", self)
         action.triggered.connect(self.unfavourite_selected.emit)
         self.addAction(action)
-        action = QAction("Clear", self)
+        action = QAction("Clear Mark", self)
         action.triggered.connect(self.clear_selected.emit)
         self.addAction(action)
 
@@ -117,6 +117,7 @@ class TrackTableView(QTableView):
         self.source_model = TrackTableItemModel(self)
         self.proxy_model = CustomTableSortFilterProxyModel(self)
         self.proxy_model.setSourceModel(self.source_model)
+        self.proxy_model.setDynamicSortFilter(False)
         self.setModel(self.proxy_model)
         # 排序、筛选 后 滚动至开头
         self.proxy_model.layoutChanged.connect(self.scrollToTop)
@@ -137,7 +138,8 @@ class TrackTableView(QTableView):
 
         # 隐藏滚动条
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
+        
+        self.setMouseTracking(False)
         # 字体高度
         fh = self.fontMetrics().height()
 

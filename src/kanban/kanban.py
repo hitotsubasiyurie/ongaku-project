@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Callable
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag, auto
+from concurrent.futures import ThreadPoolExecutor
 
 from src.logger import logger, logger_watched
 from src.basemodels import Album, Track
@@ -182,7 +183,8 @@ class KanBan:
         theme_mdfs = list(Path(self.metadata_dir).glob("*.toml"))
         theme_dirs = [os.path.join(self.resource_dir, f.stem) for f in theme_mdfs]
 
-        self.theme_kanbans = [ThemeKanBan(f, d) for f, d in zip(theme_mdfs, theme_dirs)]
+        with ThreadPoolExecutor() as executor:
+            self.theme_kanbans = list(executor.map(ThemeKanBan, theme_mdfs, theme_dirs))
 
         self._theme2kanban = {t.theme_name: t for t in self.theme_kanbans}
 

@@ -46,7 +46,7 @@ class ProgressDelegate(QStyledItemDelegate):
         font: QFont = option.font
         fh = QFontMetrics(font).height()
         size = super().sizeHint(option, index)
-        size.setHeight(fh)
+        size.setHeight(fh*1.5)
         return size
 
 
@@ -79,6 +79,11 @@ class ThemeBoxWidget(QWidget):
         # 自适应高度
         self.list_widget.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.list_widget.itemDoubleClicked.connect(self._on_list_item_clicked)
+
+        # 行宽不变
+        self.list_widget.setUniformItemSizes(True)
+        self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_widget.setTextElideMode(Qt.TextElideMode.ElideRight)
 
         # 弹出窗口类型
         self.setWindowFlags(Qt.WindowType.Popup)

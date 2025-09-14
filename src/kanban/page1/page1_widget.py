@@ -67,9 +67,9 @@ class PageWidget1(QWidget):
 
     def setup_event(self) -> None:
         # 初始化 事件
-        self.album_field.textEdited.connect(lambda t: self.album_table_view.proxy_model.set_filter(1, t))
-        self.catno_field.textEdited.connect(lambda t: self.album_table_view.proxy_model.set_filter(2, t))
-        self.date_field.textEdited.connect(lambda t: self.album_table_view.proxy_model.set_filter(3, t))
+        self.album_field.textChanged.connect(lambda t: self.album_table_view.proxy_model.set_filter(1, t))
+        self.catno_field.textChanged.connect(lambda t: self.album_table_view.proxy_model.set_filter(2, t))
+        self.date_field.textChanged.connect(lambda t: self.album_table_view.proxy_model.set_filter(3, t))
         self.album_table_view.selected_changed.connect(self._on_album_view_selected)
         self.album_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
@@ -84,7 +84,7 @@ class PageWidget1(QWidget):
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
         QShortcut(QKeySequence("Esc"), self, activated=
-            lambda: [x.setText("") for x in [self.album_field, self.catno_field, self.date_field]])
+            lambda: [x.clear() for x in [self.album_field, self.catno_field, self.date_field]])
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -112,26 +112,30 @@ class PageWidget1(QWidget):
         self.cover_label.resize(self.size())
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.KeyPress:
-            # 英文状态下 ~ 键按下时，非透明展示 cover_label
-            if event.key() == Qt.Key.Key_QuoteLeft:
+        if event.type() not in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
+            return super().eventFilter(watched, event)
+
+        key = event.key()
+
+        #  ~ 键控制 cover_label 展示
+        if key == Qt.Key.Key_QuoteLeft:
+            if event.type() == QEvent.Type.KeyPress:
                 self.cover_effect.setOpacity(1)
-                return True
-            # 上下键按下时，传递给子控件
-            if event.key() in [Qt.Key.Key_Up, Qt.Key.Key_Down]:
-                return False
-            # 其余键按下时，拦截
+            elif event.type() == QEvent.Type.KeyRelease:
+                self.cover_effect.setOpacity(0.1)
             return True
-        if event.type() == QEvent.Type.KeyRelease:
-            # 任何按键释放时，透明化 cover_label
-            self.cover_effect.opacity() != 0.1 and self.cover_effect.setOpacity(0.1)
-            return True
-        return super().eventFilter(watched, event)
+
+        # 放行上下键
+        if key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+            return False
+
+        # 拦截其他按键
+        return True
 
     def _on_album_view_selected(self, *args, **kwargs) -> None:
         rows = list(sorted(set(i.row() for i in map(self.album_table_view.proxy_model.mapToSource, self.album_table_view.selectedIndexes()))))
 
-        # 展示 已选 albums 的 links
+        # 展示 所有已选 albums 的 links
         links = list(set(itertools.chain.from_iterable(self.theme_kanban.album_kanbans[r].album.links for r in rows)))
         self.link_box.set_links(links)
 
@@ -146,6 +150,7 @@ class PageWidget1(QWidget):
             self.cover_label.clear()
 
     def _edit_metadata_file(self) -> None:
+        # 打开 元数据文件
         if self.theme_kanban:
             os.startfile(self.theme_kanban.theme_metadata_file)
 
@@ -175,61 +180,46 @@ class PageWidget1(QWidget):
         # album view 至少 选中一个
         if not rows:
             return
-        albums = [self.album_table_view.model().albums[r] for r in rows]
-
+        
         dropped_paths = list(map(Path, dropped_strs))
-        exts = set(p.suffix.lower() for p in dropped_paths)
+        albums = [self.theme_kanban.album_kanbans[r].album for r in rows]
+        dst_dirs = list(map(Path, [self.theme_kanban.album_kanbans[r].album_dir for r in rows]))
 
-        dst_dirs = [self.current_theme_kanban.get_res_dir_by_album(a) for a in albums]
-        dst_dirs = list(map(Path, dst_dirs))
-
-        # 拖入文件夹列表时
-        if all(p.is_dir() for p in dropped_paths):
-            # 路径数量必须等于 album view 选中数
-            if len(dropped_paths) != len(albums):
-                return
+        # 选中多个 album item ，拖入多个文件夹，路径数量必须等于 album item 选中数
+        if all(p.is_dir() for p in dropped_paths) and len(dropped_paths) == len(albums):
             for p, d, a in zip(dropped_paths, dst_dirs, albums):
                 src_files = [f for f in p.rglob("*") if f.suffix.lower() in AUDIO_EXTS]
                 # 音频文件数量必须等于 tracks 数量
                 if len(src_files) != len(a.tracks):
                     continue
-                result = self._putaway_track_files(src_files, d, a)
-                if not result:
-                    continue
-                # 存库音轨成功后 再存库封面
-                imgs = [i for i in p.rglob("*") if i.suffix.lower() in IMG_EXTS]
-                cover = None
-                # 唯一的图片，或名字为 cover ，认为是封面
-                cover = imgs[0] if len(imgs) == 1 else next((i for i in imgs if i.stem.lower()=="cover"), None)
-                cover and self._putaway_cover_file(cover, d)
-        # 拖入图片列表时
-        elif exts.issubset(IMG_EXTS):
-            # 路径数量等于 album view 选中数
+                self._putaway_track_files(src_files, d, a)
+            return
+        
+        exts = set(p.suffix.lower() for p in dropped_paths)
+        # 选中多个 album item ，拖入多个图片
+        if exts.issubset(IMG_EXTS):
+            # 路径数量等于 album view 选中数时
             if len(dropped_paths) == len(albums):
                 [self._putaway_cover_file(*args) for args in zip(dropped_paths, dst_dirs)]
-            # 路径数量为一个
+            # 路径数量为一个时
             elif len(dropped_paths) == 1:
                 [self._putaway_cover_file(dropped_paths[0], d) for d in dst_dirs]
-            else:
-                return
-        # 拖入音频列表时
-        elif exts.issubset(AUDIO_EXTS):
-            # album view 必须仅选中一个
-            if len(albums) != 1:
-                return
-            # 路径数量为一个
+            return
+        # 选中一个 album item ，选中多个 track item ，拖入多个音频文件
+        if exts.issubset(AUDIO_EXTS) and len(albums) == 1:
+            # 路径数量为一个时
             if len(dropped_paths) == 1:
                 trackidx = self.track_table_view.selectedIndexes()[0].row()
                 [self._putaway_track_file(p, d, albums[0], trackidx) for p, d in zip(dropped_paths, dst_dirs)]
-            # 路径数量为多个
+            # 路径数量为多个时
             else:
                 self._putaway_track_files(dropped_paths, dst_dirs[0], albums[0])
         
+        # 更新？
         self.ongaku_library.scan_all()
         self._update_album_view()
 
     def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
-        # TODO: 已存在封面时，是否覆盖
         dst_dir.mkdir(parents=True, exist_ok=True)
         ext = src.suffix.lower()
         dst = dst_dir / ("cover"+ext)

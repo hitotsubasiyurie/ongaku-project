@@ -22,7 +22,9 @@ class CustomTableItemModel(QAbstractTableModel):
         return 0
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        return self.col_cnt
+        if not parent.isValid():
+            return self.col_cnt
+        return 0
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
         row, col = index.row(), index.column()
@@ -70,7 +72,6 @@ class CustomTableSortFilterProxyModel(QSortFilterProxyModel):
         self._filter_timer.setSingleShot(True)
         self._filter_timer.setInterval(500)
         self._filter_timer.timeout.connect(self._apply_filters)
-
 
     def set_filter(self, column: int, text: str) -> None:
         if text:

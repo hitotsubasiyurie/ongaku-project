@@ -10,12 +10,13 @@ from PySide6.QtGui import QPixmap, QResizeEvent, QShortcut, QKeySequence
 from PySide6.QtWidgets import (QGraphicsOpacityEffect, QGridLayout, QLabel, QLineEdit, QMessageBox, 
      QWidget, )
 
-from ongaku.basemodels import Album
-from ongaku.constants import AUDIO_EXTS, IMG_EXTS
+from ongaku.core.basemodels import Album
+from ongaku.core.constants import AUDIO_EXTS, IMG_EXTS
+from ongaku.utils.audiofile_utils import analyze_resource_track
 from ongaku.utils.storage_utils import track_filenames
-from ongaku.kanban.page1.widgets import (AlbumTableView, CheckMessageBox, LinkComboBox, ThemeBoxWidget, 
-    TrackTableView, )
-from ongaku.kanban.kanban import KanBan, ThemeKanBan
+from ongaku.utils.basemodel_utils import tracks_assignment, track_to_unique_str
+from ongaku.kanban.kanban import ThemeKanBan
+from ongaku.kanban.page1.widgets import AlbumTableView, CheckMessageBox, LinkComboBox, TrackTableView
 
 
 class Page1Widget(QWidget):
@@ -129,6 +130,8 @@ class Page1Widget(QWidget):
 
     def _on_album_view_selected(self, *args, **kwargs) -> None:
         rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
+        if not rows:
+            return
         # 原始数据行指针
         ps = [self.album_table_view.item_model.layout_index[r] for r in rows]
 
@@ -152,9 +155,12 @@ class Page1Widget(QWidget):
             os.startfile(self.theme_kanban.theme_metadata_file)
 
     def _locate_album(self) -> None:
-        # 定位 首个 album 的 资源位置
-        row = self.album_table_view.proxy_model.mapToSource(self.album_table_view.selectedIndexes()[0]).row()
-        res_dir = self.theme_kanban.album_kanbans[row].album_dir
+        # 打开 首个 album 的 资源位置
+        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
+        if not rows or not self.theme_kanban:
+            return
+        p = self.album_table_view.item_model.layout_index[rows[0]]
+        res_dir = self.theme_kanban.album_kanbans[p].album_dir
         if os.path.exists(res_dir):
             subprocess.run(f'explorer "{res_dir}"')
 
@@ -173,18 +179,21 @@ class Page1Widget(QWidget):
 
     def _on_paths_dropped(self, dropped_strs: list[str]) -> None:
         # selectedIndexes 以索引为单位，一行多个
-        rows = list(sorted(set(i.row() for i in map(self.album_table_view.proxy_model.mapToSource, self.album_table_view.selectedIndexes()))))
+        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
         # album view 至少 选中一个
         if not rows:
             return
-        
+
+        # 原始数据行指针
+        ps = [self.album_table_view.item_model.layout_index[r] for r in rows]
+
         dropped_paths = list(map(Path, dropped_strs))
-        albums = [self.theme_kanban.album_kanbans[r].album for r in rows]
-        dst_dirs = list(map(Path, [self.theme_kanban.album_kanbans[r].album_dir for r in rows]))
+        albums = [self.theme_kanban.album_kanbans[p].album for p in ps]
+        album_dirs = list(map(Path, [self.theme_kanban.album_kanbans[p].album_dir for p in ps]))
 
         # 选中多个 album item ，拖入多个文件夹，路径数量必须等于 album item 选中数
         if all(p.is_dir() for p in dropped_paths) and len(dropped_paths) == len(albums):
-            for p, d, a in zip(dropped_paths, dst_dirs, albums):
+            for p, d, a in zip(dropped_paths, album_dirs, albums):
                 src_files = [f for f in p.rglob("*") if f.suffix.lower() in AUDIO_EXTS]
                 # 音频文件数量必须等于 tracks 数量
                 if len(src_files) != len(a.tracks):
@@ -197,24 +206,24 @@ class Page1Widget(QWidget):
         if exts.issubset(IMG_EXTS):
             # 路径数量等于 album view 选中数时
             if len(dropped_paths) == len(albums):
-                [self._putaway_cover_file(*args) for args in zip(dropped_paths, dst_dirs)]
+                [self._putaway_cover_file(*args) for args in zip(dropped_paths, album_dirs)]
             # 路径数量为一个时
             elif len(dropped_paths) == 1:
-                [self._putaway_cover_file(dropped_paths[0], d) for d in dst_dirs]
+                [self._putaway_cover_file(dropped_paths[0], d) for d in album_dirs]
             return
         # 选中一个 album item ，选中多个 track item ，拖入多个音频文件
         if exts.issubset(AUDIO_EXTS) and len(albums) == 1:
             # 路径数量为一个时
             if len(dropped_paths) == 1:
                 trackidx = self.track_table_view.selectedIndexes()[0].row()
-                [self._putaway_track_file(p, d, albums[0], trackidx) for p, d in zip(dropped_paths, dst_dirs)]
+                [self._putaway_track_file(p, d, albums[0], trackidx) for p, d in zip(dropped_paths, album_dirs)]
             # 路径数量为多个时
             else:
-                self._putaway_track_files(dropped_paths, dst_dirs[0], albums[0])
+                self._putaway_track_files(dropped_paths, album_dirs[0], albums[0])
         
-        # 更新？
-        self.ongaku_library.scan_all()
-        self._update_album_view()
+        # TODO: 更新？
+        self.theme_kanban.scan()
+        self.set_theme_kanban(self.theme_kanban)
 
     def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
         dst_dir.mkdir(parents=True, exist_ok=True)
@@ -227,24 +236,25 @@ class Page1Widget(QWidget):
         dst_dir.mkdir(parents=True, exist_ok=True)
         ext = src.suffix.lower()
         dst = dst_dir / (track_filenames(album)[trackidx]+ext)
-
-        text = f"      {src.name}\n->  {dst.name}"
-        accept = self._show_check_message("Check Again", text)
-
-        if not accept:
-            return False
-        
         src.rename(dst)
         return True
 
     def _putaway_track_files(self, src_files: list[Path], dst_dir: Path, album: Album) -> bool:
         dst_dir.mkdir(parents=True, exist_ok=True)
-        dst_files = [dst_dir / (n+f.suffix) for f, n in zip(src_files, track_filenames(album))]
-        
-        aver_similarity, row_ind, col_ind = strings_assignment([f.stem for f in src_files], [f.stem for f in dst_files])
-        _map: dict[Path, Path] = {src_files[row]: dst_files[col] for row, col in zip(row_ind, col_ind)}
-        text = f"Directory:\t{src_files[0].parent.name}\nAlbum:\t\t{album.album}\nAverage Similarity:\t{aver_similarity:.02f}\n\n"
-        text += "\n".join(f"      {k.name}\n->  {v.name}\n" for k, v in _map.items())
+
+        src_tracks = list(map(analyze_resource_track, src_files))
+        row_ind, col_ind, aver_similarity, _ = tracks_assignment(src_tracks, album.tracks)
+
+        dst_names = track_filenames(album)
+        _map: dict[Path, Path] = {src_files[r]: (dst_dir / (dst_names[c] + src_files[r].suffix.lower())) 
+                                  for r, c in zip(row_ind, col_ind)}
+
+        text = f"""
+Directory:\t\t{src_files[0].parent.name}
+Album:\t\t{album.album}
+Average Similarity:\t{aver_similarity:.02f}
+"""
+        text += "\n"*2 + "\n".join(f"    {k.name}\n->  {v.name}\n" for k, v in _map.items())
         accept = self._show_check_message("Check Again", text)
         
         if not accept:

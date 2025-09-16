@@ -2,8 +2,8 @@ import re
 import itertools
 from pathlib import Path
 
-from ongaku.utils import read_audio_tags
-from ongaku.basemodels import Album, Track
+from ongaku.utils.utils import read_audio_tags
+from ongaku.core.basemodels import Album, Track
 
 
 def analyze_resource_track(audio: str) -> Track:

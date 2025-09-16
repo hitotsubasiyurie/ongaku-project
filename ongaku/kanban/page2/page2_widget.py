@@ -2,11 +2,10 @@ from PySide6.QtCore import Qt, QModelIndex
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
 
-
+from ongaku.core.logger import logger_watched
 from ongaku.kanban.kanban import ThemeKanBan
 from ongaku.kanban.page2.track_table_view import TrackTableView
 from ongaku.kanban.page2.music_player_bar import MusicPlayerBar
-from ongaku.logger import logger_watched
 
 
 class Page2Widget(QWidget):
@@ -94,7 +93,6 @@ class Page2Widget(QWidget):
         self._playing_direction: int = 1
         self._playing_model_index: QModelIndex = None
 
-    @logger_watched(1)
     def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
         self._playing_model_index = None

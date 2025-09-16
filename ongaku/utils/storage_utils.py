@@ -2,7 +2,7 @@ from pathlib import Path
 
 import rtoml
 
-from ongaku.basemodels import Album
+from ongaku.core.basemodels import Album
 from ongaku.utils.utils import legalize_filename, dump_toml
 
 

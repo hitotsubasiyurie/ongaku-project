@@ -5,9 +5,9 @@ from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag, auto
 from concurrent.futures import ThreadPoolExecutor
 
-from ongaku.logger import logger, logger_watched
-from ongaku.basemodels import Album, Track
-from ongaku.constants import IMG_EXTS
+from ongaku.core.logger import logger, logger_watched
+from ongaku.core.basemodels import Album, Track
+from ongaku.core.constants import IMG_EXTS
 from ongaku.utils.utils import legalize_filename
 from ongaku.utils.storage_utils import load_albums_from_toml, album_filename, track_filenames, dump_albums_to_toml
 

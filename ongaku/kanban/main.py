@@ -1,6 +1,5 @@
 import os
 import sys
-import ctypes
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -11,13 +10,9 @@ from PySide6.QtWidgets import QApplication
 from ongaku.kanban.kanban import KanBan
 from ongaku.kanban.kanban_ui import KanBanUI
 from ongaku.kanban.theme_colors import current_theme
-from ongaku.kanban.page2.page2_widget import Page2Widget
 
 
 if __name__ == "__main__":
-    # 隐藏 cmd 窗口
-    ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
-
     app = QApplication([])
     QApplication.setStyle("Fusion")
     current_theme.apply_theme(app)

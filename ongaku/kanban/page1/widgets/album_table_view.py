@@ -23,7 +23,7 @@ class AlbumTableItemModel(CustomTableItemModel):
         # 重置数据
         self.table = []
         # 默认 以 S 列 排序
-        self.sort_args = (0, Qt.SortOrder.AscendingOrder)
+        self.sort_args = (0, Qt.SortOrder.DescendingOrder)
         self.filters = {}
 
         if theme_kanban:

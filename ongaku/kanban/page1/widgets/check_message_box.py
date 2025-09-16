@@ -17,6 +17,9 @@ class CheckMessageBox(QMessageBox):
         if label:
             self.layout().removeWidget(label)
             label.deleteLater()
+
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
         
         # 滚动区域和文本框
         scroll = QScrollArea(self)
@@ -40,7 +43,6 @@ class CheckMessageBox(QMessageBox):
         screen_geometry = QApplication.primaryScreen().availableGeometry()
         screen_width = screen_geometry.width()
         screen_height = screen_geometry.height()
-        print(screen_geometry)
         window_width = self.width()
         window_height = self.height()
         # 中心 展示

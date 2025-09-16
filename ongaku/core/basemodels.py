@@ -61,7 +61,11 @@ _CustomStrTuple = Annotated[tuple[str, ...], BeforeValidator(_validate_strtuple)
 
 class Album(BaseModel, validate_assignment=True):
     """
-    :param date: 仅允许四种模式： ["", "2005", "2005-01", "2005-01-01"]
+    :param catalognumber: 目录编号
+    :param date: 日期，仅允许四种模式： ["", "2005", "2005-01", "2005-01-01"]
+    :param album: 专辑名
+    :param tracks: 轨道 Track 模型列表
+    :param links: 链接
     """
     catalognumber: _CustomStr = Field(default="")
     date: _CustomStr = Field(default="", pattern=r"^$|^\d{4}$|^\d{4}-\d{1,2}$|^\d{4}-\d{1,2}-\d{1,2}$")
@@ -87,6 +91,12 @@ class Disc(BaseModel, validate_assignment=True):
 
 
 class Track(BaseModel, validate_assignment=True):
+    """
+    :param tracknumber: 序号
+    :param title: 标题
+    :param artist: 艺术家
+    :param mark: 自定义标记信息
+    """
     tracknumber: _CustomInt = Field(default=0)
     title: _CustomStr = Field(default="")
     artist: _CustomStr = Field(default="")

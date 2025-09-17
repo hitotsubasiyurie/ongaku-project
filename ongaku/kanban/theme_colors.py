@@ -13,8 +13,8 @@ class DarkTheme:
     MARKED_BACKGROUND_COLOR = QColor(0, 0, 0)
     MARKED_FOREGROUND_COLOR = QColor(130, 130, 130)
 
-    THEME_PROGRESS_COLL_COLOR = QColor(204, 204, 204, 100)
-    THEME_PROGRESS_MARK_COLOR = QColor(51, 102, 102, 100)
+    THEME_PROGRESS_COLL_COLOR = QColor(46, 160, 67, 50)
+    THEME_PROGRESS_MARK_COLOR = QColor(70, 70, 70)
 
     def apply_theme(app: QApplication) -> None:
         dark_palette = QPalette()

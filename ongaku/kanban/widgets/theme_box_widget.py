@@ -26,17 +26,17 @@ class ProgressDelegate(QStyledItemDelegate):
 
         painter.save()
 
-        if text in self.coll_dict:
-            val = self.coll_dict[text]
-            w = int(rect.width() * val)
-            comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
-            painter.fillRect(comp_rect, current_theme.THEME_PROGRESS_COLL_COLOR)
-
         if text in self.mark_dict:
             val = self.mark_dict[text]
             w = int(rect.width() * val)
             comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
             painter.fillRect(comp_rect, current_theme.THEME_PROGRESS_MARK_COLOR)
+
+        if text in self.coll_dict:
+            val = self.coll_dict[text]
+            w = int(rect.width() * val)
+            comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
+            painter.fillRect(comp_rect, current_theme.THEME_PROGRESS_COLL_COLOR)
 
         painter.restore()
 

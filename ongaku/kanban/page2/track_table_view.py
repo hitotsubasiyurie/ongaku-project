@@ -55,10 +55,10 @@ class TrackTableItemModel(CustomTableItemModel):
                     self.table.append([size, t.title, t.artist, k.album.album, k.album.date, t.mark])
                     self.original_index.append((i, j))
     
-        self.layout_index = list(range(len(self.table)))
+        self.layout_ps = list(range(len(self.table)))
         # 应用排序
         self._apply_sort()
-        self.row_cnt = len(self.layout_index)
+        self.row_cnt = len(self.layout_ps)
 
         self.endResetModel()
 
@@ -70,7 +70,7 @@ class TrackTableItemModel(CustomTableItemModel):
         
         # Size 列 资源状态 字体颜色
         if col == 0 and role == Qt.ItemDataRole.ForegroundRole:
-            return self.RESOURCE_STATE_QBRUSHS[self.tracks_states[self.layout_index[row]]]
+            return self.RESOURCE_STATE_QBRUSHS[self.tracks_states[self.layout_ps[row]]]
         
         # Size 列 文本右对齐
         if col in [0] and role == Qt.ItemDataRole.TextAlignmentRole:
@@ -80,10 +80,10 @@ class TrackTableItemModel(CustomTableItemModel):
             return Qt.AlignmentFlag.AlignCenter
         
         # 已有 Mark 信息 置灰
-        if self.table[self.layout_index[row]][5] and role in self.MARKED_QBRUSHES:
+        if self.table[self.layout_ps[row]][5] and role in self.MARKED_QBRUSHES:
             return self.MARKED_QBRUSHES[role]
         
-        if col == 5 and self.table[self.layout_index[row]][5] == "1" and role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
+        if col == 5 and self.table[self.layout_ps[row]][5] == "1" and role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
             return "❤️"
         
         return super().data(index, role)
@@ -105,11 +105,11 @@ class TrackTableView(QTableView):
     def setup_context_menu(self) -> None:
         # 初始化 右键菜单
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction("♡ Listened", self)
-        action.triggered.connect(self.unfavourite_selected.emit)
-        self.addAction(action)
         action = QAction("❤ Favourite", self)
         action.triggered.connect(self.favourite_selected.emit)
+        self.addAction(action)
+        action = QAction("♡ Listened", self)
+        action.triggered.connect(self.unfavourite_selected.emit)
         self.addAction(action)
         action = QAction("Clear Mark", self)
         action.triggered.connect(self.clear_selected.emit)

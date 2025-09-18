@@ -12,9 +12,9 @@ class CustomTableItemModel(QAbstractItemModel):
         self.headers: list[str] = []
         self.table: list[list[str]] = []
 
-        # 布局索引
-        self.layout_index: list[int] = []
-        self.row_cnt: int = len(self.layout_index)
+        # 布局 指针
+        self.layout_ps: list[int] = []
+        self.row_cnt: int = len(self.layout_ps)
         self.col_cnt: int = len(self.headers)
         # 排序状态
         self.sort_args: tuple[int, Qt.SortOrder] = (0, Qt.SortOrder.AscendingOrder)
@@ -57,7 +57,7 @@ class CustomTableItemModel(QAbstractItemModel):
         
         # 仅响应 DisplayRole, EditRole
         if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
-            return self.table[self.layout_index[row]][col]
+            return self.table[self.layout_ps[row]][col]
         
         return None
 
@@ -128,19 +128,19 @@ class CustomTableItemModel(QAbstractItemModel):
 
     def _apply_sort(self) -> None:
         column, order = self.sort_args
-        self.layout_index.sort(key=lambda r: self.table[r][column], 
+        self.layout_ps.sort(key=lambda r: self.table[r][column], 
                                reverse=(order == Qt.SortOrder.DescendingOrder))
 
     def _apply_filters(self) -> None:
         # 声明数据仍然有效，只是布局变化
         self.layoutAboutToBeChanged.emit()
 
-        self.layout_index = []
+        self.layout_ps = []
         for row, _list in enumerate(self.table):
             if all(pat.search(_list[c]) for c, pat in self.filters.items()):
-                self.layout_index.append(row)
+                self.layout_ps.append(row)
         # 更新 行数
-        self.row_cnt: int = len(self.layout_index)
+        self.row_cnt: int = len(self.layout_ps)
 
         # 应用排序
         self._apply_sort()

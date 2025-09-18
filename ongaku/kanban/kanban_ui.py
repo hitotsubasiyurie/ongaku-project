@@ -12,7 +12,6 @@ class KanBanUI(QWidget):
 
     def setup_ui(self) -> None:
         self.setWindowTitle("KanBan")
-        self.setWindowIcon(QPixmap(r"C:\Users\Administrator\Desktop\208169483.png"))
         # 字体高度
         fh = self.fontMetrics().height()
 

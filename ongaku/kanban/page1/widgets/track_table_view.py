@@ -35,10 +35,10 @@ class TrackTableItemModel(CustomTableItemModel):
             self.table = [[(rs, ms | bool(t.artist)), (t.title, t.artist)]
                         for rs, t in zip(album_kanban.track_res_states, album_kanban.album.tracks)]
         
-        self.layout_index = list(range(len(self.table)))
+        self.layout_ps = list(range(len(self.table)))
         # 应用排序
         self._apply_sort()
-        self.row_cnt = len(self.layout_index)
+        self.row_cnt = len(self.layout_ps)
 
         self.endResetModel()
     

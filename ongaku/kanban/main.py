@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QPixmap
 
 
 from ongaku.kanban.kanban import KanBan
@@ -22,6 +23,7 @@ if __name__ == "__main__":
     font.setFamily("JetBrains Mono")
     app.setFont(font)
     widget = KanBanUI()
+    widget.setWindowIcon(QPixmap(Path(__file__).with_name("icon.png")))
     kanban = KanBan(r"D:\ongaku-metadata", r"D:\移动云盘同步盘\ongaku-resource")
     widget.set_kanban(kanban)
     screen = app.screens()[0]

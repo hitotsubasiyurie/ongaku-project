@@ -107,7 +107,7 @@ class Page2Widget(QWidget):
 
         for r in rows:
             # 原始数据行指针
-            p = self.track_table_view.item_model.layout_index[r]
+            p = self.track_table_view.item_model.layout_ps[r]
             if self.track_table_view.item_model.table[p][5] and not force:
                 continue
             # 更新 看板
@@ -123,7 +123,7 @@ class Page2Widget(QWidget):
     def _play(self) -> None:
         while self._playing_model_index and self._playing_model_index.isValid():
             row = self._playing_model_index.row()
-            p = self.track_table_view.item_model.layout_index[row]
+            p = self.track_table_view.item_model.layout_ps[row]
             i, j = self.track_table_view.item_model.original_index[p]
             
             file = self.theme_kanban.album_kanbans[i].track_files[j]

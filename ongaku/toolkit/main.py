@@ -1,11 +1,9 @@
 import os
 
-from ongaku.logger import logger, set_logger_output, lprint
-from ongaku.settings import global_settings
+from ongaku.core.logger import logger, set_logger_output, lprint
+from ongaku.core.settings import global_settings
 from ongaku.toolkit.message import MESSAGE, set_language, get_supported_languages
-from ongaku.toolkit.actions import (hardlink_copy, create_musicbrainz_database, fetch_albums_metadata_from_vgmdb, 
-    fetch_albums_metadata_from_musicbrainz_database, match_resource_and_metadata, merge_metadata_files, recode,
-    remove_files)
+from ongaku.toolkit.actions import *
 from ongaku.toolkit.toolkit_utils import loop_for_actions
 
 

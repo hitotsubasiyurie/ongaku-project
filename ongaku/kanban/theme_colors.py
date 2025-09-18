@@ -26,7 +26,7 @@ class DarkTheme:
 
         dark_palette.setColor(QPalette.ColorRole.WindowText, QColor(224, 224, 224))
         dark_palette.setColor(QPalette.ColorRole.Text, QColor(224, 224, 224))
-        dark_palette.setColor(QPalette.ColorRole.HighlightedText, QColor(224, 224, 224))
+        # dark_palette.setColor(QPalette.ColorRole.HighlightedText, QColor(224, 224, 224))
 
         # 高亮 同 VSCode
         dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(38, 79, 120, 150))

@@ -30,10 +30,10 @@ class AlbumTableItemModel(CustomTableItemModel):
             self.table = [[(k.album_res_state, k.metadata_state), k.album.album, k.album.catalognumber, k.album.date]
                         for k in theme_kanban.album_kanbans]
         
-        self.layout_index = list(range(len(self.table)))
+        self.layout_ps = list(range(len(self.table)))
         # 应用排序
         self._apply_sort()
-        self.row_cnt = len(self.layout_index)
+        self.row_cnt = len(self.layout_ps)
 
         self.endResetModel()
 

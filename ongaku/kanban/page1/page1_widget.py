@@ -133,7 +133,7 @@ class Page1Widget(QWidget):
         if not rows:
             return
         # 原始数据行指针
-        ps = [self.album_table_view.item_model.layout_index[r] for r in rows]
+        ps = [self.album_table_view.item_model.layout_ps[r] for r in rows]
 
         # 展示 所有已选 albums 的 links
         links = list(set(itertools.chain.from_iterable(self.theme_kanban.album_kanbans[p].album.links for p in ps)))
@@ -159,7 +159,7 @@ class Page1Widget(QWidget):
         rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
         if not rows or not self.theme_kanban:
             return
-        p = self.album_table_view.item_model.layout_index[rows[0]]
+        p = self.album_table_view.item_model.layout_ps[rows[0]]
         res_dir = self.theme_kanban.album_kanbans[p].album_dir
         if os.path.exists(res_dir):
             subprocess.run(f'explorer "{res_dir}"')
@@ -185,7 +185,7 @@ class Page1Widget(QWidget):
             return
 
         # 原始数据行指针
-        ps = [self.album_table_view.item_model.layout_index[r] for r in rows]
+        ps = [self.album_table_view.item_model.layout_ps[r] for r in rows]
 
         dropped_paths = list(map(Path, dropped_strs))
         albums = [self.theme_kanban.album_kanbans[p].album for p in ps]

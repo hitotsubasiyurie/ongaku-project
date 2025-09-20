@@ -57,7 +57,7 @@ class ThemeBoxWidget(QWidget):
     def setup_ui(self):
         # 字体高度
         fh = self.fontMetrics().height()
-        self.setFixedWidth(fh*32)
+        self.setFixedWidth(fh*40)
 
         # 初始化 UI
         layout = QVBoxLayout()
@@ -121,7 +121,7 @@ class ThemeBoxWidget(QWidget):
 
         # 字体高度
         fh = self.fontMetrics().height()
-        self.list_widget.setFixedHeight(min(len(tmp), 10)*fh*1.75)
+        self.list_widget.setFixedHeight(min(len(tmp), 15)*fh*1.75)
         self.adjustSize()
 
     def _hide_list_items(self, *args, **kwargs) -> None:

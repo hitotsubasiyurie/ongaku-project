@@ -105,11 +105,11 @@ class TrackTableView(QTableView):
     def setup_context_menu(self) -> None:
         # 初始化 右键菜单
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction("❤ Favourite", self)
-        action.triggered.connect(self.favourite_selected.emit)
-        self.addAction(action)
         action = QAction("♡ Listened", self)
         action.triggered.connect(self.unfavourite_selected.emit)
+        self.addAction(action)
+        action = QAction("❤ Favourite", self)
+        action.triggered.connect(self.favourite_selected.emit)
         self.addAction(action)
         action = QAction("Clear Mark", self)
         action.triggered.connect(self.clear_selected.emit)

@@ -8,6 +8,3 @@ QPushButton#FloatButton:hover {
     background-color: rgba(0, 0, 0, 160);
 }
 
-QLineEdit {
-    border-radius: 15px;
-}

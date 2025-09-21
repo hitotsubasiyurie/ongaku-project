@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QSlider, QLabel, QPushButton, QHBoxLayout, QVBoxLayout, 
     QStyle, )
-from PySide6.QtGui import QMouseEvent
+from PySide6.QtGui import QMouseEvent, QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtCore import Qt, QTime, QUrl, Signal
 
@@ -32,11 +32,13 @@ class MusicPlayerBar(QWidget):
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.time_label.setFixedSize(fh * 6, fh * 1.5)
 
-        self.prev_btn = QPushButton("⏮")
+        self.prev_btn = QPushButton(QPixmap("./assests/previous.png"), "")
         self.prev_btn.setFixedSize(fh * 2, fh * 1.5)
-        self.play_btn = QPushButton("▶")
+        self.play_btn_icons = [QPixmap("./assests/play.png"), QPixmap("./assests/pause.png")]
+        self.play_btn = QPushButton()
+        self.play_btn.setIcon(self.play_btn_icons[0])
         self.play_btn.setFixedSize(fh * 2, fh * 1.5)
-        self.next_btn = QPushButton("⏭")
+        self.next_btn = QPushButton(QPixmap("./assests/next.png"), "")
         self.next_btn.setFixedSize(fh * 2, fh * 1.5)
 
         layout = QVBoxLayout()
@@ -80,20 +82,25 @@ class MusicPlayerBar(QWidget):
         self.setup_ui()
         self.setup_event()
 
-    def set_media(self, file: str) -> None:
+    def set_media(self, file: str = "") -> None:
         self.time_label.clear()
         url = QUrl.fromLocalFile(file)
         self.player.setSource(url)
-        self.toggle_play()
+        file and self.toggle_play()
 
     def toggle_play(self) -> None:
         if self.player.isPlaying():
             self.player.pause()
-            self.play_btn.setText("▶")
+            self.play_btn.setIcon(self.play_btn_icons[0])
         else:
             self.player.play()
-            self.play_btn.setText("⏸")
+            self.play_btn.setIcon(self.play_btn_icons[1])
 
+    def skip(self, delta: int = 3000) -> None:
+        pos = self.player.position() + delta
+        pos = max(0, min(pos, self.player.duration()))
+        self.player.setPosition(pos)
+    
     # 内部方法
 
     def _on_player_position_changed(self, position: int) -> None:
@@ -106,5 +113,5 @@ class MusicPlayerBar(QWidget):
 
     def _on_media_status_changed(self, status: QMediaPlayer.MediaStatus) -> None:
         if status == QMediaPlayer.MediaStatus.EndOfMedia:
-            self.play_btn.setText("▶")
+            self.play_btn.setIcon(self.play_btn_icons[0])
             self.playback_finished.emit() 

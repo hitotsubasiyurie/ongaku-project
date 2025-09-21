@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData, QSize
 from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMetrics
@@ -7,8 +8,8 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
 
 from ongaku.kanban.kanban import AlbumKanBan
 from ongaku.kanban.theme_colors import current_theme
-from ongaku.kanban.page1.widgets.album_table_view import AlbumStateItemDelegate
-from ongaku.kanban.custom_table_item_model import CustomTableItemModel
+from ongaku.kanban.page1.album_table_view import AlbumStateItemDelegate
+from ongaku.kanban.widgets.custom_table_item_model import CustomTableItemModel
 
 
 class TrackTableItemModel(CustomTableItemModel):
@@ -38,7 +39,7 @@ class TrackTableItemModel(CustomTableItemModel):
         self.layout_ps = list(range(len(self.table)))
         # 应用排序
         self._apply_sort()
-        self.row_cnt = len(self.layout_ps)
+        self.layout_row = len(self.layout_ps)
 
         self.endResetModel()
     
@@ -52,6 +53,10 @@ class TrackTableItemModel(CustomTableItemModel):
         return (Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
                 | Qt.ItemFlag.ItemIsDropEnabled)
     
+    def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
+        # 编辑无效
+        return False
+
     # drop 支持
     
     def supportedDropActions(self) -> Qt.DropAction:

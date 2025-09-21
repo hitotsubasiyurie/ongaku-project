@@ -12,9 +12,10 @@ class CustomTableItemModel(QAbstractItemModel):
         self.headers: list[str] = []
         self.table: list[list[str]] = []
 
-        # 布局 指针
+        # 布局 真实行指针
         self.layout_ps: list[int] = []
-        self.row_cnt: int = len(self.layout_ps)
+        # 布局 行数
+        self.layout_row: int = len(self.layout_ps)
         self.col_cnt: int = len(self.headers)
         # 排序状态
         self.sort_args: tuple[int, Qt.SortOrder] = (0, Qt.SortOrder.AscendingOrder)
@@ -32,7 +33,7 @@ class CustomTableItemModel(QAbstractItemModel):
 
     def index(self, row: int, column: int, parent: QModelIndex = QModelIndex()) -> QModelIndex:
         # parent 无效时，指向 root item
-        if not parent.isValid() and row < self.row_cnt:
+        if not parent.isValid() and row < self.layout_row:
             return self.createIndex(row, column)
         return QModelIndex()
 
@@ -41,7 +42,7 @@ class CustomTableItemModel(QAbstractItemModel):
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if not parent.isValid():
-            return self.row_cnt
+            return self.layout_row
         return 0
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
@@ -52,7 +53,7 @@ class CustomTableItemModel(QAbstractItemModel):
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
         row, col = index.row(), index.column()
         
-        if not index.isValid() or row >= self.row_cnt or col >= self.col_cnt:
+        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
             return None
         
         # 仅响应 DisplayRole, EditRole
@@ -78,11 +79,34 @@ class CustomTableItemModel(QAbstractItemModel):
     # 可编辑
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        if not index.isValid():
+            return Qt.ItemFlag.ItemIsEnabled
+        
         # 基本 item flag
         return Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
-        #  编辑无效
+        row, col = index.row(), index.column()
+
+        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+            return False
+        
+        # 仅响应 EditRole
+        if role != Qt.ItemDataRole.EditRole:
+            return False
+
+        # 转字符串
+        value = str(value)
+        p = self.layout_ps[row]
+
+        # 值不变时不更新视图
+        if self.table[p][col] == value:
+            return False
+        
+        # 更新数据
+        self.table[p][col] = value
+        # 刷新视图
+        self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
         return True
 
     # 排序
@@ -128,7 +152,7 @@ class CustomTableItemModel(QAbstractItemModel):
 
     def _apply_sort(self) -> None:
         column, order = self.sort_args
-        self.layout_ps.sort(key=lambda r: self.table[r][column], 
+        self.layout_ps.sort(key=lambda p: self.table[p][column], 
                                reverse=(order == Qt.SortOrder.DescendingOrder))
 
     def _apply_filters(self) -> None:
@@ -140,7 +164,7 @@ class CustomTableItemModel(QAbstractItemModel):
             if all(pat.search(_list[c]) for c, pat in self.filters.items()):
                 self.layout_ps.append(row)
         # 更新 行数
-        self.row_cnt: int = len(self.layout_ps)
+        self.layout_row: int = len(self.layout_ps)
 
         # 应用排序
         self._apply_sort()

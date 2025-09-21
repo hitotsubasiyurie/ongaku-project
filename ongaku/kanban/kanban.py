@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag, auto
 from concurrent.futures import ThreadPoolExecutor
 
-from ongaku.core.logger import logger, logger_watched
-from ongaku.core.basemodels import Album, Track
+from ongaku.core.logger import logger_watched
+from ongaku.core.basemodels import Album
 from ongaku.core.constants import IMG_EXTS
 from ongaku.utils.utils import legalize_filename
 from ongaku.utils.storage_utils import load_albums_from_toml, album_filename, track_filenames, dump_albums_to_toml
@@ -16,8 +16,13 @@ class ResourceState(IntEnum):
     """
     专辑资源状态
     """
-    LOSSLESS = 2
-    LOSSY = 1
+    # 完整无损
+    LOSSLESS = 3
+    # 完整有损
+    LOSSY = 2
+    # 不完整
+    PARTIAL = 1
+    # 缺失
     MISSING = 0
 
 
@@ -62,17 +67,32 @@ class AlbumKanBan:
     track_res_states: list[ResourceState] = field(init=False)
 
     def __post_init__(self) -> None:
-        self._analyze_resource()
-        self._analyze_metadata()
+        self.scan()
+        self.count_state()
 
-    def _analyze_metadata(self) -> None:
-        is_img: Callable[[Path], bool] = lambda p: p.suffix.lower() in IMG_EXTS
-
-        if os.path.exists(self.album_dir):
-            self.cover = next((map(str, filter(is_img, Path(self.album_dir).rglob("cover.*")))), "")
-        else:
+    def scan(self) -> None:
+        """
+        扫描文件系统。
+        """
+        # album_dir 不存在时
+        if not os.path.exists(self.album_dir):
             self.cover = ""
+            _len = len(self.album.tracks)
+            self.track_files = [""] * _len
+            self.track_stat_results = [None] * _len
+            return
+        
+        is_img: Callable[[Path], bool] = lambda p: p.suffix.lower() in IMG_EXTS
+        self.cover = next((map(str, filter(is_img, Path(self.album_dir).rglob("cover.*")))), "")
 
+        stem2ext = {p.stem: p.suffix for p in Path(self.album_dir).iterdir()}
+
+        # 例如 [path1, "", "", path4, ...]
+        self.track_files = [os.path.join(self.album_dir, n+stem2ext[n]) if n in stem2ext else "" 
+                            for n in track_filenames(self.album)]
+        self.track_stat_results = [os.stat(f) if f else None for f in self.track_files]
+
+    def count_state(self) -> None:
         self.metadata_state = MetadataState(0)
         
         if self.album.album:
@@ -83,29 +103,24 @@ class AlbumKanBan:
             self.metadata_state |= MetadataState.CATNO_EXIST
         if self.album.tracks:
             self.metadata_state |= MetadataState.TRACK_EXIST
-            if all(t.artist for t in self.album.tracks):
+            # 任一 track 有 artist 信息 
+            if any(t.artist for t in self.album.tracks):
                 self.metadata_state |= MetadataState.ARTIST_EXIST
         if self.cover:
             self.metadata_state |= MetadataState.COVER_EXIST
 
-    def _analyze_resource(self) -> None:
-        if not self.album.tracks or not os.path.exists(self.album_dir):
-            self.album_res_state = ResourceState.MISSING
-            _len = len(self.album.tracks)
-            self.track_files = [""] * _len
-            self.track_stat_results = [None] * _len
-            self.track_res_states = [ResourceState.MISSING] * _len
-            return
-
-        stem2ext = {p.stem: p.suffix for p in Path(self.album_dir).iterdir()}
-
-        self.track_files = [os.path.join(self.album_dir, n+stem2ext[n]) if n in stem2ext else "" 
-                            for n in track_filenames(self.album)]
-        self.track_stat_results = [os.stat(f) if f else None for f in self.track_files]
-
         _map = {"": ResourceState.MISSING, ".mp3": ResourceState.LOSSY, ".flac": ResourceState.LOSSLESS}
-        self.track_res_states = [_map[stem2ext.get(n, "")] for n in track_filenames(self.album)]
-        self.album_res_state = min(self.track_res_states)
+        self.track_res_states = [_map[Path(f).suffix.lower() if f else ""] for f in self.track_files]
+        
+        # 无 tracks 元数据时为 MISSING
+        if not self.album.tracks:
+            self.album_res_state = ResourceState.MISSING
+        elif all(self.track_res_states):
+            self.album_res_state = min(self.track_res_states)
+        elif any(self.track_res_states):
+            self.album_res_state = ResourceState.PARTIAL
+        else:
+            self.album_res_state = ResourceState.MISSING
 
 
 @dataclass
@@ -132,14 +147,20 @@ class ThemeKanBan:
 
     def __post_init__(self) -> None:
         self.scan()
+        self.count_progress()
 
     def scan(self) -> None:
+        """
+        扫描文件系统。
+        """
         self.theme_name = Path(self.theme_metadata_file).stem
 
         albums = load_albums_from_toml(self.theme_metadata_file)
         album_dirs = [os.path.join(self.theme_directory, legalize_filename(album_filename(a))) for a in albums]
         self.album_kanbans = [AlbumKanBan(a, d) for a, d in zip(albums, album_dirs)]
-        
+
+    def count_progress(self) -> None:
+        albums = [k.album for k in self.album_kanbans]
         if albums:
             self.mark_progress = sum(bool(t.mark) for a in albums for t in a.tracks) / sum(len(a.tracks) for a in albums)
             self.collection_progress = sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans) / len(albums)
@@ -177,6 +198,9 @@ class KanBan:
 
     @logger_watched(2)
     def scan(self) -> None:
+        """
+        扫描文件系统。
+        """
         theme_mdfs = list(Path(self.metadata_dir).glob("*.toml"))
         theme_dirs = [os.path.join(self.resource_dir, f.stem) for f in theme_mdfs]
 

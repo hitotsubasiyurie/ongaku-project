@@ -5,10 +5,10 @@ from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QStackedWidget
 from ongaku.kanban.kanban import KanBan, ThemeKanBan
 from ongaku.kanban.page1.page1_widget import Page1Widget
 from ongaku.kanban.page2.page2_widget import Page2Widget
-from ongaku.kanban.widgets.theme_box_widget import ThemeBoxWidget
+from ongaku.kanban.page0.theme_box_widget import ThemeBoxWidget
 
 
-class KanBanUI(QWidget):
+class Page0Widget(QWidget):
 
     def setup_ui(self) -> None:
         self.setWindowTitle("KanBan")
@@ -50,9 +50,9 @@ class KanBanUI(QWidget):
         # 初始化 快捷键
         QShortcut(QKeySequence("Alt+Left"), self, activated=lambda : self._toggle_page(0))
         QShortcut(QKeySequence("Alt+Right"), self, activated=lambda : self._toggle_page(1))
-        shortcut = QShortcut(QKeySequence("Tab"), self, activated=self._on_theme_btn_clicked)
+        shortcut = QShortcut(Qt.Key.Key_Tab, self, activated=self._on_theme_btn_clicked)
         shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
-        shortcut = QShortcut(QKeySequence("F5"), self, activated=self.refresh_current_theme_kanban)
+        shortcut = QShortcut(Qt.Key.Key_F5, self, activated=self.refresh_current_theme_kanban)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -66,7 +66,7 @@ class KanBanUI(QWidget):
 
     def set_kanban(self, kanban: KanBan) -> None:
         self.kanban = kanban
-        self.theme_box.set_kanban(kanban)
+        self.theme_box.set_kanban(self.kanban)
 
     def refresh_current_theme_kanban(self) -> None:
         if not self.current_theme_kanban:

@@ -2,9 +2,8 @@ from PySide6.QtCore import Qt, QModelIndex
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
 
-from ongaku.core.logger import logger_watched
 from ongaku.kanban.kanban import ThemeKanBan
-from ongaku.kanban.page2.track_table_view import TrackTableView
+from ongaku.kanban.page2.play_table_view import TrackTableView
 from ongaku.kanban.page2.music_player_bar import MusicPlayerBar
 
 
@@ -57,61 +56,60 @@ class Page2Widget(QWidget):
         self.date_field.textChanged.connect(lambda t: self.track_table_view.item_model.set_filter(4, t))
         self.mark_field.textChanged.connect(lambda t: self.track_table_view.item_model.set_filter(5, t))
         self.track_table_view.doubleClicked.connect(self._on_track_table_double_clicked)
-        self.track_table_view.favourite_selected.connect(lambda: self._update_track_mark("1"))
-        self.track_table_view.unfavourite_selected.connect(lambda: self._update_track_mark("0"))
-        self.track_table_view.clear_selected.connect(lambda: self._update_track_mark(""))
-        self.music_player_bar.playback_finished.connect(self._play_next)
-        self.music_player_bar.prev_btn.clicked.connect(self._play_prev)
-        self.music_player_bar.next_btn.clicked.connect(self._play_next)
+        self.track_table_view.favourite_selected.connect(lambda: self._set_track_mark("1", force=True))
+        self.track_table_view.unfavourite_selected.connect(lambda: self._set_track_mark("0", force=True))
+        self.track_table_view.clear_selected.connect(lambda: self._set_track_mark("", force=True))
+        self.track_table_view.item_model.dataChanged.connect(lambda: self.theme_kanban.save_metadata_file())
+        self.music_player_bar.playback_finished.connect(self._on_playback_finished)
+        self.music_player_bar.prev_btn.clicked.connect(lambda: [self._search_no_mark_ix(-1), self._play()])
+        self.music_player_bar.next_btn.clicked.connect(lambda: [self._search_no_mark_ix(1), self._play()])
 
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
-        QShortcut(QKeySequence("Space"), self, activated=self.music_player_bar.toggle_play)
-        # Ctrl+Up 无效
-        QShortcut(QKeySequence("Alt+Up"), self, activated=self._play_prev)
-        QShortcut(QKeySequence("Alt+Down"), self, activated=self._play_next)
-        QShortcut(QKeySequence("Esc"), self, activated=
+        QShortcut(Qt.Key.Key_Space, self, activated=self.music_player_bar.toggle_play)
+        QShortcut(Qt.Key.Key_Left, self, activated=lambda: self.music_player_bar.skip(-3000))
+        QShortcut(Qt.Key.Key_Right, self, activated=lambda: self.music_player_bar.skip(3000))
+        # 主键盘 和 小键盘 Enter
+        for key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            QShortcut(key, self, activated=self._play_selected)
+        QShortcut(QKeySequence("Alt+Up"), self, activated=lambda: [self._search_no_mark_ix(-1), self._play()])
+        QShortcut(QKeySequence("Alt+Down"), self, activated=lambda: [self._search_no_mark_ix(1), self._play()])
+        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._set_track_mark("0"))
+        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._set_track_mark("1"))
+        QShortcut(Qt.Key.Key_Escape, self, activated=
                   lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
-        shortcut = QShortcut(QKeySequence("."), self, activated=
-                             lambda: self._playing_model_index and self._playing_model_index.isValid() 
-                             and [self.track_table_view.selectRow(self._playing_model_index.row()), 
-                                  self.track_table_view.setCurrentIndex(self.track_table_view.selectedIndexes()[0])])
-        shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
-        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._update_track_mark("0"))
-        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._update_track_mark("1"))
+        QShortcut(Qt.Key.Key_Period, self, activated=self._hightlight_playing_ix)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.theme_kanban: ThemeKanBan = None
+        # 内部属性
+        # 当前播放 视图索引
+        self._playing_ix: QModelIndex = None
 
         self.setup_ui()
         self.setup_event()
         self.setup_shortcut()
 
-        # 内部属性
-        self._playing_direction: int = 1
-        self._playing_model_index: QModelIndex = None
-
     def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
-        self._playing_model_index = None
+        self._playing_ix = None
         # 清空搜索框
         [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]]
         self.track_table_view.item_model.set_theme_kanban(theme_kanban)
 
     # 内部方法
 
-    def _update_track_mark(self, mark: str, force: bool = True) -> None:
-        rows = list(sorted(set(i.row() for i in self.track_table_view.selectedIndexes())))
-
+    def _set_track_mark(self, rows: list[int] = [], mark: str = "", force: bool = False) -> None:
+        rows = rows or list(sorted(set(i.row() for i in self.track_table_view.selectedIndexes())))
+        # 批量处理
         for r in rows:
-            # 原始数据行指针
             p = self.track_table_view.item_model.layout_ps[r]
             if self.track_table_view.item_model.table[p][5] and not force:
                 continue
             # 更新 看板
-            i, j = self.track_table_view.item_model.original_index[p]
+            i, j = self.track_table_view.item_model.kanban_index[p]
             self.theme_kanban.album_kanbans[i].album.tracks[j].mark = mark
             # 更新 视图
             self.track_table_view.item_model.table[p][5] = mark
@@ -120,50 +118,77 @@ class Page2Widget(QWidget):
         # 保存文件
         self.theme_kanban.save_metadata_file()
 
+    def _play_selected(self) -> None:
+        ixs = self.track_table_view.selectedIndexes()
+        if not ixs:
+            return
+        # 播放选择的第一个
+        self._playing_ix = ixs[0]
+        self._play()
+
     def _play(self) -> None:
-        while self._playing_model_index and self._playing_model_index.isValid():
-            row = self._playing_model_index.row()
-            p = self.track_table_view.item_model.layout_ps[row]
-            i, j = self.track_table_view.item_model.original_index[p]
-            
-            file = self.theme_kanban.album_kanbans[i].track_files[j]
-            # 文件为空 继续寻找
-            if not file:
-                self._move_playing_index()
-                continue
-
-            self.music_player_bar.set_media(file)
-            # track table 选中 当前播放行
-            self.track_table_view.scrollTo(self._playing_model_index, QAbstractItemView.ScrollHint.PositionAtCenter)
-            self.track_table_view.clearSelection()
-            self.track_table_view.selectRow(self._playing_model_index.row())
-            # 更新 track mark
-            self._update_track_mark("0", force=False)
-            return
-
         # index 无效 清空播放器
-        self.music_player_bar.set_media("")
-    
-    def _play_prev(self) -> None:
-        self._playing_direction = -1
-        self._move_playing_index()
-        self._play()
-
-    def _play_next(self) -> None:
-        self._playing_direction = 1
-        self._move_playing_index()
-        self._play()
-
-    def _move_playing_index(self) -> None:
-        if not self._playing_model_index:
+        if not self._playing_ix or not self._playing_ix.isValid():
+            self.music_player_bar.set_media("")
             return
-        row = self._playing_model_index.row()
-        self._playing_model_index = self._playing_model_index.siblingAtRow(row + self._playing_direction)
+
+        row = self._playing_ix.row()
+        p = self.track_table_view.item_model.layout_ps[row]
+        i, j = self.track_table_view.item_model.kanban_index[p]
+        file = self.theme_kanban.album_kanbans[i].track_files[j]
+        self._hightlight_playing_ix()
+        # 播放
+        self.music_player_bar.set_media(file)
+        # 更新 track mark
+        self._set_track_mark([row], "0", force=False)
+
+        # file 为空时
+        if not file:
+            self._on_playback_finished()
+
+    def _hightlight_playing_ix(self) -> None:
+        self.track_table_view.clearSelection()
+        
+        if not self._playing_ix or not self._playing_ix.isValid():
+            return
+        
+        # track table 选中 当前播放行
+        self.track_table_view.selectRow(self._playing_ix.row())
+        self.track_table_view.setCurrentIndex(self._playing_ix)
+        self.track_table_view.scrollTo(self._playing_ix, QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def _on_playback_finished(self) -> None:
+        # 清空播放器
+        self.music_player_bar.set_media("")
+        # 高光下一行
+        row = self._playing_ix.row()
+        self._playing_ix = self._playing_ix.siblingAtRow(row + 1)
+        self._hightlight_playing_ix()
+    
+    def _search_no_mark_ix(self, direction: int) -> None:
+        if not self._playing_ix or not self._playing_ix.isValid():
+            return
+        
+        while True:
+            row = self._playing_ix.row()
+            self._playing_ix = self._playing_ix.siblingAtRow(row + direction)
+
+            # 至尽头，退出循环
+            if not self._playing_ix.isValid():
+                break
+
+            p = self.track_table_view.item_model.layout_ps[row]
+            i, j = self.track_table_view.item_model.kanban_index[p]
+            
+            # 无 mark 信息，且有文件，退出循环
+            if (not self.theme_kanban.album_kanbans[i].album.tracks[j].mark 
+                and self.theme_kanban.album_kanbans[i].track_files[j]):
+                break
 
     def _on_track_table_double_clicked(self, index: QModelIndex) -> None:
         # 双击 Size 列 播放
         if index.column() != 0:
             return
-        self._playing_model_index = index
+        self._playing_ix = index
         self._play()
-    
+

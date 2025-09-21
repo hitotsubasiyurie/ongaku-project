@@ -1,7 +1,7 @@
-import itertools
 import os
 import shutil
 import subprocess
+import itertools
 from pathlib import Path
 from typing import Callable
 
@@ -16,7 +16,10 @@ from ongaku.utils.audiofile_utils import analyze_resource_track
 from ongaku.utils.storage_utils import track_filenames
 from ongaku.utils.basemodel_utils import tracks_assignment, track_to_unique_str
 from ongaku.kanban.kanban import ThemeKanBan
-from ongaku.kanban.page1.widgets import AlbumTableView, CheckMessageBox, LinkComboBox, TrackTableView
+from ongaku.kanban.page1.album_table_view import AlbumTableView
+from ongaku.kanban.page1.check_message_box import CheckMessageBox
+from ongaku.kanban.page1.link_combo_box import LinkComboBox
+from ongaku.kanban.page1.track_table_view import TrackTableView
 
 
 class Page1Widget(QWidget):

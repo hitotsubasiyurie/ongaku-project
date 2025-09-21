@@ -6,6 +6,7 @@ class DarkTheme:
 
     LOSSLESS_COLOR = QColor(46, 160, 67)
     LOSSY_COLOR = QColor(204, 153, 51)
+    PARTIAL_COLOR = QColor(231, 63, 63)
     MISSING_COLOR = QColor(204, 204, 204)
 
     ARTIST_TEXT_COLOR = QColor(102, 102, 102)
@@ -15,6 +16,18 @@ class DarkTheme:
 
     THEME_PROGRESS_COLL_COLOR = QColor(46, 160, 67, 50)
     THEME_PROGRESS_MARK_COLOR = QColor(70, 70, 70)
+
+    WIDGETS_QSS = """
+QPushButton#FloatButton {
+    background-color: rgba(0, 0, 0, 100);
+    color: white;
+    border-radius: 20px;
+}
+
+QPushButton#FloatButton:hover {
+    background-color: rgba(0, 0, 0, 160);
+}
+"""
 
     def apply_theme(app: QApplication) -> None:
         dark_palette = QPalette()
@@ -26,12 +39,14 @@ class DarkTheme:
 
         dark_palette.setColor(QPalette.ColorRole.WindowText, QColor(224, 224, 224))
         dark_palette.setColor(QPalette.ColorRole.Text, QColor(224, 224, 224))
-        # dark_palette.setColor(QPalette.ColorRole.HighlightedText, QColor(224, 224, 224))
+        dark_palette.setColor(QPalette.ColorRole.HighlightedText, QColor(224, 224, 224))
 
         # 高亮 同 VSCode
         dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(38, 79, 120, 150))
 
         app.setPalette(dark_palette)
+
+        app.setStyleSheet(DarkTheme.WIDGETS_QSS)
 
 
 

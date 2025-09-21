@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -6,15 +5,18 @@ import orjson
 from pydantic import BaseModel
 
 
-SETTINGS_FILE = Path(sys.argv[0]).parent / "settings.json"
+SETTINGS_FILE = Path("./settings.json")
 
 
 class _GlobalSettings(BaseModel, validate_assignment=True):
 
-    language: str | None = None
-    temp_directory: str | None = None
-    metadata_directory: str | None = None
-    resource_directory: str | None = None
+    language: str = ""
+    temp_directory: str = ""
+    metadata_directory: str = ""
+    resource_directory: str = ""
+    # 可选配置
+    ui_font_size: int = 0
+    ui_font_family: str = ""
 
     @classmethod
     def load(cls) -> "_GlobalSettings":

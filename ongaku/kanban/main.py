@@ -2,30 +2,41 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# 指定运行目录
+os.chdir(Path(__file__).parent.parent)
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QIcon
 
-
+from ongaku.core.settings import global_settings
 from ongaku.kanban.kanban import KanBan
-from ongaku.kanban.kanban_ui import KanBanUI
+from ongaku.kanban.page0.init_settings_dialog import InitSettingsDialog
+from ongaku.kanban.page0.page0_widget import Page0Widget
 from ongaku.kanban.theme_colors import current_theme
 
 
 if __name__ == "__main__":
     app = QApplication([])
+    app.setWindowIcon(QIcon("./kanban/assests/icon.png"))
     QApplication.setStyle("Fusion")
     current_theme.apply_theme(app)
-    app.setStyleSheet(Path(__file__).with_name("widgets.qss").read_text("utf-8"))
+
     font = app.font()
-    font.setPointSize(9)
-    font.setFamily("JetBrains Mono")
+    global_settings.ui_font_size and font.setPointSize(global_settings.ui_font_size)
+    global_settings.ui_font_family and font.setFamily(global_settings.ui_font_family)
     app.setFont(font)
-    widget = KanBanUI()
-    widget.setWindowIcon(QPixmap(Path(__file__).with_name("icon.png")))
-    kanban = KanBan(r"D:\ongaku-metadata", r"D:\移动云盘同步盘\ongaku-resource")
+
+    if not all([global_settings.metadata_directory, global_settings.resource_directory]):
+        widget = InitSettingsDialog()
+        result = widget.exec()
+        if not result:
+            app.quit()
+            sys.exit(0)
+
+    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
+    widget = Page0Widget()
     widget.set_kanban(kanban)
+
     screen = app.screens()[0]
     screen_geometry = screen.availableGeometry()
     width = screen_geometry.width()
@@ -33,6 +44,7 @@ if __name__ == "__main__":
     widget.resize(width, height)
     widget.move(screen_geometry.left(), screen_geometry.top())
     widget.show()
+
     sys.exit(app.exec())
 
 

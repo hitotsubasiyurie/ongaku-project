@@ -1,16 +1,21 @@
 from typing import Any
 
-from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QItemSelection, QMimeData
-from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath
+from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData
+from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
-    QAbstractItemView, )
+    QAbstractItemView, QStyle)
 
 from ongaku.kanban.kanban import ResourceState, ThemeKanBan
-from ongaku.kanban.theme_colors import current_theme
+from ongaku.kanban.ui_theme import current_theme
 from ongaku.kanban.widgets.custom_table_item_model import CustomTableItemModel
 
 
 class AlbumTableItemModel(CustomTableItemModel):
+
+    MARKED_QBRUSHES = {
+        Qt.ItemDataRole.BackgroundRole: QBrush(current_theme.MARKED_BACKGROUND_COLOR),
+        Qt.ItemDataRole.ForegroundRole: QBrush(current_theme.MARKED_FOREGROUND_COLOR)
+    }
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -18,11 +23,17 @@ class AlbumTableItemModel(CustomTableItemModel):
         self.headers: list[str] = ["S", "ALBUM", "CATNO", "DATE"]
         self.col_cnt: int = len(self.headers)
 
-    def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
+        self.theme_kanban: ThemeKanBan = None
+
+        self.album_marks: list[bool] = []
+
+    def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         # 声明重置模型
         self.beginResetModel()
 
         # 重置数据
+        self.theme_kanban = theme_kanban
+        self.album_marks = []
         self.table = []
         # 默认 以 S 列 排序
         self.sort_args = (0, Qt.SortOrder.DescendingOrder)
@@ -31,6 +42,8 @@ class AlbumTableItemModel(CustomTableItemModel):
         if theme_kanban:
             self.table = [[(k.album_res_state, k.metadata_state), k.album.album, k.album.catalognumber, k.album.date]
                         for k in theme_kanban.album_kanbans]
+            self.album_marks = [all(t.mark for t in k.album.tracks) 
+                                 for k in theme_kanban.album_kanbans]
         
         self.layout_ps = list(range(len(self.table)))
         # 应用排序
@@ -39,7 +52,17 @@ class AlbumTableItemModel(CustomTableItemModel):
 
         self.endResetModel()
 
-    # 可编辑
+    def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
+        row, col = index.row(), index.column()
+
+        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+            return None
+        
+        # 已有 Mark 信息 置灰
+        if self.album_marks[self.layout_ps[row]] and role in self.MARKED_QBRUSHES:
+            return self.MARKED_QBRUSHES[role]
+        
+        return super().data(index, role)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # S 列 只读
@@ -51,8 +74,35 @@ class AlbumTableItemModel(CustomTableItemModel):
                 | Qt.ItemFlag.ItemIsDropEnabled)
 
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
-        # 编辑无效
-        return False
+        row, col = index.row(), index.column()
+
+        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+            return False
+        
+        # 仅响应 EditRole
+        if role != Qt.ItemDataRole.EditRole:
+            return False
+
+        # 转字符串
+        value = str(value)
+        p = self.layout_ps[row]
+
+        # 值不变时不更新视图
+        if self.table[p][col] == value:
+            return False
+        
+        # 更新数据
+        self.table[p][col] = value
+        if col == 1:
+            self.theme_kanban.album_kanbans[p].album.album = value
+        elif col == 2:
+            self.theme_kanban.album_kanbans[p].album.catalognumber = value
+        elif col == 3:
+            self.theme_kanban.album_kanbans[p].album.date = value
+        
+        # 刷新视图
+        self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
+        return True
 
     # drop 支持
     
@@ -77,6 +127,12 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
     }
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        # 绘制背景
+        if option.state & QStyle.StateFlag.State_Selected:
+            painter.fillRect(option.rect, option.palette.highlight())
+        elif (bg := index.data(Qt.ItemDataRole.BackgroundRole)):
+            painter.fillRect(option.rect, QBrush(bg))
+        
         painter.save()
         rs, ms = index.data(Qt.ItemDataRole.DisplayRole)
         painter.setPen(Qt.PenStyle.NoPen)

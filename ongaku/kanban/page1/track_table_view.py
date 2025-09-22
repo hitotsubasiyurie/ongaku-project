@@ -2,17 +2,22 @@ import json
 from typing import Any
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData, QSize
-from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMetrics
+from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMetrics, QBrush
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, 
-    QHeaderView, QAbstractItemView, )
+    QHeaderView, QAbstractItemView, QStyle)
 
 from ongaku.kanban.kanban import AlbumKanBan
-from ongaku.kanban.theme_colors import current_theme
+from ongaku.kanban.ui_theme import current_theme
 from ongaku.kanban.page1.album_table_view import AlbumStateItemDelegate
 from ongaku.kanban.widgets.custom_table_item_model import CustomTableItemModel
 
 
 class TrackTableItemModel(CustomTableItemModel):
+
+    MARKED_QBRUSHES = {
+        Qt.ItemDataRole.BackgroundRole: QBrush(current_theme.MARKED_BACKGROUND_COLOR),
+        Qt.ItemDataRole.ForegroundRole: QBrush(current_theme.MARKED_FOREGROUND_COLOR)
+    }
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -20,13 +25,19 @@ class TrackTableItemModel(CustomTableItemModel):
         self.headers = ["S", "TITLE"]
         self.col_cnt: int = len(self.headers)
 
-    def set_album_kanban(self, album_kanban: AlbumKanBan = None) -> None:
+        self.album_kanban: AlbumKanBan = None
+
+        self.track_marks: list[bool] = []
+
+    def reset_album_kanban(self, album_kanban: AlbumKanBan = None) -> None:
         ms = 0b111110
 
         # 声明重置模型
         self.beginResetModel()
         
         # 重置数据
+        self.album_kanban = album_kanban
+        self.track_marks = []
         self.table = []
         # 默认 以 S 列 排序
         self.sort_args = (0, Qt.SortOrder.AscendingOrder)
@@ -35,15 +46,26 @@ class TrackTableItemModel(CustomTableItemModel):
         if album_kanban:
             self.table = [[(rs, ms | bool(t.artist)), (t.title, t.artist)]
                         for rs, t in zip(album_kanban.track_res_states, album_kanban.album.tracks)]
-        
+            self.track_marks = [bool(t.mark) for t in album_kanban.album.tracks]
+
         self.layout_ps = list(range(len(self.table)))
         # 应用排序
         self._apply_sort()
         self.layout_row = len(self.layout_ps)
 
         self.endResetModel()
-    
-    # 可编辑
+
+    def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
+        row, col = index.row(), index.column()
+
+        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+            return None
+        
+        # 已有 Mark 信息 置灰
+        if self.track_marks[self.layout_ps[row]] and role in self.MARKED_QBRUSHES:
+            return self.MARKED_QBRUSHES[role]
+        
+        return super().data(index, role)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # S 列 只读
@@ -54,8 +76,36 @@ class TrackTableItemModel(CustomTableItemModel):
                 | Qt.ItemFlag.ItemIsDropEnabled)
     
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
-        # 编辑无效
-        return False
+        row, col = index.row(), index.column()
+
+        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+            return False
+        
+        # 仅响应 EditRole
+        if role != Qt.ItemDataRole.EditRole:
+            return False
+
+        # 仅响应 TITLE 列
+        if col != 1:
+            return False
+        
+        # 转元组
+        value = tuple(json.loads(str(value)))
+
+        p = self.layout_ps[row]
+
+        # 值不变时不更新视图
+        if self.table[p][col] == value:
+            return False
+    
+        # 更新数据
+        self.table[p][col] = value
+        self.album_kanban.album.tracks[p].title = value[0]
+        self.album_kanban.album.tracks[p].artist = value[1]
+
+        # 刷新视图
+        self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
+        return True
 
     # drop 支持
     
@@ -70,7 +120,18 @@ class TrackTableItemModel(CustomTableItemModel):
 class TrackTitleItemDelegate(QStyledItemDelegate):
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        # 绘制背景
+        if option.state & QStyle.StateFlag.State_Selected:
+            painter.fillRect(option.rect, option.palette.highlight())
+        elif (bg := index.data(Qt.ItemDataRole.BackgroundRole)):
+            painter.fillRect(option.rect, QBrush(bg))
+
         painter.save()
+
+        # 前景颜色
+        if fg:= index.data(Qt.ItemDataRole.ForegroundRole):
+            painter.setPen(fg.color())
+
         title, artist = index.data(Qt.ItemDataRole.DisplayRole)
         # 艺术家信息 增加缩进
         artist = " "*6 + artist
@@ -85,7 +146,7 @@ class TrackTitleItemDelegate(QStyledItemDelegate):
         
         artist_rect = QRect(rect.left(), title_rect.bottom()+fh//4, rect.width(),
                             self._get_content_height(font, width, artist))
-        painter.setPen(current_theme.ARTIST_TEXT_COLOR)
+        painter.setPen(current_theme.MARKED_FOREGROUND_COLOR)
         painter.drawText(artist_rect, artist)
         painter.restore()
 

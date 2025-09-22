@@ -9,22 +9,20 @@ class DarkTheme:
     PARTIAL_COLOR = QColor(231, 63, 63)
     MISSING_COLOR = QColor(204, 204, 204)
 
-    ARTIST_TEXT_COLOR = QColor(102, 102, 102)
-
     MARKED_BACKGROUND_COLOR = QColor(0, 0, 0)
     MARKED_FOREGROUND_COLOR = QColor(130, 130, 130)
 
-    THEME_PROGRESS_COLL_COLOR = QColor(46, 160, 67, 50)
-    THEME_PROGRESS_MARK_COLOR = QColor(70, 70, 70)
+    THEME_PROGRESS_COLL_COLOR = QColor(51, 102, 51)
+    THEME_PROGRESS_MARK_COLOR = QColor(80, 80, 80)
 
     WIDGETS_QSS = """
-QPushButton#FloatButton {
+QPushButton {
     background-color: rgba(0, 0, 0, 100);
     color: white;
-    border-radius: 20px;
+    border-radius: 16px;
 }
 
-QPushButton#FloatButton:hover {
+QPushButton:hover {
     background-color: rgba(0, 0, 0, 160);
 }
 """
@@ -45,6 +43,8 @@ QPushButton#FloatButton:hover {
         dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(38, 79, 120, 150))
 
         app.setPalette(dark_palette)
+
+        fh = app.fontMetrics().height()
 
         app.setStyleSheet(DarkTheme.WIDGETS_QSS)
 

@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QSlider, QLabel, QPushButton, QHBoxLayout, QVBoxLayout, 
     QStyle, )
-from PySide6.QtGui import QMouseEvent, QPixmap
+from PySide6.QtGui import QMouseEvent, QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtCore import Qt, QTime, QUrl, Signal
 
@@ -32,14 +32,19 @@ class MusicPlayerBar(QWidget):
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.time_label.setFixedSize(fh * 6, fh * 1.5)
 
-        self.prev_btn = QPushButton(QPixmap("./assests/previous.png"), "")
-        self.prev_btn.setFixedSize(fh * 2, fh * 1.5)
-        self.play_btn_icons = [QPixmap("./assests/play.png"), QPixmap("./assests/pause.png")]
+        self.prev_btn = QPushButton(QIcon("./kanban/assets/previous.png"), "")
+        self.prev_btn.setFixedSize(fh * 1.5, fh * 1.5)
+        self.prev_btn.setIconSize(self.prev_btn.size())
+
+        self.play_btn_icons = [QIcon("./kanban/assets/play.png"), QIcon("./kanban/assets/pause.png")]
         self.play_btn = QPushButton()
         self.play_btn.setIcon(self.play_btn_icons[0])
-        self.play_btn.setFixedSize(fh * 2, fh * 1.5)
-        self.next_btn = QPushButton(QPixmap("./assests/next.png"), "")
-        self.next_btn.setFixedSize(fh * 2, fh * 1.5)
+        self.play_btn.setFixedSize(fh * 1.5, fh * 1.5)
+        self.play_btn.setIconSize(self.prev_btn.size())
+
+        self.next_btn = QPushButton(QIcon("./kanban/assets/next.png"), "")
+        self.next_btn.setFixedSize(fh * 1.5, fh * 1.5)
+        self.next_btn.setIconSize(self.prev_btn.size())
 
         layout = QVBoxLayout()
         layout.setSpacing(1)
@@ -83,10 +88,10 @@ class MusicPlayerBar(QWidget):
         self.setup_event()
 
     def set_media(self, file: str = "") -> None:
-        self.time_label.clear()
         url = QUrl.fromLocalFile(file)
         self.player.setSource(url)
         file and self.toggle_play()
+        not file and self.time_label.clear()
 
     def toggle_play(self) -> None:
         if self.player.isPlaying():

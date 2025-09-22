@@ -62,21 +62,27 @@ class Page1Widget(QWidget):
         self.cover_label.raise_()
         # 透明度
         self.cover_effect = QGraphicsOpacityEffect(self)
-        self.cover_effect.setOpacity(0.1)
+        self.cover_effect.setOpacity(0.2)
         self.cover_label.setGraphicsEffect(self.cover_effect)
         # 对齐
         self.cover_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
     def setup_event(self) -> None:
         # 初始化 事件
+        # 搜索框
         self.album_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(1, t))
         self.catno_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(2, t))
         self.date_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(3, t))
         self.album_table_view.selectionModel().selectionChanged.connect(self._on_album_view_selected)
+        # view 拖入路径
         self.album_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
+        # album_table_view 右键菜单动作
         self.album_table_view.action_edit_clicked.connect(self._edit_metadata_file)
         self.album_table_view.action_locate_clicked.connect(self._locate_album)
+        # view 编辑数据
+        self.track_table_view.item_model.dataChanged.connect(lambda: self.theme_kanban.save_metadata_file())
+        self.album_table_view.item_model.dataChanged.connect(lambda: self.theme_kanban.save_metadata_file())
 
         # 拦截 album_table 和 track_table 事件
         self.album_table_view.installEventFilter(self)
@@ -101,8 +107,9 @@ class Page1Widget(QWidget):
         self.theme_kanban = theme_kanban
         # 清空搜索框
         [x.clear() for x in [self.album_field, self.catno_field, self.date_field]]
-        self.album_table_view.item_model.set_theme_kanban(theme_kanban)
-        self.track_table_view.item_model.set_album_kanban(None)
+        self.cover_label.clear()
+        self.album_table_view.item_model.reset_theme_kanban(theme_kanban)
+        self.track_table_view.item_model.reset_album_kanban(None)
 
     # 重写方法
 
@@ -121,7 +128,7 @@ class Page1Widget(QWidget):
             if event.type() == QEvent.Type.KeyPress:
                 self.cover_effect.setOpacity(1)
             elif event.type() == QEvent.Type.KeyRelease:
-                self.cover_effect.setOpacity(0.1)
+                self.cover_effect.setOpacity(0.2)
             return True
 
         # 放行上下键
@@ -144,7 +151,7 @@ class Page1Widget(QWidget):
 
         # 展示 首个 album 的 track, cover
         album_kanban = self.theme_kanban.album_kanbans[ps[0]]
-        self.track_table_view.item_model.set_album_kanban(album_kanban)
+        self.track_table_view.item_model.reset_album_kanban(album_kanban)
         if album_kanban.cover:
             pix = QPixmap(album_kanban.cover)
             pix = pix.scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -166,19 +173,6 @@ class Page1Widget(QWidget):
         res_dir = self.theme_kanban.album_kanbans[p].album_dir
         if os.path.exists(res_dir):
             subprocess.run(f'explorer "{res_dir}"')
-
-    def _show_check_message(self, title: str, text: str, on_yes_clicked: Callable = None, 
-                            on_no_clicked: Callable = None) -> bool:
-        """弹出确认对话框"""
-        check_msg = CheckMessageBox(title, text, parent=self)
-        check_msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        # 设置默认按钮为 NO
-        check_msg.setDefaultButton(QMessageBox.StandardButton.No)
-        on_yes_clicked and check_msg.button(QMessageBox.StandardButton.Yes).clicked.connect(on_yes_clicked)
-        on_no_clicked and check_msg.button(QMessageBox.StandardButton.No).clicked.connect(on_no_clicked)
-        # 阻塞
-        accept = check_msg.exec() == QMessageBox.StandardButton.Yes
-        return accept 
 
     def _on_paths_dropped(self, dropped_strs: list[str]) -> None:
         # selectedIndexes 以索引为单位，一行多个
@@ -202,6 +196,10 @@ class Page1Widget(QWidget):
                 if len(src_files) != len(a.tracks):
                     continue
                 self._putaway_track_files(src_files, d, a)
+            # 更新视图
+            # TODO: kanban 和 model 之间隔了一层 table 缓存
+            # 怎么简便的更新呢？
+            [self.theme_kanban.album_kanbans[p].__post_init__() for p in ps]
             return
         
         exts = set(p.suffix.lower() for p in dropped_paths)
@@ -266,4 +264,16 @@ Average Similarity:\t{aver_similarity:.02f}
         [src.rename(dst) for src, dst in _map.items()]
         return True
 
+    def _show_check_message(self, title: str, text: str, on_yes_clicked: Callable = None, 
+                            on_no_clicked: Callable = None) -> bool:
+        """弹出确认对话框"""
+        check_msg = CheckMessageBox(title, text, parent=self)
+        check_msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        # 设置默认按钮为 NO
+        check_msg.setDefaultButton(QMessageBox.StandardButton.No)
+        on_yes_clicked and check_msg.button(QMessageBox.StandardButton.Yes).clicked.connect(on_yes_clicked)
+        on_no_clicked and check_msg.button(QMessageBox.StandardButton.No).clicked.connect(on_no_clicked)
+        # 阻塞
+        accept = check_msg.exec() == QMessageBox.StandardButton.Yes
+        return accept 
 

@@ -66,7 +66,6 @@ class Page0Widget(QWidget):
 
     def set_kanban(self, kanban: KanBan) -> None:
         self.kanban = kanban
-        self.theme_box.set_kanban(self.kanban)
 
     def refresh_current_theme_kanban(self) -> None:
         if not self.current_theme_kanban:
@@ -103,6 +102,9 @@ class Page0Widget(QWidget):
 
     def _on_theme_btn_clicked(self):
         if self.theme_box.isHidden():
+            # 每次展示，重新统计进度
+            [k.count_progress() for k in self.kanban.theme_kanbans]
+            self.theme_box.set_kanban(self.kanban)
             self.theme_box.move((self.width()-self.theme_box.width()) // 2, 
                                 (self.height()-self.theme_box.height()) // 2)
             self.theme_box.show()

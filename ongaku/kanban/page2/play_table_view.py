@@ -2,10 +2,10 @@ import itertools
 from typing import Any
 
 from PySide6.QtCore import QModelIndex, Qt, QObject, Signal
-from PySide6.QtGui import QAction, QBrush, QResizeEvent
+from PySide6.QtGui import QAction, QBrush, QResizeEvent, QIcon
 from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
-from ongaku.kanban.theme_colors import current_theme
+from ongaku.kanban.ui_theme import current_theme
 from ongaku.kanban.kanban import ThemeKanBan, ResourceState
 from ongaku.kanban.widgets.custom_table_item_model import CustomTableItemModel
 
@@ -23,6 +23,8 @@ class PlayTableItemModel(CustomTableItemModel):
         Qt.ItemDataRole.ForegroundRole: QBrush(current_theme.MARKED_FOREGROUND_COLOR)
     }
 
+    PLAYING_ICON_CACHE = None
+
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
@@ -34,8 +36,13 @@ class PlayTableItemModel(CustomTableItemModel):
         self.tracks_states: list[ResourceState] = []
         # 看板索引
         self.kanban_index: list[tuple[int, int]] = []
+        # 播放中
+        self.playing_ij: tuple[int, int] = None
 
-    def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
+        # 建造 Application 后才 实例化 QIcon
+        self.PLAYING_ICON_CACHE = QIcon("./kanban/assets/playing.png")
+
+    def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         # 声明重置模型
         self.beginResetModel()
 
@@ -44,6 +51,7 @@ class PlayTableItemModel(CustomTableItemModel):
         self.table = []
         self.tracks_states = []
         self.kanban_index = []
+        self.playing_ij = None
         # 默认 以 Title 列 排序
         self.sort_args = (1, Qt.SortOrder.AscendingOrder)
         self.filters = {}
@@ -92,6 +100,21 @@ class PlayTableItemModel(CustomTableItemModel):
         
         return super().data(index, role)
 
+    def headerData(self, section: int, orientation: Qt.Orientation,
+                   role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
+        # 仅响应 DisplayRole, DecorationRole
+        if role not in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.DecorationRole]:
+            return
+
+        # 列表头 播放中 仅展示装饰图标
+        if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_index[self.layout_ps[section]] == self.playing_ij:
+            if role == Qt.ItemDataRole.DecorationRole:
+                return self.PLAYING_ICON_CACHE
+            else:
+                return
+        
+        return super().headerData(section, orientation, role)
+    
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # Size 列 不可编辑
         if index.column() == 0:
@@ -136,7 +159,7 @@ class PlayTableItemModel(CustomTableItemModel):
         return True
 
 
-class TrackTableView(QTableView):
+class PlayTableView(QTableView):
 
     favourite_selected = Signal()
     unfavourite_selected = Signal()

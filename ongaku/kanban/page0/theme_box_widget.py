@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAb
     QStyledItemDelegate, QStyleOptionViewItem, QStyle, )
 
 from ongaku.kanban.kanban import KanBan
-from ongaku.kanban.theme_colors import current_theme
+from ongaku.kanban.ui_theme import current_theme
 
 
 class ProgressDelegate(QStyledItemDelegate):
@@ -26,17 +26,15 @@ class ProgressDelegate(QStyledItemDelegate):
 
         painter.save()
 
-        if text in self.mark_dict:
-            val = self.mark_dict[text]
+        # 先画长进度条
+        params = [(self.coll_dict.get(text, 0), current_theme.THEME_PROGRESS_COLL_COLOR),
+                  (self.mark_dict.get(text, 0), current_theme.THEME_PROGRESS_MARK_COLOR)]
+        params.sort(key=lambda t: t[0], reverse=True)
+        
+        for val, color in params:
             w = int(rect.width() * val)
             comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
-            painter.fillRect(comp_rect, current_theme.THEME_PROGRESS_MARK_COLOR)
-
-        if text in self.coll_dict:
-            val = self.coll_dict[text]
-            w = int(rect.width() * val)
-            comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
-            painter.fillRect(comp_rect, current_theme.THEME_PROGRESS_COLL_COLOR)
+            painter.fillRect(comp_rect, color)
 
         painter.restore()
 

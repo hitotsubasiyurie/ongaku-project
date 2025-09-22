@@ -53,7 +53,7 @@ class Page1Widget(QWidget):
         self.track_table_view = TrackTableView()
         grid_layout.addWidget(self.track_table_view, 1, 3, 1, 2)
 
-        col_stretch = [5, 1, 1, 2, 4]
+        col_stretch = [5, 1, 1, 2, 3]
         [s and grid_layout.setColumnStretch(i, s) for i, s in enumerate(col_stretch)]
 
         self.cover_label = QLabel(self)

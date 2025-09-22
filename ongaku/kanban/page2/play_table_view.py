@@ -89,7 +89,7 @@ class PlayTableItemModel(CustomTableItemModel):
         # Date, Mark 列 文本居中
         if col in [4, 5] and role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignmentFlag.AlignCenter
-        
+
         # 已有 Mark 信息 置灰
         if self.table[self.layout_ps[row]][5] and role in self.MARKED_QBRUSHES:
             return self.MARKED_QBRUSHES[role]

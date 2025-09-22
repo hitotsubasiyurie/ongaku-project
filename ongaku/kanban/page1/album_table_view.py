@@ -62,6 +62,10 @@ class AlbumTableItemModel(CustomTableItemModel):
         if self.album_marks[self.layout_ps[row]] and role in self.MARKED_QBRUSHES:
             return self.MARKED_QBRUSHES[role]
         
+        # CATNO, DATE 列 文本居中
+        if col in [2, 3] and role == Qt.ItemDataRole.TextAlignmentRole:
+            return Qt.AlignmentFlag.AlignCenter
+
         return super().data(index, role)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
@@ -216,7 +220,7 @@ class AlbumTableView(QTableView):
         
         # 设置列
         header = self.horizontalHeader()
-        column_widths = [fh*1.5, 0, fh*6, fh*5]
+        column_widths = [fh*1.5, 0, fh*7, fh*6]
         [self.setColumnWidth(i, w) for i, w in enumerate(column_widths)]
         column_modes = [QHeaderView.ResizeMode.Fixed if w else QHeaderView.ResizeMode.Stretch for w in column_widths]
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]

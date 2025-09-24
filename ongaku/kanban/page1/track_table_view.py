@@ -9,99 +9,97 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
 from ongaku.kanban.kanban import AlbumKanBan
 from ongaku.kanban.ui_theme import current_theme
 from ongaku.kanban.page1.album_table_view import AlbumStateItemDelegate
-from ongaku.kanban.widgets.custom_table_item_model import CustomTableItemModel
+from ongaku.kanban.common.custom_table_item_model import CustomTableItemModel
 
 
 class TrackTableItemModel(CustomTableItemModel):
 
-    MARKED_QBRUSHES = {
-        Qt.ItemDataRole.BackgroundRole: QBrush(current_theme.MARKED_BACKGROUND_COLOR),
-        Qt.ItemDataRole.ForegroundRole: QBrush(current_theme.MARKED_FOREGROUND_COLOR)
-    }
+    MARKED_BACKGROUND_QBRUSHES = QBrush(current_theme.MARKED_BACKGROUND_COLOR)
+    MARKED_FOREGROUND_QBRUSHES = QBrush(current_theme.MARKED_FOREGROUND_COLOR)
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
         self.headers = ["S", "TITLE"]
-        self.col_cnt: int = len(self.headers)
 
         self.album_kanban: AlbumKanBan = None
 
-        self.track_marks: list[bool] = []
-
     def reset_album_kanban(self, album_kanban: AlbumKanBan = None) -> None:
-        ms = 0b111110
-
         # 声明重置模型
         self.beginResetModel()
         
         # 重置数据
         self.album_kanban = album_kanban
-        self.track_marks = []
-        self.table = []
+        self.layout_ps = list(range(len(self.album_kanban.album.tracks)))
+
         # 默认 以 S 列 排序
         self.sort_args = (0, Qt.SortOrder.AscendingOrder)
+        # 清空筛选
         self.filters = {}
 
-        if album_kanban:
-            self.table = [[(rs, ms | bool(t.artist)), (t.title, t.artist)]
-                        for rs, t in zip(album_kanban.track_res_states, album_kanban.album.tracks)]
-            self.track_marks = [bool(t.mark) for t in album_kanban.album.tracks]
-
-        self.layout_ps = list(range(len(self.table)))
         # 应用排序
         self._apply_sort()
-        self.layout_row = len(self.layout_ps)
 
         self.endResetModel()
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
         row, col = index.row(), index.column()
 
-        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+        if not index.isValid() or row >= len(self.layout_ps) or col >= len(self.headers):
             return None
         
-        # 已有 Mark 信息 置灰
-        if self.track_marks[self.layout_ps[row]] and role in self.MARKED_QBRUSHES:
-            return self.MARKED_QBRUSHES[role]
-        
-        return super().data(index, role)
+        p = self.layout_ps[row]
+
+        # 前景
+        if role == Qt.ItemDataRole.ForegroundRole:
+            # 已有 Mark 信息
+            if self.album_kanban.album.tracks[p].mark:
+                return self.MARKED_FOREGROUND_QBRUSHES
+ 
+        # 背景
+        if role == Qt.ItemDataRole.BackgroundRole:
+            # 已有 Mark 信息
+            if self.album_kanban.album.tracks[p].mark:
+                return self.MARKED_BACKGROUND_QBRUSHES
+
+        # DisplayRole, EditRole
+        if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
+            return self._get_data(col, p)
+
+        return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # S 列 只读
         if index.column() == 0:
             return Qt.ItemFlag.NoItemFlags
         
+        # 允许 拖入
         return (Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
                 | Qt.ItemFlag.ItemIsDropEnabled)
     
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
         row, col = index.row(), index.column()
 
-        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+        if not index.isValid() or row >= len(self.layout_ps) or col >= len(self.headers):
             return False
-        
+
         # 仅响应 EditRole
         if role != Qt.ItemDataRole.EditRole:
             return False
 
-        # 仅响应 TITLE 列
-        if col != 1:
-            return False
-        
         # 转元组
         value = tuple(json.loads(str(value)))
 
-        p = self.layout_ps[row]
-
-        # 值不变时不更新视图
-        if self.table[p][col] == value:
-            return False
-    
         # 更新数据
-        self.table[p][col] = value
-        self.album_kanban.album.tracks[p].title = value[0]
-        self.album_kanban.album.tracks[p].artist = value[1]
+        p = self.layout_ps[row]
+        old_hash = hash(self.album_kanban.album)
+
+        if col == 1:
+            self.album_kanban.album.tracks[p].title = value[0]
+            self.album_kanban.album.tracks[p].artist = value[1]
+
+        if old_hash == hash(self.album_kanban.album):
+            return False
 
         # 刷新视图
         self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
@@ -115,6 +113,18 @@ class TrackTableItemModel(CustomTableItemModel):
     def canDropMimeData(self, data: QMimeData, action: Qt.DropAction, row: int, column: int, parent: QModelIndex) \
             -> bool:
         return True
+
+    # 内部方法
+
+    def _get_data(self, col: int, p: int) -> str:
+        ms = 0b111110
+
+        if col == 0:
+            return (self.album_kanban.track_res_states[p], 
+                    ms | bool(self.album_kanban.album.tracks[p].artist))
+        elif col == 1:
+            return (self.album_kanban.album.tracks[p].title, 
+                    self.album_kanban.album.tracks[p].artist)
 
 
 class TrackTitleItemDelegate(QStyledItemDelegate):

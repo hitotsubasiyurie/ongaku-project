@@ -1731,3 +1731,22 @@ mark 信息放在 track 元数据里有许多坏处：
                             play_table 进度条 封面 展示+可接收
 -----------------------------【todo】专辑 view header 展示 favourite 界面
                             算了。好丑
+
+## 2025.09.23
+
+QT 编程 view 和 model
+
+对于 AlbumTableItemModel ，接受 theme_kanban ，展示自定义的二维数据 table
+table 的数据来自于 theme_kanban ，这些数据可能会经过预处理，比如字符串格式化，数字格式化，拼接数据等等
+为了性能，不能直接把预处理逻辑写在 data 接口 中
+原始 theme_kanban -> table 预处理缓存 -> 界面
+但这样的问题，在于很难双向更新。
+界面编辑时，要根据行列更新进 theme_kanban 中，
+theme_kanban 变化时，又要根据索引给对应 界面 行列发出信号
+双向同步问题
+
+Qt的Model/View框架设计的初衷，就是让Model成为原始数据的“适配器”（Adapter）。最佳实践是不创建独立的、扁平化的缓存。Model应该直接持有对原始数据结构（self.theme_kanban）的引用，并在data()和setData()方法中动态地进行索引到具体数据对象的映射。Qt 的 Model/View 框架就是让 Model 像一个适配器：直接把原始数据结构包装成标准接口，而不是再造一个「副本表格」。只有在性能瓶颈时，才考虑额外做懒缓存，而不是默认就把数据拍平。
+
+
+
+

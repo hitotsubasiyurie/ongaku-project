@@ -200,6 +200,7 @@ class Page1Widget(QWidget):
             # TODO: kanban 和 model 之间隔了一层 table 缓存
             # 怎么简便的更新呢？
             [self.theme_kanban.album_kanbans[p].__post_init__() for p in ps]
+            self.album_table_view.item_model.table[p]
             return
         
         exts = set(p.suffix.lower() for p in dropped_paths)

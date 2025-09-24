@@ -59,9 +59,9 @@ class Page2Widget(QWidget):
         # play_table_view 双击
         self.play_table_view.doubleClicked.connect(self._on_track_table_double_clicked)
         # play_table_view 右键菜单动作
-        self.play_table_view.favourite_selected.connect(lambda: self._set_track_mark("1", force=True))
-        self.play_table_view.unfavourite_selected.connect(lambda: self._set_track_mark("0", force=True))
-        self.play_table_view.clear_selected.connect(lambda: self._set_track_mark("", force=True))
+        self.play_table_view.favourite_selected.connect(lambda: self._set_track_mark([], "1", force=True))
+        self.play_table_view.unfavourite_selected.connect(lambda: self._set_track_mark([], "0", force=True))
+        self.play_table_view.clear_selected.connect(lambda: self._set_track_mark([], "", force=True))
         # play_table_view 编辑
         self.play_table_view.item_model.dataChanged.connect(lambda: self.theme_kanban.save_metadata_file())
         # 播放器事件
@@ -79,8 +79,8 @@ class Page2Widget(QWidget):
             QShortcut(key, self, activated=self._play_selected)
         QShortcut(QKeySequence("Alt+Up"), self, activated=lambda: self._play_next_no_mark_ix(-1))
         QShortcut(QKeySequence("Alt+Down"), self, activated=lambda: self._play_next_no_mark_ix(1))
-        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._set_track_mark("0"))
-        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._set_track_mark("1"))
+        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._set_track_mark([], "0"))
+        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._set_track_mark([], "1"))
         QShortcut(Qt.Key.Key_Escape, self, activated=
                   lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
         QShortcut(Qt.Key.Key_Period, self, activated=self._hightlight_playing_ix)
@@ -106,15 +106,16 @@ class Page2Widget(QWidget):
 
     # 内部方法
 
-    def _set_track_mark(self, rows: list[int] = [], mark: str = "", force: bool = False) -> None:
-        rows = rows or list(sorted(set(i.row() for i in self.play_table_view.selectedIndexes())))
+    def _set_track_mark(self, selected: list[int] = [], mark: str = "", force: bool = False) -> None:
+        # TODO: selected 类型应该是 model index 
+        rows = selected or list(sorted(set(i.row() for i in self.play_table_view.selectedIndexes())))
         # 批量处理
         for r in rows:
             p = self.play_table_view.item_model.layout_ps[r]
             if self.play_table_view.item_model.table[p][5] and not force:
                 continue
             # 更新 看板
-            i, j = self.play_table_view.item_model.kanban_index[p]
+            i, j = self.play_table_view.item_model.kanban_ij[p]
             self.theme_kanban.album_kanbans[i].album.tracks[j].mark = mark
             # 更新 视图
             self.play_table_view.item_model.table[p][5] = mark
@@ -139,7 +140,7 @@ class Page2Widget(QWidget):
 
         row = self._playing_ix.row()
         p = self.play_table_view.item_model.layout_ps[row]
-        i, j = self.play_table_view.item_model.kanban_index[p]
+        i, j = self.play_table_view.item_model.kanban_ij[p]
         file = self.theme_kanban.album_kanbans[i].track_files[j]
         self._hightlight_playing_ix()
         # 播放
@@ -186,7 +187,7 @@ class Page2Widget(QWidget):
                 break
 
             p = self.play_table_view.item_model.layout_ps[row]
-            i, j = self.play_table_view.item_model.kanban_index[p]
+            i, j = self.play_table_view.item_model.kanban_ij[p]
             
             # 无 mark 信息，且有文件，退出循环
             if (not self.theme_kanban.album_kanbans[i].album.tracks[j].mark 

@@ -1,4 +1,3 @@
-import itertools
 from typing import Any
 
 from PySide6.QtCore import QModelIndex, Qt, QObject, Signal
@@ -7,7 +6,7 @@ from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
 from ongaku.kanban.ui_theme import current_theme
 from ongaku.kanban.kanban import ThemeKanBan, ResourceState
-from ongaku.kanban.widgets.custom_table_item_model import CustomTableItemModel
+from ongaku.kanban.common.custom_table_item_model import CustomTableItemModel
 
 
 class PlayTableItemModel(CustomTableItemModel):
@@ -18,29 +17,20 @@ class PlayTableItemModel(CustomTableItemModel):
         ResourceState.MISSING: QBrush(current_theme.MISSING_COLOR),
     }
 
-    MARKED_QBRUSHES = {
-        Qt.ItemDataRole.BackgroundRole: QBrush(current_theme.MARKED_BACKGROUND_COLOR),
-        Qt.ItemDataRole.ForegroundRole: QBrush(current_theme.MARKED_FOREGROUND_COLOR)
-    }
-
-    PLAYING_ICON_CACHE = None
+    MARKED_BACKGROUND_QBRUSHES = QBrush(current_theme.MARKED_BACKGROUND_COLOR)
+    MARKED_FOREGROUND_QBRUSHES = QBrush(current_theme.MARKED_FOREGROUND_COLOR)
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers: list[str] = ["Size", "Title", "Artist", "Album", "Date", "Mark"]
-        self.col_cnt: int = len(self.headers)
+        self.headers = ["Size", "Title", "Artist", "Album", "Date", "Mark"]
 
         self.theme_kanban: ThemeKanBan = None
 
-        self.tracks_states: list[ResourceState] = []
         # 看板索引
-        self.kanban_index: list[tuple[int, int]] = []
-        # 播放中
+        self.kanban_ij: list[tuple[int, int]] = []
+        # 播放中索引
         self.playing_ij: tuple[int, int] = None
-
-        # 建造 Application 后才 实例化 QIcon
-        self.PLAYING_ICON_CACHE = QIcon("./kanban/assets/playing.png")
 
     def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         # 声明重置模型
@@ -48,70 +38,67 @@ class PlayTableItemModel(CustomTableItemModel):
 
         # 重置数据
         self.theme_kanban = theme_kanban
-        self.table = []
-        self.tracks_states = []
-        self.kanban_index = []
+        self.kanban_ij = [(i, j) 
+                          for i, ak in enumerate(theme_kanban.album_kanbans)
+                          for j, t in enumerate(ak.album.tracks)]
         self.playing_ij = None
+        self.layout_ps = list(range(len(self.kanban_ij)))
+
         # 默认 以 Title 列 排序
         self.sort_args = (1, Qt.SortOrder.AscendingOrder)
+        # 清空筛选
         self.filters = {}
 
-        # 填充数据
-        if theme_kanban:
-            self.tracks_states = list(itertools.chain.from_iterable(k.track_res_states for k in theme_kanban.album_kanbans))
-            for i, k in enumerate(theme_kanban.album_kanbans):
-                for j, t  in enumerate(k.album.tracks):
-                    stat = k.track_stat_results[j]
-                    size = "{:.2f} MiB".format(stat.st_size / 1024 / 1024) if stat else ""
-                    self.table.append([size, t.title, t.artist, k.album.album, k.album.date, t.mark])
-                    self.kanban_index.append((i, j))
-    
-        self.layout_ps = list(range(len(self.table)))
         # 应用排序
         self._apply_sort()
-        self.layout_row = len(self.layout_ps)
 
         self.endResetModel()
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
         row, col = index.row(), index.column()
 
-        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+        if not index.isValid() or row >= len(self.layout_ps) or col >= len(self.headers):
             return None
-        
-        # Size 列 资源状态 字体颜色
-        if col == 0 and role == Qt.ItemDataRole.ForegroundRole:
-            return self.RESOURCE_STATE_QBRUSHS[self.tracks_states[self.layout_ps[row]]]
-        
-        # Size 列 文本右对齐
-        if col in [0] and role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignmentFlag.AlignRight
-        # Date, Mark 列 文本居中
-        if col in [4, 5] and role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignmentFlag.AlignCenter
 
-        # 已有 Mark 信息 置灰
-        if self.table[self.layout_ps[row]][5] and role in self.MARKED_QBRUSHES:
-            return self.MARKED_QBRUSHES[role]
-        
-        # Mark 列 展示 favourite
-        if col == 5 and self.table[self.layout_ps[row]][5] == "1" and role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
-            return "❤️"
-        
-        return super().data(index, role)
+        i, j = self.kanban_ij[self.layout_ps[row]]
+
+        # 前景
+        if role == Qt.ItemDataRole.ForegroundRole:
+            # Size 列 资源状态
+            if col == 0:
+                return self.RESOURCE_STATE_QBRUSHS[self.theme_kanban.album_kanbans[i].track_res_states[j]]
+            # 已有 Mark 信息
+            if self.theme_kanban.album_kanbans[i].album.tracks[j].mark:
+                return self.MARKED_FOREGROUND_QBRUSHES
+ 
+        # 背景
+        if role == Qt.ItemDataRole.BackgroundRole:
+            # 已有 Mark 信息
+            if self.theme_kanban.album_kanbans[i].album.tracks[j].mark:
+                return self.MARKED_BACKGROUND_QBRUSHES
+
+        # 文本对齐
+        if role == Qt.ItemDataRole.TextAlignmentRole:
+            # Size 列 文本右对齐
+            if col in [0]:
+                return Qt.AlignmentFlag.AlignRight
+            # Date, Mark 列 文本居中
+            if col in [4, 5]:
+                return Qt.AlignmentFlag.AlignCenter
+
+        # DisplayRole, EditRole
+        if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
+            return self._get_data(role, col, i, j)
+
+        return None
 
     def headerData(self, section: int, orientation: Qt.Orientation,
                    role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
-        # 仅响应 DisplayRole, DecorationRole
-        if role not in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.DecorationRole]:
-            return
 
-        # 列表头 播放中 仅展示装饰图标
-        if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_index[self.layout_ps[section]] == self.playing_ij:
-            if role == Qt.ItemDataRole.DecorationRole:
-                return self.PLAYING_ICON_CACHE
-            else:
-                return
+        if role == Qt.ItemDataRole.DecorationRole:
+            # 列表头 播放中 仅展示装饰图标
+            if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_ij[self.layout_ps[section]] == self.playing_ij:
+                    return QIcon("./kanban/assets/playing.png")
         
         return super().headerData(section, orientation, role)
     
@@ -125,24 +112,20 @@ class PlayTableItemModel(CustomTableItemModel):
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
         row, col = index.row(), index.column()
 
-        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+        if not index.isValid() or row >= len(self.layout_ps) or col >= len(self.headers):
             return False
-        
+
         # 仅响应 EditRole
         if role != Qt.ItemDataRole.EditRole:
             return False
 
         # 转字符串
         value = str(value)
-        p = self.layout_ps[row]
 
-        # 值不变时不更新视图
-        if self.table[p][col] == value:
-            return False
-        
         # 更新数据
-        self.table[p][col] = value
-        i, j = self.kanban_index[p]
+        i, j = self.kanban_ij[self.layout_ps[row]]
+        old_hash = hash(self.theme_kanban.album_kanbans[i].album)
+
         if col == 1:
             self.theme_kanban.album_kanbans[i].album.tracks[j].title = value
         elif col == 2:
@@ -154,9 +137,45 @@ class PlayTableItemModel(CustomTableItemModel):
         elif col == 5:
             self.theme_kanban.album_kanbans[i].album.tracks[j].mark = value
         
+        if old_hash == hash(self.theme_kanban.album_kanbans[i].album):
+            return False
+
         # 刷新视图
         self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
         return True
+
+    def _apply_sort(self) -> None:
+        column, order = self.sort_args
+        self.layout_ps.sort(key=lambda p: self._get_data(Qt.ItemDataRole.EditRole, column, *self.kanban_ij[p]), 
+                            reverse=(order == Qt.SortOrder.DescendingOrder))
+
+    def _apply_filters(self) -> None:
+        self.layout_ps = []
+        for p, (i, j) in enumerate(self.kanban_ij):
+            if all(pat.search(self._get_data(Qt.ItemDataRole.EditRole, c, i, j)) for c, pat in self.filters.items()):
+                self.layout_ps.append(p)
+        
+        # 应用排序
+        self._apply_sort()
+
+    # 内部方法
+
+    def _get_data(self, role: Qt.ItemDataRole, col: int, i: int, j: int) -> str:
+        if col == 0:
+            stat = self.theme_kanban.album_kanbans[i].track_stat_results[j]
+            size = "{:.2f} MiB".format(stat.st_size / 1024 / 1024) if stat else ""
+            return size
+        elif col == 1:
+            return self.theme_kanban.album_kanbans[i].album.tracks[j].title
+        elif col == 2:
+            return self.theme_kanban.album_kanbans[i].album.tracks[j].artist
+        elif col == 3:
+            return self.theme_kanban.album_kanbans[i].album.album
+        elif col == 4:
+            return self.theme_kanban.album_kanbans[i].album.date
+        elif col == 5:
+            mark = self.theme_kanban.album_kanbans[i].album.tracks[j].mark
+            return "❤️" if mark == "1" and role == Qt.ItemDataRole.DisplayRole else mark
 
 
 class PlayTableView(QTableView):

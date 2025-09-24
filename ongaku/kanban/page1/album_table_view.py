@@ -7,25 +7,20 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
 
 from ongaku.kanban.kanban import ResourceState, ThemeKanBan
 from ongaku.kanban.ui_theme import current_theme
-from ongaku.kanban.widgets.custom_table_item_model import CustomTableItemModel
+from ongaku.kanban.common.custom_table_item_model import CustomTableItemModel
 
 
 class AlbumTableItemModel(CustomTableItemModel):
 
-    MARKED_QBRUSHES = {
-        Qt.ItemDataRole.BackgroundRole: QBrush(current_theme.MARKED_BACKGROUND_COLOR),
-        Qt.ItemDataRole.ForegroundRole: QBrush(current_theme.MARKED_FOREGROUND_COLOR)
-    }
+    MARKED_BACKGROUND_QBRUSHES = QBrush(current_theme.MARKED_BACKGROUND_COLOR)
+    MARKED_FOREGROUND_QBRUSHES = QBrush(current_theme.MARKED_FOREGROUND_COLOR)
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers: list[str] = ["S", "ALBUM", "CATNO", "DATE"]
-        self.col_cnt: int = len(self.headers)
+        self.headers = ["S", "ALBUM", "CATNO", "DATE"]
 
         self.theme_kanban: ThemeKanBan = None
-
-        self.album_marks: list[bool] = []
 
     def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         # 声明重置模型
@@ -33,40 +28,43 @@ class AlbumTableItemModel(CustomTableItemModel):
 
         # 重置数据
         self.theme_kanban = theme_kanban
-        self.album_marks = []
-        self.table = []
+        self.layout_ps = list(range(len(self.theme_kanban.album_kanbans)))
+
         # 默认 以 S 列 排序
         self.sort_args = (0, Qt.SortOrder.DescendingOrder)
+        # 清空筛选
         self.filters = {}
 
-        if theme_kanban:
-            self.table = [[(k.album_res_state, k.metadata_state), k.album.album, k.album.catalognumber, k.album.date]
-                        for k in theme_kanban.album_kanbans]
-            self.album_marks = [all(t.mark for t in k.album.tracks) 
-                                 for k in theme_kanban.album_kanbans]
-        
-        self.layout_ps = list(range(len(self.table)))
         # 应用排序
         self._apply_sort()
-        self.layout_row = len(self.layout_ps)
 
         self.endResetModel()
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
         row, col = index.row(), index.column()
 
-        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+        if not index.isValid() or row >= len(self.layout_ps) or col >= len(self.headers):
             return None
         
-        # 已有 Mark 信息 置灰
-        if self.album_marks[self.layout_ps[row]] and role in self.MARKED_QBRUSHES:
-            return self.MARKED_QBRUSHES[role]
-        
-        # CATNO, DATE 列 文本居中
-        if col in [2, 3] and role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignmentFlag.AlignCenter
+        p = self.layout_ps[row]
 
-        return super().data(index, role)
+        # 前景
+        if role == Qt.ItemDataRole.ForegroundRole:
+            # 所有 track 都有 Mark 信息
+            if all(t.mark for t in self.theme_kanban.album_kanbans[p].album.tracks):
+                return self.MARKED_FOREGROUND_QBRUSHES
+ 
+        # 背景
+        if role == Qt.ItemDataRole.BackgroundRole:
+            # 所有 track 都有 Mark 信息
+            if all(t.mark for t in self.theme_kanban.album_kanbans[p].album.tracks):
+                return self.MARKED_BACKGROUND_QBRUSHES
+
+        # DisplayRole, EditRole
+        if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
+            return self._get_data(col, p)
+
+        return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # S 列 只读
@@ -80,30 +78,31 @@ class AlbumTableItemModel(CustomTableItemModel):
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
         row, col = index.row(), index.column()
 
-        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
+        if not index.isValid() or row >= len(self.layout_ps) or col >= len(self.headers):
             return False
-        
+
         # 仅响应 EditRole
         if role != Qt.ItemDataRole.EditRole:
             return False
 
         # 转字符串
         value = str(value)
-        p = self.layout_ps[row]
 
-        # 值不变时不更新视图
-        if self.table[p][col] == value:
-            return False
-        
         # 更新数据
-        self.table[p][col] = value
+        p = self.layout_ps[row]
+        old_hash = hash(self.theme_kanban.album_kanbans[p].album)
+
         if col == 1:
             self.theme_kanban.album_kanbans[p].album.album = value
-        elif col == 2:
+        if col == 2:
             self.theme_kanban.album_kanbans[p].album.catalognumber = value
-        elif col == 3:
+        if col == 3:
             self.theme_kanban.album_kanbans[p].album.date = value
-        
+
+
+        if old_hash == hash(self.theme_kanban.album_kanbans[p].album):
+            return False
+
         # 刷新视图
         self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
         return True
@@ -116,6 +115,33 @@ class AlbumTableItemModel(CustomTableItemModel):
     def canDropMimeData(self, data: QMimeData, action: Qt.DropAction, row: int, column: int, parent: QModelIndex) \
             -> bool:
         return True
+
+    def _apply_sort(self) -> None:
+        column, order = self.sort_args
+        self.layout_ps.sort(key=lambda p: self._get_data(column, p), 
+                            reverse=(order == Qt.SortOrder.DescendingOrder))
+
+    def _apply_filters(self) -> None:
+        self.layout_ps = []
+        for p in range(len(self.theme_kanban.album_kanbans)):
+            if all(pat.search(self._get_data(c, p)) for c, pat in self.filters.items()):
+                self.layout_ps.append(p)
+        
+        # 应用排序
+        self._apply_sort()
+
+    # 内部方法
+
+    def _get_data(self, col: int, p: int) -> str:
+        if col == 0:
+            return (self.theme_kanban.album_kanbans[p].album_res_state, 
+                    self.theme_kanban.album_kanbans[p].metadata_state)
+        elif col == 1:
+            return self.theme_kanban.album_kanbans[p].album.album
+        elif col == 2:
+            return self.theme_kanban.album_kanbans[p].album.catalognumber
+        elif col == 3:
+            return self.theme_kanban.album_kanbans[p].album.date
 
 
 class AlbumStateItemDelegate(QStyledItemDelegate):

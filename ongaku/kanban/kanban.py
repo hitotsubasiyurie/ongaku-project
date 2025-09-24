@@ -60,11 +60,11 @@ class AlbumKanBan:
     cover: str = field(init=False)
     metadata_state: MetadataState = field(init=False)
 
-    track_files: list[str] = field(init=False)
-    track_stat_results: list[os.stat_result] = field(init=False)
+    track_files: tuple[str, ...] = field(init=False)
+    track_stat_results: tuple[os.stat_result, ...] = field(init=False)
 
     album_res_state: ResourceState = field(init=False)
-    track_res_states: list[ResourceState] = field(init=False)
+    track_res_states: tuple[ResourceState, ...] = field(init=False)
 
     def __post_init__(self) -> None:
         self.scan()
@@ -78,8 +78,8 @@ class AlbumKanBan:
         if not os.path.exists(self.album_dir):
             self.cover = ""
             _len = len(self.album.tracks)
-            self.track_files = [""] * _len
-            self.track_stat_results = [None] * _len
+            self.track_files = ("",) * _len
+            self.track_stat_results = (None,) * _len
             return
         
         is_img: Callable[[Path], bool] = lambda p: p.suffix.lower() in IMG_EXTS
@@ -88,9 +88,9 @@ class AlbumKanBan:
         stem2ext = {p.stem: p.suffix for p in Path(self.album_dir).iterdir()}
 
         # 例如 [path1, "", "", path4, ...]
-        self.track_files = [os.path.join(self.album_dir, n+stem2ext[n]) if n in stem2ext else "" 
-                            for n in track_filenames(self.album)]
-        self.track_stat_results = [os.stat(f) if f else None for f in self.track_files]
+        self.track_files = tuple(os.path.join(self.album_dir, n+stem2ext[n]) if n in stem2ext else "" 
+                                 for n in track_filenames(self.album))
+        self.track_stat_results = tuple(os.stat(f) if f else None for f in self.track_files)
 
     def count_state(self) -> None:
         self.metadata_state = MetadataState(0)
@@ -110,7 +110,7 @@ class AlbumKanBan:
             self.metadata_state |= MetadataState.COVER_EXIST
 
         _map = {"": ResourceState.MISSING, ".mp3": ResourceState.LOSSY, ".flac": ResourceState.LOSSLESS}
-        self.track_res_states = [_map[Path(f).suffix.lower() if f else ""] for f in self.track_files]
+        self.track_res_states = tuple(_map[Path(f).suffix.lower() if f else ""] for f in self.track_files)
         
         # 无 tracks 元数据时为 MISSING
         if not self.album.tracks:
@@ -121,6 +121,11 @@ class AlbumKanBan:
             self.album_res_state = ResourceState.PARTIAL
         else:
             self.album_res_state = ResourceState.MISSING
+
+    def __hash__(self) -> int:
+        return hash((self.album, self.album_dir, 
+                     self.cover, self.metadata_state, self.track_files,
+                     self.track_stat_results, self.album_res_state, self.track_res_states))
 
 
 @dataclass
@@ -143,7 +148,7 @@ class ThemeKanBan:
     collection_progress: float = field(init=False)
     mark_progress: float = field(init=False)
 
-    album_kanbans: list[AlbumKanBan] = field(init=False)
+    album_kanbans: tuple[AlbumKanBan, ...] = field(init=False)
 
     def __post_init__(self) -> None:
         self.scan()
@@ -157,7 +162,7 @@ class ThemeKanBan:
 
         albums = load_albums_from_toml(self.theme_metadata_file)
         album_dirs = [os.path.join(self.theme_directory, legalize_filename(album_filename(a))) for a in albums]
-        self.album_kanbans = [AlbumKanBan(a, d) for a, d in zip(albums, album_dirs)]
+        self.album_kanbans = tuple(AlbumKanBan(a, d) for a, d in zip(albums, album_dirs))
 
     def count_progress(self) -> None:
         albums = [k.album for k in self.album_kanbans]
@@ -172,6 +177,9 @@ class ThemeKanBan:
         albums = [k.album for k in self.album_kanbans]
         dump_albums_to_toml(albums, self.theme_metadata_file)
 
+    def __hash__(self) -> int:
+        return hash((self.theme_metadata_file, self.theme_directory, self.theme_name, 
+                     self.collection_progress, self.mark_progress, self.album_kanbans))
 
 @dataclass
 class KanBan:
@@ -185,7 +193,7 @@ class KanBan:
     metadata_dir: str
     resource_dir: str
 
-    theme_kanbans: list[ThemeKanBan] = field(init=False)
+    theme_kanbans: tuple[ThemeKanBan, ...] = field(init=False)
 
     # 缓存
     _theme2kanban: dict[str, ThemeKanBan] = field(init=False)
@@ -201,12 +209,13 @@ class KanBan:
         """
         扫描文件系统。
         """
-        theme_mdfs = list(Path(self.metadata_dir).glob("*.toml"))
+        theme_mdfs = tuple(Path(self.metadata_dir).glob("*.toml"))
         theme_dirs = [os.path.join(self.resource_dir, f.stem) for f in theme_mdfs]
 
         with ThreadPoolExecutor() as executor:
-            self.theme_kanbans = list(executor.map(ThemeKanBan, theme_mdfs, theme_dirs))
+            self.theme_kanbans = tuple(executor.map(ThemeKanBan, theme_mdfs, theme_dirs))
 
         self._theme2kanban = {t.theme_name: t for t in self.theme_kanbans}
 
-
+    def __hash__(self) -> int:
+        return hash((self.metadata_dir, self.resource_dir, self.theme_kanbans))

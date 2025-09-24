@@ -10,13 +10,9 @@ class CustomTableItemModel(QAbstractItemModel):
         super().__init__(parent)
 
         self.headers: list[str] = []
-        self.table: list[list[str]] = []
-
         # 布局 真实行指针
         self.layout_ps: list[int] = []
-        # 布局 行数
-        self.layout_row: int = len(self.layout_ps)
-        self.col_cnt: int = len(self.headers)
+        
         # 排序状态
         self.sort_args: tuple[int, Qt.SortOrder] = (0, Qt.SortOrder.AscendingOrder)
         # 过滤
@@ -27,13 +23,16 @@ class CustomTableItemModel(QAbstractItemModel):
         # 仅超时一次
         self._filter_timer.setSingleShot(True)
         self._filter_timer.setInterval(500)
-        self._filter_timer.timeout.connect(self._apply_filters)
+
+        self._filter_timer.timeout.connect(lambda: [self.layoutAboutToBeChanged.emit(), 
+                                                    self._apply_filters(), 
+                                                    self.layoutChanged.emit()])
 
     # 只读
 
     def index(self, row: int, column: int, parent: QModelIndex = QModelIndex()) -> QModelIndex:
         # parent 无效时，指向 root item
-        if not parent.isValid() and row < self.layout_row:
+        if not parent.isValid() and row < len(self.layout_ps):
             return self.createIndex(row, column)
         return QModelIndex()
 
@@ -42,25 +41,19 @@ class CustomTableItemModel(QAbstractItemModel):
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if not parent.isValid():
-            return self.layout_row
+            return len(self.layout_ps)
         return 0
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if not parent.isValid():
-            return self.col_cnt
+            return len(self.headers)
         return 0
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
-        row, col = index.row(), index.column()
-        
-        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
-            return None
-        
-        # 仅响应 DisplayRole, EditRole
-        if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
-            return self.table[self.layout_ps[row]][col]
-        
-        return None
+        """
+        待实现
+        """
+        pass
 
     # 表头
 
@@ -74,7 +67,7 @@ class CustomTableItemModel(QAbstractItemModel):
         if orientation == Qt.Orientation.Vertical:
             return section + 1
         
-        return self.headers[section] if section < self.col_cnt else None
+        return self.headers[section] if section < len(self.headers) else None
     
     # 可编辑
 
@@ -86,35 +79,14 @@ class CustomTableItemModel(QAbstractItemModel):
         return Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole = Qt.ItemDataRole.EditRole) -> bool:
-        row, col = index.row(), index.column()
-
-        if not index.isValid() or row >= self.layout_row or col >= self.col_cnt:
-            return False
-        
-        # 仅响应 EditRole
-        if role != Qt.ItemDataRole.EditRole:
-            return False
-
-        # 转字符串
-        value = str(value)
-        p = self.layout_ps[row]
-
-        # 值不变时不更新视图
-        if self.table[p][col] == value:
-            return False
-        
-        # 更新数据
-        self.table[p][col] = value
-        # 刷新视图
-        self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
-        return True
+        """
+        待实现
+        """
+        pass
 
     # 排序
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
-        if not self.table:
-            return
-        
         # 更新排序状态
         self.sort_args = (column, order)
 
@@ -126,9 +98,6 @@ class CustomTableItemModel(QAbstractItemModel):
     # 自定义方法
 
     def set_filter(self, column: int, text: str) -> None:
-        if not self.table:
-            return
-        
         if text:
             try:
                 self.filters[column] = re.compile(text, re.IGNORECASE)
@@ -141,35 +110,20 @@ class CustomTableItemModel(QAbstractItemModel):
         self._filter_timer.start()
     
     def unset_filter(self) -> None:
-        if not self.table:
-            return
-        
         self.filters = {}
-
         self._filter_timer.start()
 
     # 内部方法
 
     def _apply_sort(self) -> None:
-        column, order = self.sort_args
-        self.layout_ps.sort(key=lambda p: self.table[p][column], 
-                               reverse=(order == Qt.SortOrder.DescendingOrder))
+        """
+        待实现
+        """
+        pass
 
     def _apply_filters(self) -> None:
-        # 声明数据仍然有效，只是布局变化
-        self.layoutAboutToBeChanged.emit()
-
-        self.layout_ps = []
-        for row, _list in enumerate(self.table):
-            if all(pat.search(_list[c]) for c, pat in self.filters.items()):
-                self.layout_ps.append(row)
-        # 更新 行数
-        self.layout_row: int = len(self.layout_ps)
-
-        # 应用排序
-        self._apply_sort()
-
-        self.layoutChanged.emit()
-
-
+        """
+        待实现
+        """
+        pass
 

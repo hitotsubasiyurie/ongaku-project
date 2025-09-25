@@ -30,7 +30,7 @@ class TrackTableItemModel(CustomTableItemModel):
         
         # 重置数据
         self.album_kanban = album_kanban
-        self.layout_ps = list(range(len(self.album_kanban.album.tracks)))
+        self.layout_ps = list(range(len(self.album_kanban.album.tracks))) if album_kanban else []
 
         # 默认 以 S 列 排序
         self.sort_args = (0, Qt.SortOrder.AscendingOrder)
@@ -157,6 +157,9 @@ class TrackTitleItemDelegate(QStyledItemDelegate):
         artist_rect = QRect(rect.left(), title_rect.bottom()+fh//4, rect.width(),
                             self._get_content_height(font, width, artist))
         painter.setPen(current_theme.MARKED_FOREGROUND_COLOR)
+        # artist 字体减小
+        font.setPointSize(font.pointSize() - 1)
+        painter.setFont(font)
         painter.drawText(artist_rect, artist)
         painter.restore()
 

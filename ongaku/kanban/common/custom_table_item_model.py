@@ -18,10 +18,11 @@ class CustomTableItemModel(QAbstractItemModel):
         # 过滤
         self.filters: dict[int, re.Pattern] = {}
 
-        # 防抖定时器
+        # 过滤 防抖定时器
         self._filter_timer = QTimer(self)
         # 仅超时一次
         self._filter_timer.setSingleShot(True)
+        # 0.5 秒
         self._filter_timer.setInterval(500)
 
         self._filter_timer.timeout.connect(lambda: [self.layoutAboutToBeChanged.emit(), 

@@ -40,9 +40,9 @@ class PlayTableItemModel(CustomTableItemModel):
         self.theme_kanban = theme_kanban
         self.kanban_ij = [(i, j) 
                           for i, ak in enumerate(theme_kanban.album_kanbans)
-                          for j, t in enumerate(ak.album.tracks)]
+                          for j, t in enumerate(ak.album.tracks)] if theme_kanban else []
         self.playing_ij = None
-        self.layout_ps = list(range(len(self.kanban_ij)))
+        self.layout_ps = list(range(len(self.kanban_ij))) if theme_kanban else []
 
         # 默认 以 Title 列 排序
         self.sort_args = (1, Qt.SortOrder.AscendingOrder)

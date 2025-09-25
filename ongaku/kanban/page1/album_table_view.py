@@ -28,7 +28,7 @@ class AlbumTableItemModel(CustomTableItemModel):
 
         # 重置数据
         self.theme_kanban = theme_kanban
-        self.layout_ps = list(range(len(self.theme_kanban.album_kanbans)))
+        self.layout_ps = list(range(len(self.theme_kanban.album_kanbans))) if theme_kanban else []
 
         # 默认 以 S 列 排序
         self.sort_args = (0, Qt.SortOrder.DescendingOrder)

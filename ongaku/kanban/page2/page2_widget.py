@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QModelIndex
+from PySide6.QtCore import Qt, QModelIndex, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
 
@@ -63,7 +63,7 @@ class Page2Widget(QWidget):
         self.play_table_view.unfavourite_selected.connect(lambda: self._set_track_mark([], "0", force=True))
         self.play_table_view.clear_selected.connect(lambda: self._set_track_mark([], "", force=True))
         # play_table_view 编辑
-        self.play_table_view.item_model.dataChanged.connect(lambda: self.theme_kanban.save_metadata_file())
+        self.play_table_view.item_model.dataChanged.connect(self._save_timer.start)
         # 播放器事件
         self.music_player_bar.playback_finished.connect(self._on_playback_finished)
         self.music_player_bar.prev_btn.clicked.connect(lambda: self._play_next_no_mark_ix(-1))
@@ -79,8 +79,8 @@ class Page2Widget(QWidget):
             QShortcut(key, self, activated=self._play_selected)
         QShortcut(QKeySequence("Alt+Up"), self, activated=lambda: self._play_next_no_mark_ix(-1))
         QShortcut(QKeySequence("Alt+Down"), self, activated=lambda: self._play_next_no_mark_ix(1))
-        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._set_track_mark([], "0"))
-        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._set_track_mark([], "1"))
+        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._set_track_mark([], "0", force=True))
+        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._set_track_mark([], "1", force=True))
         QShortcut(Qt.Key.Key_Escape, self, activated=
                   lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
         QShortcut(Qt.Key.Key_Period, self, activated=self._hightlight_playing_ix)
@@ -89,9 +89,15 @@ class Page2Widget(QWidget):
         super().__init__(parent)
 
         self.theme_kanban: ThemeKanBan = None
-        # 内部属性
+
         # 当前播放 视图索引
         self._playing_ix: QModelIndex = None
+
+        # 保存元数据文件 防抖定时器 5 秒
+        self._save_timer = QTimer(self)
+        self._save_timer.setSingleShot(True)
+        self._save_timer.setInterval(5000)
+        self._save_timer.timeout.connect(lambda: self.theme_kanban.save_metadata_file())
 
         self.setup_ui()
         self.setup_event()
@@ -106,23 +112,15 @@ class Page2Widget(QWidget):
 
     # 内部方法
 
-    def _set_track_mark(self, selected: list[int] = [], mark: str = "", force: bool = False) -> None:
-        # TODO: selected 类型应该是 model index 
-        rows = selected or list(sorted(set(i.row() for i in self.play_table_view.selectedIndexes())))
-        # 批量处理
-        for r in rows:
-            p = self.play_table_view.item_model.layout_ps[r]
-            if self.play_table_view.item_model.table[p][5] and not force:
+    def _set_track_mark(self, rows: list[int] = [], mark: str = "", force: bool = False) -> None:
+        if rows:
+            model_indexs = [self.play_table_view.item_model.createIndex(r, 5) for r in rows]
+        else:
+            model_indexs = list(ix for ix in self.play_table_view.selectedIndexes() if ix.column() == 5)
+        for ix in model_indexs:
+            if self.play_table_view.item_model.data(ix, Qt.ItemDataRole.EditRole) and not False:
                 continue
-            # 更新 看板
-            i, j = self.play_table_view.item_model.kanban_ij[p]
-            self.theme_kanban.album_kanbans[i].album.tracks[j].mark = mark
-            # 更新 视图
-            self.play_table_view.item_model.table[p][5] = mark
-            ix = self.play_table_view.item_model.index(r, 5)
-            self.play_table_view.item_model.dataChanged.emit(ix, ix)
-        # 保存文件
-        self.theme_kanban.save_metadata_file()
+            self.play_table_view.item_model.setData(ix, mark, Qt.ItemDataRole.EditRole)
 
     def _play_selected(self) -> None:
         ixs = self.play_table_view.selectedIndexes()

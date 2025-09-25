@@ -108,7 +108,7 @@ class ThemeBoxWidget(QWidget):
 
     def _update_list_items(self) -> None:
         # list_widget 展示优先级 selected > themes
-        tmp = sorted(self.theme_names, key=lambda t: (t != self.selected_theme, -1*self.coll_dict.get(t), self.mark_dict.get(t)))
+        tmp = sorted(self.theme_names, key=lambda t: (t != self.selected_theme, -1*self.coll_dict.get(t), -1*self.mark_dict.get(t)))
         # 等宽 空白字符 两个字符
         tmp = [f"⚪️{t}" if t == self.selected_theme else f"　　{t}" for t in tmp]
         self.list_widget.clear()

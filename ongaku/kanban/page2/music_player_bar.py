@@ -33,16 +33,19 @@ class MusicPlayerBar(QWidget):
         self.time_label.setFixedSize(fh * 6, fh * 1.5)
 
         self.prev_btn = QPushButton(QIcon("./kanban/assets/previous.png"), "")
+        self.prev_btn.setObjectName("FloatButton")
         self.prev_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.prev_btn.setIconSize(self.prev_btn.size())
 
         self.play_btn_icons = [QIcon("./kanban/assets/play.png"), QIcon("./kanban/assets/pause.png")]
         self.play_btn = QPushButton()
+        self.play_btn.setObjectName("FloatButton")
         self.play_btn.setIcon(self.play_btn_icons[0])
         self.play_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.play_btn.setIconSize(self.prev_btn.size())
 
         self.next_btn = QPushButton(QIcon("./kanban/assets/next.png"), "")
+        self.next_btn.setObjectName("FloatButton")
         self.next_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.next_btn.setIconSize(self.prev_btn.size())
 

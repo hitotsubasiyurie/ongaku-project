@@ -117,8 +117,9 @@ class Page2Widget(QWidget):
             model_indexs = [self.play_table_view.item_model.createIndex(r, 5) for r in rows]
         else:
             model_indexs = list(ix for ix in self.play_table_view.selectedIndexes() if ix.column() == 5)
+        
         for ix in model_indexs:
-            if self.play_table_view.item_model.data(ix, Qt.ItemDataRole.EditRole) and not False:
+            if self.play_table_view.item_model.data(ix, Qt.ItemDataRole.EditRole) and not force:
                 continue
             self.play_table_view.item_model.setData(ix, mark, Qt.ItemDataRole.EditRole)
 

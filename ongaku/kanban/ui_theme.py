@@ -16,13 +16,13 @@ class DarkTheme:
     THEME_PROGRESS_MARK_COLOR = QColor(80, 80, 80)
 
     WIDGETS_QSS = """
-QPushButton {
+QPushButton#FloatButton {
     background-color: rgba(0, 0, 0, 100);
     color: white;
     border-radius: 16px;
 }
 
-QPushButton:hover {
+QPushButton#FloatButton:hover {
     background-color: rgba(0, 0, 0, 160);
 }
 """

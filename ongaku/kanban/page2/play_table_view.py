@@ -95,10 +95,12 @@ class PlayTableItemModel(CustomTableItemModel):
     def headerData(self, section: int, orientation: Qt.Orientation,
                    role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
 
-        if role == Qt.ItemDataRole.DecorationRole:
-            # 列表头 播放中 仅展示装饰图标
-            if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_ij[self.layout_ps[section]] == self.playing_ij:
-                    return QIcon("./kanban/assets/playing.png")
+        # 列表头 播放中 仅展示装饰图标
+        if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_ij[self.layout_ps[section]] == self.playing_ij:
+            if role == Qt.ItemDataRole.DecorationRole:
+                return QIcon("./kanban/assets/playing.png")
+            else:
+                return
         
         return super().headerData(section, orientation, role)
     
@@ -237,7 +239,7 @@ class PlayTableView(QTableView):
         # ResizeMode
         column_modes = [QHeaderView.ResizeMode.Fixed, 
                         QHeaderView.ResizeMode.Interactive, QHeaderView.ResizeMode.Interactive, QHeaderView.ResizeMode.Interactive, 
-                        QHeaderView.ResizeMode.Stretch, QHeaderView.ResizeMode.Stretch]
+                        QHeaderView.ResizeMode.Fixed, QHeaderView.ResizeMode.Fixed]
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
         self.setup_context_menu()
@@ -250,7 +252,7 @@ class PlayTableView(QTableView):
         column_widths = [fh*5, 0, fh*18, fh*18, fh*5, fh*2]
         [w and self.setColumnWidth(i, w) for i, w in enumerate(column_widths)]
         # Title 占据剩余宽度
-        self.setColumnWidth(1, self.width() - sum(column_widths) - 1)
+        self.setColumnWidth(1, self.width() - sum(column_widths) - self.verticalHeader().width() - self.verticalScrollBar().width())
         return super().resizeEvent(event)
 
 

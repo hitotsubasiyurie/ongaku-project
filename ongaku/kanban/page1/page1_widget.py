@@ -185,6 +185,7 @@ class Page1Widget(QWidget):
             [self.theme_kanban.album_kanbans[p].__post_init__() for p in ps]
             self.cover_label.set_album_kanban(self.theme_kanban.album_kanbans[p])
             return
+        
         # 选中一个 album item ，选中多个 track item ，拖入多个音频文件
         if exts.issubset(AUDIO_EXTS) and len(ps) == 1:
             # 路径数量为一个时

@@ -103,5 +103,5 @@ class Track(BaseModel, validate_assignment=True):
     mark: _CustomStr = Field(default="")
 
     def __hash__(self) -> int:
-        return hash((self.tracknumber, self.title, self.artist))
+        return hash((self.tracknumber, self.title, self.artist, self.mark))
 

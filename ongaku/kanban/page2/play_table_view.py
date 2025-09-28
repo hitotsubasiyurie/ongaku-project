@@ -148,7 +148,8 @@ class PlayTableItemModel(CustomTableItemModel):
 
     def _apply_sort(self) -> None:
         column, order = self.sort_args
-        self.layout_ps.sort(key=lambda p: self._get_data(Qt.ItemDataRole.EditRole, column, *self.kanban_ij[p]), 
+        # 忽略大小写，首尾空字符
+        self.layout_ps.sort(key=lambda p: self._get_data(Qt.ItemDataRole.EditRole, column, *self.kanban_ij[p]).lower().strip(), 
                             reverse=(order == Qt.SortOrder.DescendingOrder))
 
     def _apply_filters(self) -> None:

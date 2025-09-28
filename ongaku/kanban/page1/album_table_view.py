@@ -118,7 +118,9 @@ class AlbumTableItemModel(CustomTableItemModel):
 
     def _apply_sort(self) -> None:
         column, order = self.sort_args
-        self.layout_ps.sort(key=lambda p: self._get_data(column, p), 
+        
+        # 忽略大小写，首尾空字符
+        self.layout_ps.sort(key=lambda p: self._get_data(column, p) if column == 0 else self._get_data(column, p).lower().strip(), 
                             reverse=(order == Qt.SortOrder.DescendingOrder))
 
     def _apply_filters(self) -> None:

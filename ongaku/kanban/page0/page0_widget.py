@@ -30,12 +30,24 @@ class Page0Widget(QWidget):
         self.stack.addWidget(self.page2)
 
         self.page_btn = QPushButton(">", parent=self)
-        self.page_btn.setObjectName("FloatButton")
         self.page_btn.setFixedSize(fh*2, fh*2)
 
         self.theme_btn = QPushButton("≡", parent=self)
-        self.theme_btn.setObjectName("FloatButton")
         self.theme_btn.setFixedSize(fh*2, fh*2)
+
+        btn_qss = f"""
+QPushButton {{
+    /* 透明背景 */
+    background-color: rgba(100, 100, 100, 0);
+    /* 50% 圆角 */
+    border-radius: {fh*1}px;
+}}
+
+QPushButton:hover {{
+    background-color: rgba(100, 100, 100, 200);
+}}
+"""
+        [b.setStyleSheet(btn_qss) for b in [self.page_btn, self.theme_btn]]
 
         self.theme_box = ThemeBoxWidget(self)
         self.theme_box.hide()

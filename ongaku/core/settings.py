@@ -15,8 +15,9 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
     metadata_directory: str = ""
     resource_directory: str = ""
     # 可选配置
-    ui_font_size: int = 0
-    ui_font_family: str = ""
+    color_theme: str = "dark"
+    ui_font_size: int = 10
+    ui_font_family: str = "JetBrains Mono"
 
     @classmethod
     def load(cls) -> "_GlobalSettings":

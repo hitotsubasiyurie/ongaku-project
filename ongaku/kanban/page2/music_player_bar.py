@@ -71,6 +71,20 @@ class MusicPlayerBar(QWidget):
         layout.insertStretch(0)
         layout.insertStretch(-1)
 
+        btn_qss = f"""
+QPushButton {{
+    /* 透明背景 */
+    background-color: rgba(100, 100, 100, 0);
+    /* 50% 圆角 */
+    border-radius: {fh*0.75}px;
+}}
+
+QPushButton:hover {{
+    background-color: rgba(100, 100, 100, 200);
+}}
+"""
+        [b.setStyleSheet(btn_qss) for b in [self.prev_btn, self.play_btn, self.next_btn]]
+
     def setup_event(self) -> None:
         self.slider.sliderMoved.connect(lambda pos: self.player.setPosition(pos))
         self.play_btn.clicked.connect(self.toggle_play)

@@ -79,11 +79,11 @@ class Page2Widget(QWidget):
             QShortcut(key, self, activated=self._play_selected)
         QShortcut(QKeySequence("Alt+Up"), self, activated=lambda: self._play_next_no_mark_ix(-1))
         QShortcut(QKeySequence("Alt+Down"), self, activated=lambda: self._play_next_no_mark_ix(1))
-        QShortcut(QKeySequence("Alt+-"), self, activated=lambda: self._set_track_mark([], "0", force=True))
-        QShortcut(QKeySequence("Alt++"), self, activated=lambda: self._set_track_mark([], "1", force=True))
+        QShortcut(QKeySequence("-"), self, activated=lambda: [self._set_track_mark([], "0", force=True), self._hightlight_row(self._select_next().row())])
+        QShortcut(QKeySequence("+"), self, activated=lambda: [self._set_track_mark([], "1", force=True), self._hightlight_row(self._select_next().row())])
         QShortcut(Qt.Key.Key_Escape, self, activated=
                   lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
-        QShortcut(Qt.Key.Key_Period, self, activated=self._hightlight_playing_ix)
+        QShortcut(Qt.Key.Key_Period, self, activated=lambda: self._hightlight_row(self._playing_ix.row()))
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -123,6 +123,27 @@ class Page2Widget(QWidget):
                 continue
             self.play_table_view.item_model.setData(ix, mark, Qt.ItemDataRole.EditRole)
 
+    def _hightlight_row(self, row: int) -> None:
+        self.play_table_view.clearSelection()
+        
+        if not (0 < row < self.play_table_view.item_model.rowCount()):
+            return
+        
+        # track table 选中行
+        self.play_table_view.selectRow(row)
+        ix = self.play_table_view.item_model.createIndex(row, 1)
+        self.play_table_view.setCurrentIndex(ix)
+        self.play_table_view.scrollTo(ix, QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def _select_next(self) -> QModelIndex:
+        ixs = self.play_table_view.selectedIndexes()
+        if not ixs:
+            return
+        ix = ixs[-1]
+        next_ix = ix.siblingAtRow(ix.row() + 1)
+
+        return next_ix if next_ix.isValid() else ix
+
     def _play_selected(self) -> None:
         ixs = self.play_table_view.selectedIndexes()
         if not ixs:
@@ -141,7 +162,7 @@ class Page2Widget(QWidget):
         p = self.play_table_view.item_model.layout_ps[row]
         i, j = self.play_table_view.item_model.kanban_ij[p]
         file = self.theme_kanban.album_kanbans[i].track_files[j]
-        self._hightlight_playing_ix()
+        self._hightlight_row(row)
         # 播放
         self.music_player_bar.set_media(file)
         # 更新播放图标
@@ -154,24 +175,11 @@ class Page2Widget(QWidget):
         if not file:
             self._on_playback_finished()
 
-    def _hightlight_playing_ix(self) -> None:
-        self.play_table_view.clearSelection()
-        
-        if not self._playing_ix or not self._playing_ix.isValid():
-            return
-        
-        # track table 选中 当前播放行
-        self.play_table_view.selectRow(self._playing_ix.row())
-        self.play_table_view.setCurrentIndex(self._playing_ix)
-        self.play_table_view.scrollTo(self._playing_ix, QAbstractItemView.ScrollHint.PositionAtCenter)
-
     def _on_playback_finished(self) -> None:
         # 清空播放器
         self.music_player_bar.set_media("")
         # 高光下一行
-        row = self._playing_ix.row()
-        self._playing_ix = self._playing_ix.siblingAtRow(row + 1)
-        self._hightlight_playing_ix()
+        self._hightlight_row(self._playing_ix.row() + 1)
     
     def _play_next_no_mark_ix(self, direction: int) -> None:
         if not self._playing_ix or not self._playing_ix.isValid():

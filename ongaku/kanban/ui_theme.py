@@ -1,5 +1,9 @@
+from typing import Union, Type, TYPE_CHECKING
+
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QPalette, QColor
+
+from ongaku.core.settings import global_settings
 
 
 class DarkTheme:
@@ -32,7 +36,7 @@ class DarkTheme:
         dark_palette.setColor(QPalette.ColorRole.Window, QColor(0, 0, 0))
         dark_palette.setColor(QPalette.ColorRole.Button, QColor(40, 40, 40))
 
-        dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(38, 79, 120, 150))
+        dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(38, 79, 120))
 
         app.setPalette(dark_palette)
 
@@ -71,21 +75,6 @@ class LightTheme:
 
         app.setPalette(light_palette)
 
-# TODO: 模块级常量
-current_theme = DarkTheme
 
-
-def apply_theme(app: QApplication, name: str) -> None:
-    themes = [DarkTheme, LightTheme]
-    theme = next((t for t in themes if t.NAME == name), DarkTheme)
-
-    theme.apply_theme(app)
-
-    global current_theme
-    current_theme = theme
-
-
-
-
-
+current_theme = next((t for t in [DarkTheme, LightTheme] if t.NAME == global_settings.color_theme), DarkTheme)
 

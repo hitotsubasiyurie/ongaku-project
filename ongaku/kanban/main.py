@@ -12,7 +12,7 @@ from ongaku.core.settings import global_settings
 from ongaku.kanban.kanban import KanBan
 from ongaku.kanban.page0.init_settings_dialog import InitSettingsDialog
 from ongaku.kanban.page0.page0_widget import Page0Widget
-from ongaku.kanban.ui_theme import apply_theme
+from ongaku.kanban.ui_theme import current_theme
 
 
 if __name__ == "__main__":
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon("./kanban/assets/icon.png"))
 
     QApplication.setStyle("Fusion")
-    apply_theme(app, global_settings.color_theme)
+    current_theme.apply_theme(app)
 
     font = app.font()
     global_settings.ui_font_size and font.setPointSize(global_settings.ui_font_size)

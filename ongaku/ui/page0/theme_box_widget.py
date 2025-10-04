@@ -3,8 +3,8 @@ from PySide6.QtGui import (QFocusEvent, QPainter, QFocusEvent, QFont, QFontMetri
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAbstractScrollArea, QListWidgetItem, 
     QStyledItemDelegate, QStyleOptionViewItem, QStyle, )
 
-from ongaku.kanban.kanban import KanBan
-from ongaku.kanban.ui_theme import current_theme
+from ongaku.core.kanban import KanBan
+from ongaku.ui.color_theme import current_theme
 
 
 class ProgressDelegate(QStyledItemDelegate):
@@ -96,8 +96,8 @@ class ThemeBoxWidget(QWidget):
 
     def set_kanban(self, kanban: KanBan) -> None:
         self.theme_names = [k.theme_name for k in kanban.theme_kanbans]
-        self.coll_dict = {k.theme_name: k.collection_progress for k in kanban.theme_kanbans}
-        self.mark_dict = {k.theme_name: k.mark_progress for k in kanban.theme_kanbans}
+        self.coll_dict = {k.theme_name: k.album_collection_progress for k in kanban.theme_kanbans}
+        self.mark_dict = {k.theme_name: k.track_mark_progress for k in kanban.theme_kanbans}
 
         self.delegate.coll_dict = self.coll_dict
         self.delegate.mark_dict = self.mark_dict

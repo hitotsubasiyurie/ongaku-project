@@ -1,0 +1,10 @@
+from ongaku.toolkit.plugins.cp_lr import hardlink_copy
+from ongaku.toolkit.plugins.create_musicbrainz_database import create_musicbrainz_database
+from ongaku.toolkit.plugins.fetch_albums_metadata_from_musicbrainz_database import fetch_albums_metadata_from_musicbrainz_database
+from ongaku.toolkit.plugins.fetch_albums_metadata_from_vgmdb import fetch_albums_metadata_from_vgmdb
+from ongaku.toolkit.plugins.merge_metadata_files import merge_metadata_files
+from ongaku.toolkit.plugins.recode import recode
+from ongaku.toolkit.plugins.match_resource_and_metadata import match_resource_and_metadata
+from ongaku.toolkit.plugins.remove_files import remove_files
+
+

@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QResizeEvent, QPalette
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
-from ongaku.kanban.kanban import AlbumKanBan
+from ongaku.core.kanban import AlbumKanBan
 
 
 class CoverLabel(QLabel):

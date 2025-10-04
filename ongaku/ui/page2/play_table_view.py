@@ -4,9 +4,9 @@ from PySide6.QtCore import QModelIndex, Qt, QObject, Signal
 from PySide6.QtGui import QAction, QBrush, QResizeEvent, QIcon
 from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
-from ongaku.kanban.ui_theme import current_theme
-from ongaku.kanban.kanban import ThemeKanBan, ResourceState
-from ongaku.kanban.common.custom_table_item_model import CustomTableItemModel
+from ongaku.core.kanban import ThemeKanBan, ResourceState
+from ongaku.ui.color_theme import current_theme
+from ongaku.ui.common.custom_table_item_model import CustomTableItemModel
 
 
 class PlayTableItemModel(CustomTableItemModel):

@@ -9,10 +9,10 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 
 from ongaku.core.settings import global_settings
-from ongaku.kanban.kanban import KanBan
-from ongaku.kanban.page0.init_settings_dialog import InitSettingsDialog
-from ongaku.kanban.page0.page0_widget import Page0Widget
-from ongaku.kanban.ui_theme import current_theme
+from ongaku.core.kanban import KanBan
+from ongaku.ui.page0.init_settings_dialog import InitSettingsDialog
+from ongaku.ui.page0.page0_widget import Page0Widget
+from ongaku.ui.color_theme import current_theme
 
 
 if __name__ == "__main__":

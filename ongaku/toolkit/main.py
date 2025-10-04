@@ -3,7 +3,7 @@ import os
 from ongaku.core.logger import logger, set_logger_output, lprint
 from ongaku.core.settings import global_settings
 from ongaku.toolkit.message import MESSAGE, set_language, get_supported_languages
-from ongaku.toolkit.actions import *
+from ongaku.toolkit.plugins import *
 from ongaku.toolkit.toolkit_utils import loop_for_actions
 
 

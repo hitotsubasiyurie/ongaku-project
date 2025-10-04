@@ -5,9 +5,9 @@ from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPaint
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
     QAbstractItemView, QStyle)
 
-from ongaku.kanban.kanban import ResourceState, ThemeKanBan
-from ongaku.kanban.ui_theme import current_theme
-from ongaku.kanban.common.custom_table_item_model import CustomTableItemModel
+from ongaku.core.kanban import ResourceState, ThemeKanBan
+from ongaku.ui.color_theme import current_theme
+from ongaku.ui.common.custom_table_item_model import CustomTableItemModel
 
 
 class AlbumTableItemModel(CustomTableItemModel):
@@ -231,6 +231,8 @@ class AlbumTableView(QTableView):
         self.setSortingEnabled(True)
         # 条目滚动 提高性能
         self.setVerticalScrollMode(QTableView.ScrollMode.ScrollPerItem)
+        # 隐藏滚动条
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         # 允许拖入
         self.setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)

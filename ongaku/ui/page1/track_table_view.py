@@ -6,10 +6,10 @@ from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMet
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, 
     QHeaderView, QAbstractItemView, QStyle)
 
-from ongaku.kanban.kanban import AlbumKanBan
-from ongaku.kanban.ui_theme import current_theme
-from ongaku.kanban.page1.album_table_view import AlbumStateItemDelegate
-from ongaku.kanban.common.custom_table_item_model import CustomTableItemModel
+from ongaku.core.kanban import AlbumKanBan
+from ongaku.ui.color_theme import current_theme
+from ongaku.ui.page1.album_table_view import AlbumStateItemDelegate
+from ongaku.ui.common.custom_table_item_model import CustomTableItemModel
 
 
 class TrackTableItemModel(CustomTableItemModel):

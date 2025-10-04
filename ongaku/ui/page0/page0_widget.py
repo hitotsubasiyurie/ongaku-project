@@ -2,10 +2,10 @@ from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QPixmap, QResizeEvent, QShortcut, QKeySequence
 from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QStackedWidget, )
 
-from ongaku.kanban.kanban import KanBan, ThemeKanBan
-from ongaku.kanban.page1.page1_widget import Page1Widget
-from ongaku.kanban.page2.page2_widget import Page2Widget
-from ongaku.kanban.page0.theme_box_widget import ThemeBoxWidget
+from ongaku.core.kanban import KanBan, ThemeKanBan
+from ongaku.ui.page1.page1_widget import Page1Widget
+from ongaku.ui.page2.page2_widget import Page2Widget
+from ongaku.ui.page0.theme_box_widget import ThemeBoxWidget
 
 
 class Page0Widget(QWidget):
@@ -115,7 +115,7 @@ QPushButton:hover {{
     def _on_theme_btn_clicked(self):
         if self.theme_box.isHidden():
             # 每次展示，重新统计进度
-            [k.count_progress() for k in self.kanban.theme_kanbans]
+            # [k.count_progress() for k in self.kanban.theme_kanbans]
             self.theme_box.set_kanban(self.kanban)
             self.theme_box.move((self.width()-self.theme_box.width()) // 2, 
                                 (self.height()-self.theme_box.height()) // 2)

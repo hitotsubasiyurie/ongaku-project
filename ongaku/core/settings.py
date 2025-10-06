@@ -22,7 +22,7 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
     ui_font_family: str = Field(default="JetBrains Mono", description="")
 
     # 控制 自动保存
-    _auto_save: bool = True
+    _auto_save: bool = False
 
     @classmethod
     def load(cls) -> "_GlobalSettings":
@@ -40,7 +40,6 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
         
         # 逐个字段校验
         obj = cls()
-        obj._auto_save = False
         for name, _ in _GlobalSettings.model_fields.items():
             if name not in data:
                 continue
@@ -48,8 +47,8 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
                 setattr(obj, name, data[name])
             except Exception as e:
                 print(f"Invalid filed value. {name} {data[name]} {e}")
+        
         obj._auto_save = True
-
         return obj
 
     def save(self):

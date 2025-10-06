@@ -74,5 +74,5 @@ class LightTheme:
         app.setPalette(light_palette)
 
 
-current_theme = next((t for t in [DarkTheme, LightTheme] if t.NAME == global_settings.color_theme), DarkTheme)
+current_theme = next((t for t in [DarkTheme, LightTheme] if t.NAME == global_settings.ui_color_theme), DarkTheme)
 

@@ -124,7 +124,11 @@ class Page1Widget(QWidget):
         links = list(set(itertools.chain.from_iterable(self.theme_kanban.album_kanbans[p].album.links for p in ps)))
         self.link_box.set_links(links)
 
-        # 展示 首个 album 的 track, cover
+        # 多选行时不更新
+        if len(ps) > 1:
+            return
+
+        # 展示 album 的 track, cover
         album_kanban = self.theme_kanban.album_kanbans[ps[0]]
         self.track_table_view.item_model.reset_album_kanban(album_kanban)
         self.cover_label.set_album_kanban(album_kanban)

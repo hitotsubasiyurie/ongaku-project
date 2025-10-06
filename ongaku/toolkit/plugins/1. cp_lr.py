@@ -3,9 +3,13 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from ongaku.logger import lprint
+from ongaku.core.logger import lprint
+from ongaku.core.settings import  global_settings
 from ongaku.toolkit.toolkit_utils import easy_linput
 from ongaku.toolkit.message import MESSAGE
+
+
+PLUGIN_NAME = [""]
 
 
 def hardlink_copy():

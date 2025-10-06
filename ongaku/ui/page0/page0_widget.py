@@ -1,7 +1,9 @@
-from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtGui import QPixmap, QResizeEvent, QShortcut, QKeySequence
-from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QStackedWidget, )
+from PySide6.QtCore import Qt
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtGui import QShortcut, QKeySequence, QIcon
+from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
+from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan, ThemeKanBan
 from ongaku.ui.page1.page1_widget import Page1Widget
 from ongaku.ui.page2.page2_widget import Page2Widget
@@ -29,21 +31,27 @@ class Page0Widget(QWidget):
         self.page2 = Page2Widget()
         self.stack.addWidget(self.page2)
 
-        self.page_btn = QPushButton(">", parent=self)
-        self.page_btn.setFixedSize(fh*2, fh*2)
+        self.page_btn_icons = [QIcon(f"./ui/assets/{global_settings.ui_color_theme}/page_next.png"), 
+                               QIcon(f"./ui/assets/{global_settings.ui_color_theme}/page_prev.png")]
+        self.page_btn = QPushButton(parent=self)
+        self.page_btn.setIcon(self.page_btn_icons[0])
+        self.page_btn.setFixedSize(fh*1.5, fh*1.5)
+        self.page_btn.setIconSize(self.page_btn.size())
 
-        self.theme_btn = QPushButton("≡", parent=self)
-        self.theme_btn.setFixedSize(fh*2, fh*2)
+        self.theme_btn = QPushButton(QIcon(f"./ui/assets/{global_settings.ui_color_theme}/details.png"), "", parent=self)
+        self.theme_btn.setFixedSize(fh*1.5, fh*1.5)
+        self.theme_btn.setIconSize(self.theme_btn.size())
 
         btn_qss = f"""
 QPushButton {{
     /* 透明背景 */
     background-color: rgba(100, 100, 100, 0);
     /* 50% 圆角 */
-    border-radius: {fh*1}px;
+    border-radius: {fh*0.75}px;
 }}
 
 QPushButton:hover {{
+    /* 悬浮 */
     background-color: rgba(100, 100, 100, 200);
 }}
 """
@@ -98,11 +106,11 @@ QPushButton:hover {{
     def _locate_btns(self):
         index = self.stack.currentIndex()
         if index == 0:
-            self.page_btn.setText(">")
+            self.page_btn.setIcon(self.page_btn_icons[0])
             self.page_btn.move(self.width() - self.page_btn.width(), 0)
             self.theme_btn.move(self.width() - self.page_btn.width()*2, 0)
         else:
-            self.page_btn.setText("<")
+            self.page_btn.setIcon(self.page_btn_icons[1])
             self.page_btn.move(0, 0)
             self.theme_btn.move(self.page_btn.width(), 0)
 

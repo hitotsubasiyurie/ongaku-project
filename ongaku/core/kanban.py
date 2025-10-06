@@ -57,7 +57,7 @@ def load_albums_from_toml(filepath: str) -> list[Album]:
     text = Path(filepath).read_text(encoding="utf-8")
     if not text:
         return []
-    obj = rtoml.load(text)
+    obj = rtoml.loads(text)
     ds = obj.values()
     for d in ds:
         d["tracks"] = [{"tracknumber": t[0], "title": t[1], "artist": t[2], "mark": t[3] if len(t) > 3 else ""} for t in d["tracks"]]

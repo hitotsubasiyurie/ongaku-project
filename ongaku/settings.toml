@@ -1,0 +1,16 @@
+# ["en", "zh", "ja"], default is "en"
+language = "en"
+
+# used to store the temporary files of the program, such as logs, etc
+temp_directory = "./tmp"
+
+metadata_directory = "D:/ongaku-metadata"
+
+resource_directory = "D:/移动云盘同步盘/ongaku-resource"
+
+# ["dark", "light"], default is "dark"
+ui_color_theme = "dark"
+
+ui_font_size = 9
+
+ui_font_family = "JetBrains Mono"

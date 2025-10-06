@@ -4,6 +4,7 @@ from PySide6.QtGui import QMouseEvent, QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtCore import Qt, QTime, QUrl, Signal
 
+from ongaku.core.settings import global_settings
 
 class ClickableSlider(QSlider):
 
@@ -32,22 +33,20 @@ class MusicPlayerBar(QWidget):
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.time_label.setFixedSize(fh * 6, fh * 1.5)
 
-        self.prev_btn = QPushButton(QIcon("./kanban/assets/previous.png"), "")
-        self.prev_btn.setObjectName("FloatButton")
+        self.prev_btn = QPushButton(QIcon(f"./ui/assets/{global_settings.ui_color_theme}/play_prev.png"), "")
         self.prev_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.prev_btn.setIconSize(self.prev_btn.size())
 
-        self.play_btn_icons = [QIcon("./kanban/assets/play.png"), QIcon("./kanban/assets/pause.png")]
+        self.play_btn_icons = [QIcon(f"./ui/assets/{global_settings.ui_color_theme}/play.png"), 
+                               QIcon(f"./ui/assets/{global_settings.ui_color_theme}/pause.png")]
         self.play_btn = QPushButton()
-        self.play_btn.setObjectName("FloatButton")
         self.play_btn.setIcon(self.play_btn_icons[0])
         self.play_btn.setFixedSize(fh * 1.5, fh * 1.5)
-        self.play_btn.setIconSize(self.prev_btn.size())
+        self.play_btn.setIconSize(self.play_btn.size())
 
-        self.next_btn = QPushButton(QIcon("./kanban/assets/next.png"), "")
-        self.next_btn.setObjectName("FloatButton")
+        self.next_btn = QPushButton(QIcon(f"./ui/assets/{global_settings.ui_color_theme}/play_next.png"), "")
         self.next_btn.setFixedSize(fh * 1.5, fh * 1.5)
-        self.next_btn.setIconSize(self.prev_btn.size())
+        self.next_btn.setIconSize(self.next_btn.size())
 
         layout = QVBoxLayout()
         layout.setSpacing(1)
@@ -80,6 +79,7 @@ QPushButton {{
 }}
 
 QPushButton:hover {{
+    /* 悬浮 */
     background-color: rgba(100, 100, 100, 200);
 }}
 """

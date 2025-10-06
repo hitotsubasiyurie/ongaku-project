@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
 from ongaku.core.kanban import AlbumKanBan
 from ongaku.ui.color_theme import current_theme
 from ongaku.ui.page1.album_table_view import AlbumStateItemDelegate
-from ongaku.ui.common.custom_table_item_model import CustomTableItemModel
+from ongaku.ui.custom.custom_table_item_model import CustomTableItemModel
 
 
 class TrackTableItemModel(CustomTableItemModel):

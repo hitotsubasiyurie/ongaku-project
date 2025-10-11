@@ -1,3 +1,3 @@
-from ongaku.toolkit.metadata_source.vgmdb_api import VGMdbAPI
-from ongaku.toolkit.metadata_source.musicbrainz_api import MusicBrainzAPI
-from ongaku.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
+from ongaku.crawlers.vgmdb_api import VGMdbAPI
+from ongaku.crawlers.musicbrainz_api import MusicBrainzAPI
+from ongaku.crawlers.musicbrainz_database import MusicBrainzDatabase

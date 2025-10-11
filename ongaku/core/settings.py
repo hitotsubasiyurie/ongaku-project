@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, ClassVar
 
 import rtoml
 import tomli_w
@@ -11,18 +11,50 @@ SETTINGS_FILE = Path("./settings.toml")
 
 class _GlobalSettings(BaseModel, validate_assignment=True):
 
-    language: Literal["en", "zh", "ja"] = Field(default="en", description='["en", "zh", "ja"], default is "en"')
-    temp_directory: str = Field(default="./tmp", 
-                                description="used to store the temporary files of the program, such as logs, etc")
-    metadata_directory: str = Field(default="", description="")
-    resource_directory: str = Field(default="", description="")
-
-    ui_color_theme: Literal["dark", "light"] = Field(default="dark", description='["dark", "light"], default is "dark"')
-    ui_font_size: int = Field(default=9, gt=0, description="")
-    ui_font_family: str = Field(default="JetBrains Mono", description="")
-
+    # 支持的语言
+    SUPPORTED_LANGS: ClassVar[list[str]] = ["en", "zh", "ja"]
     # 控制 自动保存
     _auto_save: bool = False
+
+    language: Literal["en", "zh", "ja"] = Field(
+        default="en", 
+        description='Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese)'
+    )
+
+    temp_directory: str = Field(
+        default="./ongaku-temp", 
+        description="Directory for storing temporary files (logs, cache, etc.)",
+        min_length=1
+    )
+
+    metadata_directory: str = Field(
+        default="./ongaku-metadata", 
+        description="Directory for storing album metadata files",
+        min_length=1
+    )
+
+    resource_directory: str = Field(
+        default="./ongaku-resource", 
+        description="Directory for storing album audio files",
+        min_length=1
+    )
+
+    ui_color_theme: Literal["dark", "light"] = Field(
+        default="dark", 
+        description='Visual theme for the interface. Options: "dark" or "light"'
+    )
+
+    ui_font_size: int = Field(
+        default=9, 
+        gt=0, 
+        description="Base font size for the user interface (in points)"
+    )
+
+    ui_font_family: str = Field(
+        default="JetBrains Mono", 
+        description='Font family used throughout the interface. Recommended: "JetBrains Mono"',
+        min_length=1
+    )
 
     @classmethod
     def load(cls) -> "_GlobalSettings":

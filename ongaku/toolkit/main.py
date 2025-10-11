@@ -1,53 +1,41 @@
 import os
+import uuid
+import importlib.util
+from pathlib import Path
 
-from ongaku.core.logger import logger, set_logger_output, lprint
+# 指定运行目录
+os.chdir(Path(__file__).parent.parent)
+
+from ongaku.core.logger import set_logger_output
 from ongaku.core.settings import global_settings
-from ongaku.toolkit.message import MESSAGE, set_language, get_supported_languages
-from ongaku.toolkit.plugins import *
 from ongaku.toolkit.toolkit_utils import loop_for_actions
 
 
-def ask_for_lang() -> str:
-    langs = get_supported_languages()
-    langs_str = ", ".join(langs)
-    while True:
-        lang = input(f"Please choose a language [{langs_str}]:\n").strip()
-        if lang in langs:
-            return lang
-
-
-def ask_for_temp_dir() -> str:
-    while True:
-        ongaku_tmp = input(MESSAGE.FMJEKLYK).strip("'\"")
-        if not ongaku_tmp or not os.path.isdir(ongaku_tmp): 
-            continue
-        return ongaku_tmp
+PLUGIN_DIR = Path("./toolkit/plugin")
 
 
 def main():
 
-    if global_settings.language not in get_supported_languages():
-        global_settings.language = ask_for_lang()
+    # 初始化 目录
+    for p in [global_settings.temp_directory, global_settings.metadata_directory, global_settings.resource_directory]:
+        os.makedirs(p, exist_ok=True)
     
-    set_language(global_settings.language)
-
-    if not global_settings.temp_directory:
-        global_settings.temp_directory = ask_for_temp_dir()
-
     set_logger_output(global_settings.temp_directory)
 
-    message2action = {
-        MESSAGE.AUP6NZT5: hardlink_copy,
-        MESSAGE.WFSEKVW9: remove_files,
-        MESSAGE.GB5JO189: recode,
-        MESSAGE.GBT3D4H8: fetch_albums_metadata_from_vgmdb,
-        MESSAGE.VKTS4CY7: fetch_albums_metadata_from_musicbrainz_database,
-        MESSAGE.ZJFV9Z1X: merge_metadata_files,
-        MESSAGE.B2BHBP2H: match_resource_and_metadata,
-        MESSAGE.ER5LSXY9: create_musicbrainz_database,
-        MESSAGE.CLZWFPBZ: None
-    }
+    message2action = {}
 
+    # 仅扫描 表层 py 文件
+    for file in PLUGIN_DIR.glob("*.py"):
+        spec = importlib.util.spec_from_file_location(f"plugin_{uuid.uuid4().hex}", file)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        plugin_main = getattr(module, "main", None)
+        plugin_name = getattr(module, "PLUGIN_NAME", None)
+
+        if callable(plugin_main):
+            message2action[plugin_name or file.name] = plugin_main
+    
     loop_for_actions(message2action)
 
 

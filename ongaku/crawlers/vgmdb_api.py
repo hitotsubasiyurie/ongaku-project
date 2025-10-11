@@ -2,7 +2,6 @@ import itertools
 import json
 import pickle
 import re
-import time
 import uuid
 from pathlib import Path
 from collections import Counter
@@ -10,10 +9,10 @@ from collections import Counter
 import requests
 from lxml import etree
 
-from ongaku.exception import OngakuException
-from ongaku.logger import logger, logger_watched
-from ongaku.basemodels import Album, Disc, Track
-from ongaku.utils import retry, RateLimiter
+from ongaku.core.exception import OngakuException
+from ongaku.core.logger import logger, logger_watched
+from ongaku.core.basemodels import Album, Disc, Track
+from ongaku.utils.utils import retry, RateLimiter
 
 
 class VGMdbAPI:

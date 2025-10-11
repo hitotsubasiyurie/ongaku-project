@@ -5,10 +5,10 @@ import orjson
 import psycopg2
 from psycopg2 import extras
 
-from ongaku.logger import logger
-from ongaku.exception import OngakuException
-from ongaku.basemodels import Album, Track
-from ongaku.basemodel_utils import abstract_tracks_info
+from ongaku.core.logger import logger
+from ongaku.core.exception import OngakuException
+from ongaku.core.basemodels import Album, Track
+from ongaku.utils.basemodel_utils import abstract_tracks_info
 
 
 class MusicBrainzDatabase:

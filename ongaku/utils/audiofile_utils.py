@@ -2,8 +2,9 @@ import re
 import itertools
 from pathlib import Path
 
-from ongaku.utils.utils import read_audio_tags
 from ongaku.core.basemodels import Album, Track
+from ongaku.core.constants import AUDIO_EXTS
+from ongaku.utils.utils import read_audio_tags
 
 
 def analyze_resource_track(audio: str) -> Track:

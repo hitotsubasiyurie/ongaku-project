@@ -37,6 +37,15 @@ if __name__ == "__main__":
     kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
     widget = Page0Widget()
     widget.set_kanban(kanban)
+
+    screen = app.screens()[0]
+    screen_geometry = screen.availableGeometry()
+    width = screen_geometry.width()
+    height = int(screen_geometry.height() * 0.75)
+    widget.resize(width, height)
+    widget.move(screen_geometry.left(), screen_geometry.top())
+    widget.show()
+
     widget.showMaximized()
 
     sys.exit(app.exec())

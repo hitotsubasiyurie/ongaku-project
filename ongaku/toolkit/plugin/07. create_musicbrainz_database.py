@@ -1,28 +1,49 @@
-"""
-处理 MusicBrainz JSON Data Dumps
-
-1. 下载 recording.tar.xz, release.tar.xz
-    https://metabrainz.org/datasets/download
-
-
-"""
-
 import os
-import sys
-from datetime import datetime
 import subprocess
 from pathlib import Path
 from typing import Generator
+from types import SimpleNamespace
 
 import orjson
 from tqdm import tqdm
 
-from ongaku.basemodels import Album
-from ongaku.logger import logger, lprint
-from ongaku.toolkit.message import MESSAGE
+from ongaku.core.basemodels import Album
+from ongaku.core.logger import logger, lprint
+from ongaku.core.settings import  global_settings
 from ongaku.toolkit.toolkit_utils import easy_linput
-from ongaku.toolkit.metadata_source.musicbrainz_api import MusicBrainzAPI
-from ongaku.toolkit.metadata_source.musicbrainz_database import MusicBrainzDatabase
+from ongaku.crawlers.musicbrainz_api import MusicBrainzAPI
+from ongaku.crawlers.musicbrainz_database import MusicBrainzDatabase
+
+
+
+if global_settings.language == "zh":
+    PLUGIN_NAME = "创建本地 MusicBrainz 数据库"
+elif global_settings.language == "ja":
+    pass
+else:
+    pass
+
+
+MESSAGE = SimpleNamespace()
+
+
+if global_settings.language == "zh":
+    MESSAGE.C3X = \
+"""
+使用 MusicBrainz JSON Data Dumps 文件创建本地 Album 数据库。
+
+转储文件目录：
+    包含 recording.tar.xz、release.tar.xz。
+    下载地址：https://metabrainz.org/datasets/download
+tar 可执行文件路径：
+    用于解压 .tar.gz 文件。
+"""
+    MESSAGE.OG9 = "请输入 MusicBrainz 转储文件目录："
+    MESSAGE.K98 = "请输入 tar 可执行文件路径："
+elif global_settings.language == "ja":
+    pass
+else:
+    pass
 
 
 def read_musicbrainz_tar_dump(tar_exe: str, tar_file: str) -> Generator[str, None, None]:
@@ -47,15 +68,16 @@ def release_to_albums(recordings: dict, release: dict) -> list[Album]:
     return albums
 
 
-def create_musicbrainz_database():
+def main():
+    lprint(MESSAGE.C3X)
 
-    parent_directory: Path = easy_linput(MESSAGE.RT2DKKG4, return_type=Path)
-    tar_exe = easy_linput(MESSAGE.NLYCQM7M, return_type=str)
+    parent_directory: Path = easy_linput(MESSAGE.OG9, return_type=Path)
+    tar_exe = easy_linput(MESSAGE.K98, return_type=str)
 
     recording_tar, release_tar = parent_directory / "recording.tar.xz", parent_directory / "release.tar.xz"
 
     # 错误 保存 文件
-    wrong_release_wf = (parent_directory / "wrong_release.jsonl").open("a", encoding="utf-8")
+    failed_release_wf = (parent_directory / "failed_release.jsonl").open("a", encoding="utf-8")
 
     # 断点 续作 文件
     checkpoint_file = parent_directory / "checkpoint"
@@ -80,7 +102,7 @@ def create_musicbrainz_database():
         except Exception as e:
             print(e)
             logger.error("", exc_info=1)
-            wrong_release_wf.write(orjson.dumps(release).decode("utf-8") + "\n")
+            failed_release_wf.write(orjson.dumps(release).decode("utf-8") + "\n")
             continue
         
         rid_batch.extend([release["id"]] * len(albums))

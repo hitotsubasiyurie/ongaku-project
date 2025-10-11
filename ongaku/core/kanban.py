@@ -8,7 +8,6 @@ from functools import cached_property
 
 import rtoml
 
-from ongaku.core.logger import logger_watched
 from ongaku.core.basemodels import Album
 from ongaku.core.constants import IMG_EXTS
 from ongaku.utils.utils import legalize_filename, dump_toml
@@ -52,7 +51,7 @@ def dump_albums_to_toml(albums: list[Album], filepath: str) -> None:
 
 def load_albums_from_toml(filepath: str) -> list[Album]:
     """
-    从 TOML 文件 重建 Album 模型列表。
+    从 TOML 文件 解析 Album 模型列表。
     """
     text = Path(filepath).read_text(encoding="utf-8")
     if not text:
@@ -72,24 +71,24 @@ class ResourceState(IntEnum):
     # 完整无损
     LOSSLESS = 3
     # 完整有损
-    LOSSY    = 2
+    LOSSY = 2
     # 不完整
-    PARTIAL  = 1
+    PARTIAL = 1
     # 缺失
-    MISSING  = 0
+    MISSING = 0
 
 
 class MetadataState(IntFlag):
     """
     专辑元数据文件状态
     """
-    NONE         = 0
-    TITLE_EXIST  = 1 << 0
-    DATE_EXIST   = 1 << 1
-    CATNO_EXIST  = 1 << 2
-    TRACK_EXIST  = 1 << 3
+    NONE = 0
+    TITLE_EXIST = 1 << 0
+    DATE_EXIST = 1 << 1
+    CATNO_EXIST = 1 << 2
+    TRACK_EXIST = 1 << 3
     ARTIST_EXIST = 1 << 4
-    COVER_EXIST  = 1 << 5
+    COVER_EXIST = 1 << 5
 
 
 @dataclass
@@ -272,7 +271,6 @@ class KanBan:
         self.resource_dir = os.path.abspath(self.resource_dir)
         self.scan()
 
-    @logger_watched(2)
     def scan(self) -> None:
         """
         扫描文件系统。

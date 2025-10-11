@@ -1,10 +1,52 @@
 import os
 import msvcrt
 from pathlib import Path
+from types import SimpleNamespace
 
-from ongaku.logger import lprint
+from ongaku.core.logger import lprint
 from ongaku.toolkit.toolkit_utils import easy_linput
-from ongaku.toolkit.message import MESSAGE
+from ongaku.core.settings import  global_settings
+
+
+if global_settings.language == "zh":
+    PLUGIN_NAME = "重新编码文本文件"
+elif global_settings.language == "ja":
+    pass
+else:
+    pass
+
+
+MESSAGE = SimpleNamespace()
+
+
+if global_settings.language == "zh":
+    MESSAGE.C3X = \
+"""
+扫描目录下的文本文件，尝试用不同的编码打开，找到它的正确的编码方式，然后以 UTF-8 编码保存。
+
+父目录路径：
+    将会扫描该目录中特定文件后缀的文件
+文件后缀列表：
+    将会处理父目录中该文件后缀的文件。多值用英文逗号隔开，例如 .txt,.cue,.log
+保存文件前缀： 
+    会新创建文件保存结果。
+    输入如 __recoded_utf_8__ 时，D:\\download\\1.txt 重编码后会生成 D:\\download\\__recoded_utf_8__1.txt
+"""
+    MESSAGE.OG9 = "请输入父目录路径："
+    MESSAGE.K98 = "请输入文件后缀列表（默认为 .cue ）："
+    MESSAGE.RR7 = "请输入保存文件前缀（默认为 __recoded_utf_8__）："
+    MESSAGE.F01 = \
+"""
+a: 上一个编码 d: 下一个编码
+w: 上一个文件 s: 下一个文件
+p: 资源管理器打开路径
+q: 退出
+回车保存...
+"""
+elif global_settings.language == "ja":
+    pass
+else:
+    pass
 
 
 TEXT_ENCODINGS = ["ascii", "big5", "big5hkscs", "cp037", "cp273", "cp424", "cp437", "cp500", "cp720", "cp737", "cp775", 
@@ -25,14 +67,14 @@ PREFERRED_ENCODINGS = ["utf_8_sig", "utf_8", "shift_jis", "shift_jis_2004", "big
 ENCODINGS = PREFERRED_ENCODINGS + list(set(TEXT_ENCODINGS) - set(PREFERRED_ENCODINGS))
 
 
-def recode():
+def main():
 
-    lprint(MESSAGE.XQIIHSJN)
+    lprint(MESSAGE.C3X)
 
-    directory: Path = easy_linput(MESSAGE.D1EG4CA9, return_type=Path)
-    suffixs_str: str = easy_linput(MESSAGE.DGO6VHRZ, default=".cue", return_type=str)
+    directory = easy_linput(MESSAGE.OG9, return_type=Path)
+    suffixs_str = easy_linput(MESSAGE.K98, default=".cue", return_type=str)
     accept_suffixs = set(map(str.lower, map(str.strip, suffixs_str.split(","))))
-    result_prefix: str = easy_linput(MESSAGE.O166KECP, default="__recoded_utf_8__", return_type=str)
+    result_prefix = easy_linput(MESSAGE.RR7, default="__recoded_utf_8__", return_type=str)
 
     # 待处理文件
     files = [f for f in Path(directory).rglob("*") 
@@ -58,7 +100,7 @@ def recode():
             print("-"*64)
             print(f"{j}/{max_j} {ENCODINGS[j]}")
             print(f"{i}/{max_i} {files[i]}")
-            print(MESSAGE.JABXWHDS)
+            print(MESSAGE.F01)
         except Exception:
             j = max(0, min(j + dir_j, max_j))
             if (dir_j == -1 and j != 0) or (dir_j == 1 and j != max_j):

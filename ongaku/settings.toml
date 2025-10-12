@@ -1,4 +1,7 @@
 # Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese)
+log_level = "en"
+
+# Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese)
 language = "zh"
 
 # Directory for storing temporary files (logs, cache, etc.)

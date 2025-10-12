@@ -16,6 +16,11 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
     # 控制 自动保存
     _auto_save: bool = False
 
+    log_level: Literal["en", "zh", "ja"] = Field(
+        default="en", 
+        description='Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese)'
+    )
+
     language: Literal["en", "zh", "ja"] = Field(
         default="en", 
         description='Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese)'

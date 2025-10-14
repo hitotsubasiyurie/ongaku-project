@@ -69,7 +69,7 @@ class CustomTableItemModel(QAbstractItemModel):
             return section + 1
         
         return self.headers[section] if section < len(self.headers) else None
-    
+
     # 可编辑
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:

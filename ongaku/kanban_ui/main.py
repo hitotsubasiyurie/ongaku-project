@@ -10,14 +10,14 @@ from PySide6.QtGui import QIcon
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan
-from ongaku.ui.page0.init_settings_dialog import InitSettingsDialog
-from ongaku.ui.page0.page0_widget import Page0Widget
-from ongaku.ui.color_theme import current_theme
+from ongaku.kanban_ui.page0.init_settings_dialog import InitSettingsDialog
+from ongaku.kanban_ui.page0.page0_widget import Page0Widget
+from ongaku.kanban_ui.color_theme import current_theme
 
 
 if __name__ == "__main__":
     app = QApplication([])
-    app.setWindowIcon(QIcon("./ui/assets/icon.png"))
+    app.setWindowIcon(QIcon("./kanban_ui/assets/icon.png"))
 
     QApplication.setStyle("Fusion")
     current_theme.apply_theme(app)

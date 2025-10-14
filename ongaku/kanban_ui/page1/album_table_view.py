@@ -6,8 +6,8 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
     QAbstractItemView, QStyle)
 
 from ongaku.core.kanban import ResourceState, ThemeKanBan
-from ongaku.ui.color_theme import current_theme
-from ongaku.ui.custom.custom_table_item_model import CustomTableItemModel
+from ongaku.kanban_ui.color_theme import current_theme
+from ongaku.kanban_ui.custom.custom_table_item_model import CustomTableItemModel
 
 
 class AlbumTableItemModel(CustomTableItemModel):
@@ -65,6 +65,18 @@ class AlbumTableItemModel(CustomTableItemModel):
             return self._get_data(col, p)
 
         return None
+
+    def headerData(self, section: int, orientation: Qt.Orientation,
+                   role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
+
+        if role == Qt.ItemDataRole.TextAlignmentRole and orientation == Qt.Orientation.Vertical:
+            return Qt.AlignmentFlag.AlignLeft
+
+        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Vertical:
+            if self.theme_kanban.album_kanbans[self.layout_ps[section]].is_favourite:
+                return f"{section + 1}*"
+
+        return super().headerData(section, orientation, role)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # S 列 只读
@@ -247,6 +259,7 @@ class AlbumTableView(QTableView):
         header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         header.setSectionsClickable(False)
         header.setFrameShape(QFrame.Shape.NoFrame)
+        
         
         # 设置列
         header = self.horizontalHeader()

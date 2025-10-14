@@ -100,10 +100,6 @@ class AlbumKanBan:
     :var cover: 封面路径
     :var track_files: 音轨文件路径列表。文件不存在时为 "" 。
     :var track_stat_results: 音轨文件属性列表
-
-    :var metadata_state: 专辑元数据状态
-    :var track_res_states: 专辑轨道资源状态列表
-    :var album_res_state: 专辑资源状态
     """
 
     album: Album
@@ -145,6 +141,7 @@ class AlbumKanBan:
 
     @cached_property
     def metadata_state(self) -> MetadataState:
+        """专辑元数据状态"""
         s = MetadataState.NONE
         
         if self.album.album:
@@ -165,12 +162,14 @@ class AlbumKanBan:
 
     @cached_property
     def track_res_states(self) -> tuple[ResourceState, ...]:
+        """专辑轨道资源状态列表"""
         _map = {"": ResourceState.MISSING, ".mp3": ResourceState.LOSSY, ".flac": ResourceState.LOSSLESS}
         states = tuple(_map[Path(f).suffix.lower() if f else ""] for f in self.track_files)
         return states
     
     @cached_property
     def album_res_state(self) -> ResourceState:
+        """专辑资源状态"""
         # 无 tracks 元数据时为 MISSING
         if not self.album.tracks:
             s = ResourceState.MISSING
@@ -183,6 +182,11 @@ class AlbumKanBan:
 
         return s
 
+    @cached_property
+    def is_favourite(self) -> bool:
+        """是否喜欢"""
+        return any(t.mark == "1" for t in self.album.tracks)
+
     def __hash__(self) -> int:
         return hash((self.album, self.album_dir, self.cover, self.track_files, self.track_stat_results))
 
@@ -194,10 +198,6 @@ class ThemeKanBan:
     :param theme_directory: 主题资源目录路径
 
     :var album_kanbans: 
-
-    :var theme_name: 主题名
-    :var collection_progress: 资源收集进度
-    :var mark_progress: 标记进度
     """
 
     theme_metadata_file: str
@@ -225,10 +225,12 @@ class ThemeKanBan:
 
     @cached_property
     def theme_name(self) -> str:
+        """主题名"""
         return Path(self.theme_metadata_file).stem
 
     @cached_property
     def album_collection_progress(self) -> float:
+        """资源收集进度"""
         albums = [k.album for k in self.album_kanbans]
         if albums:
             return sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans) / len(albums)
@@ -236,6 +238,7 @@ class ThemeKanBan:
 
     @cached_property
     def track_mark_progress(self) -> float:
+        """标记进度"""
         albums = [k.album for k in self.album_kanbans]
         total = sum(len(a.tracks) for a in albums)
         if total:

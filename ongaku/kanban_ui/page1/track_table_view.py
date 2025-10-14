@@ -7,9 +7,9 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
     QHeaderView, QAbstractItemView, QStyle)
 
 from ongaku.core.kanban import AlbumKanBan
-from ongaku.ui.color_theme import current_theme
-from ongaku.ui.page1.album_table_view import AlbumStateItemDelegate
-from ongaku.ui.custom.custom_table_item_model import CustomTableItemModel
+from ongaku.kanban_ui.color_theme import current_theme
+from ongaku.kanban_ui.page1.album_table_view import AlbumStateItemDelegate
+from ongaku.kanban_ui.custom.custom_table_item_model import CustomTableItemModel
 
 
 class TrackTableItemModel(CustomTableItemModel):
@@ -67,6 +67,18 @@ class TrackTableItemModel(CustomTableItemModel):
             return self._get_data(col, p)
 
         return None
+
+    def headerData(self, section: int, orientation: Qt.Orientation,
+                   role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
+
+        if role == Qt.ItemDataRole.TextAlignmentRole and orientation == Qt.Orientation.Vertical:
+            return Qt.AlignmentFlag.AlignLeft
+
+        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Vertical:
+            if self.album_kanban.album.tracks[self.layout_ps[section]].mark == "1":
+                return f"{section + 1}*"
+
+        return super().headerData(section, orientation, role)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # S 列 只读

@@ -14,11 +14,11 @@ from ongaku.core.constants import AUDIO_EXTS, IMG_EXTS
 from ongaku.utils.audiofile_utils import analyze_resource_track
 from ongaku.utils.basemodel_utils import tracks_assignment
 from ongaku.core.kanban import ThemeKanBan, track_filenames
-from ongaku.ui.page1.album_table_view import AlbumTableView
-from ongaku.ui.page1.check_message_box import CheckMessageBox
-from ongaku.ui.page1.link_combo_box import LinkComboBox
-from ongaku.ui.page1.track_table_view import TrackTableView
-from ongaku.ui.page1.cover_label import CoverLabel
+from ongaku.kanban_ui.page1.album_table_view import AlbumTableView
+from ongaku.kanban_ui.page1.check_message_box import CheckMessageBox
+from ongaku.kanban_ui.page1.link_combo_box import LinkComboBox
+from ongaku.kanban_ui.page1.track_table_view import TrackTableView
+from ongaku.kanban_ui.page1.cover_label import CoverLabel
 
 
 class Page1Widget(QWidget):

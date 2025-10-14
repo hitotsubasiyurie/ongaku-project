@@ -5,8 +5,8 @@ from PySide6.QtGui import QAction, QBrush, QResizeEvent, QIcon
 from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
 from ongaku.core.kanban import ThemeKanBan, ResourceState
-from ongaku.ui.color_theme import current_theme
-from ongaku.ui.custom.custom_table_item_model import CustomTableItemModel
+from ongaku.kanban_ui.color_theme import current_theme
+from ongaku.kanban_ui.custom.custom_table_item_model import CustomTableItemModel
 
 
 class PlayTableItemModel(CustomTableItemModel):
@@ -98,7 +98,7 @@ class PlayTableItemModel(CustomTableItemModel):
         # 列表头 播放中 仅展示装饰图标
         if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_ij[self.layout_ps[section]] == self.playing_ij:
             if role == Qt.ItemDataRole.DecorationRole:
-                return QIcon(f"./ui/assets/playing.png")
+                return QIcon(f"./kanban_ui/assets/playing.png")
             else:
                 return
         

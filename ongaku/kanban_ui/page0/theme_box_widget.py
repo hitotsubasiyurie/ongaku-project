@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAb
     QStyledItemDelegate, QStyleOptionViewItem, QStyle, )
 
 from ongaku.core.kanban import KanBan
-from ongaku.ui.color_theme import current_theme
+from ongaku.kanban_ui.color_theme import current_theme
 
 
 class ProgressDelegate(QStyledItemDelegate):

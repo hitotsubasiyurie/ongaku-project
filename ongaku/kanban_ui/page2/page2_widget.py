@@ -3,8 +3,8 @@ from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
 
 from ongaku.core.kanban import ThemeKanBan
-from ongaku.ui.page2.play_table_view import PlayTableView
-from ongaku.ui.page2.music_player_bar import MusicPlayerBar
+from ongaku.kanban_ui.page2.play_table_view import PlayTableView
+from ongaku.kanban_ui.page2.music_player_bar import MusicPlayerBar
 
 
 class Page2Widget(QWidget):

@@ -4,7 +4,6 @@ from typing import Callable
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
 from concurrent.futures import ThreadPoolExecutor
-from functools import cached_property
 
 import rtoml
 
@@ -135,11 +134,7 @@ class AlbumKanBan:
                                  for n in track_filenames(self.album))
         self.track_stat_results = tuple(os.stat(f) if f else None for f in self.track_files)
 
-        # 失效属性缓存
-        for attr in ("metadata_state", "track_res_states", "album_res_state"):
-            self.__dict__.pop(attr, None)
-
-    @cached_property
+    @property
     def metadata_state(self) -> MetadataState:
         """专辑元数据状态"""
         s = MetadataState.NONE
@@ -160,14 +155,14 @@ class AlbumKanBan:
 
         return s
 
-    @cached_property
+    @property
     def track_res_states(self) -> tuple[ResourceState, ...]:
         """专辑轨道资源状态列表"""
         _map = {"": ResourceState.MISSING, ".mp3": ResourceState.LOSSY, ".flac": ResourceState.LOSSLESS}
         states = tuple(_map[Path(f).suffix.lower() if f else ""] for f in self.track_files)
         return states
     
-    @cached_property
+    @property
     def album_res_state(self) -> ResourceState:
         """专辑资源状态"""
         # 无 tracks 元数据时为 MISSING
@@ -182,7 +177,7 @@ class AlbumKanBan:
 
         return s
 
-    @cached_property
+    @property
     def is_favourite(self) -> bool:
         """是否喜欢"""
         return any(t.mark == "1" for t in self.album.tracks)
@@ -219,16 +214,12 @@ class ThemeKanBan:
         album_dirs = [os.path.join(self.theme_directory, album_filename(a)) for a in albums]
         self.album_kanbans = tuple(AlbumKanBan(a, d) for a, d in zip(albums, album_dirs))
 
-        # 失效属性缓存
-        for attr in ("theme_name", "album_collection_progress", "track_mark_progress"):
-            self.__dict__.pop(attr, None)
-
-    @cached_property
+    @property
     def theme_name(self) -> str:
         """主题名"""
         return Path(self.theme_metadata_file).stem
 
-    @cached_property
+    @property
     def album_collection_progress(self) -> float:
         """资源收集进度"""
         albums = [k.album for k in self.album_kanbans]
@@ -236,7 +227,7 @@ class ThemeKanBan:
             return sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans) / len(albums)
         return 0
 
-    @cached_property
+    @property
     def track_mark_progress(self) -> float:
         """标记进度"""
         albums = [k.album for k in self.album_kanbans]
@@ -286,7 +277,14 @@ class KanBan:
         with ThreadPoolExecutor() as executor:
             self.theme_kanbans = tuple(executor.map(ThemeKanBan, theme_mdfs, theme_dirs))
 
+        # 最大日期 倒序
+        self.theme_kanbans = tuple(sorted(self.theme_kanbans, 
+                                          key=lambda k: max(ak.album.date for ak in k.album_kanbans),
+                                          reverse=True))
+
     def get_theme_kanban(self, name: str) -> ThemeKanBan | None:
+        if not name:
+            return None
         return next((k for k in self.theme_kanbans if k.theme_name == name), None)
 
     def __hash__(self) -> int:

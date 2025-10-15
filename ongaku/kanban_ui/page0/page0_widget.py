@@ -1,13 +1,13 @@
 from PySide6.QtCore import Qt
-from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtGui import QShortcut, QKeySequence, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan, ThemeKanBan
+from ongaku.kanban_ui.page0.theme_box_widget import ThemeBoxWidget
+from ongaku.kanban_ui.page0.toast_notifier import ToastNotifier
 from ongaku.kanban_ui.page1.page1_widget import Page1Widget
 from ongaku.kanban_ui.page2.page2_widget import Page2Widget
-from ongaku.kanban_ui.page0.theme_box_widget import ThemeBoxWidget
 
 
 class Page0Widget(QWidget):
@@ -59,6 +59,8 @@ QPushButton:hover {{
 
         self.theme_box = ThemeBoxWidget(self)
         self.theme_box.hide()
+
+        self.toast_notifier = ToastNotifier(self)
 
     def setup_event(self) -> None:
         # 初始化 事件
@@ -122,8 +124,6 @@ QPushButton:hover {{
 
     def _on_theme_btn_clicked(self):
         if self.theme_box.isHidden():
-            # 每次展示，重新统计进度
-            # [k.count_progress() for k in self.kanban.theme_kanbans]
             self.theme_box.set_kanban(self.kanban)
             self.theme_box.move((self.width()-self.theme_box.width()) // 2, 
                                 (self.height()-self.theme_box.height()) // 2)
@@ -133,9 +133,11 @@ QPushButton:hover {{
 
     def _on_theme_box_selected(self) -> None:
         self.current_theme_kanban = self.kanban.get_theme_kanban(self.theme_box.selected_theme)
+        self.setWindowTitle(f"KanBan - {self.current_theme_kanban.theme_name if self.current_theme_kanban else ''}")
         self.page1.set_theme_kanban(self.current_theme_kanban)
         self.page2.set_theme_kanban(self.current_theme_kanban)
-
+        # self.toast_notifier.show_message(self.current_theme_kanban.theme_name)
+        [self.toast_notifier.show_message(self.current_theme_kanban.theme_name) for _ in range(5)]
 
 
 

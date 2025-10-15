@@ -89,28 +89,25 @@ class ThemeBoxWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.theme_names: list[str] = []
+        self.kanban: KanBan = None
         self.selected_theme: str = None
 
         self.setup_ui()
 
     def set_kanban(self, kanban: KanBan) -> None:
-        self.theme_names = [k.theme_name for k in kanban.theme_kanbans]
-        self.coll_dict = {k.theme_name: k.album_collection_progress for k in kanban.theme_kanbans}
-        self.mark_dict = {k.theme_name: k.track_mark_progress for k in kanban.theme_kanbans}
+        self.kanban = kanban
 
-        self.delegate.coll_dict = self.coll_dict
-        self.delegate.mark_dict = self.mark_dict
+        self.delegate.coll_dict = {k.theme_name: k.album_collection_progress for k in kanban.theme_kanbans}
+        self.delegate.mark_dict = {k.theme_name: k.track_mark_progress for k in kanban.theme_kanbans}
 
         self._update_list_items()
 
     # 内部方法
 
     def _update_list_items(self) -> None:
-        # list_widget 展示优先级 selected > themes
-        tmp = sorted(self.theme_names, key=lambda t: (t != self.selected_theme, -1*self.coll_dict.get(t), -1*self.mark_dict.get(t)))
         # 等宽 空白字符 两个字符
-        tmp = [f"⚪️{t}" if t == self.selected_theme else f"　　{t}" for t in tmp]
+        theme_names = [k.theme_name for k in self.kanban.theme_kanbans]
+        tmp = [f"⚪️{t}" if t == self.selected_theme else f"　　{t}" for t in theme_names]
         self.list_widget.clear()
         self.list_widget.addItems(tmp)
         # 滚动 list_widget 至顶
@@ -127,7 +124,7 @@ class ThemeBoxWidget(QWidget):
         text = self.line_edit.text().lower()
         for i in range(self.list_widget.count()):
             item = self.list_widget.item(i)
-            item.setHidden(text not in item.text().lower())
+            item.setHidden(text not in item.text().lower()[:2])
 
     def _on_line_edit_text_changed(self, text: str) -> None:
         self._hide_list_items()
@@ -144,15 +141,6 @@ class ThemeBoxWidget(QWidget):
         self._update_list_items()
         # 发出信号
         self.selected_changed.emit()
-
-
-
-
-
-
-
-
-
 
 
 

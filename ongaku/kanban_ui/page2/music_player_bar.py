@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QTime, QUrl, Signal
 
 from ongaku.core.settings import global_settings
 
+
 class ClickableSlider(QSlider):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:

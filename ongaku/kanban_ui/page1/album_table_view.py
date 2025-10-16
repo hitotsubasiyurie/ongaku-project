@@ -74,7 +74,7 @@ class AlbumTableItemModel(CustomTableItemModel):
 
         if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Vertical:
             if self.theme_kanban.album_kanbans[self.layout_ps[section]].is_favourite:
-                return f"{section + 1}*"
+                return f"🤍"
 
         return super().headerData(section, orientation, role)
 

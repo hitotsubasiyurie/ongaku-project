@@ -178,7 +178,7 @@ class PlayTableItemModel(CustomTableItemModel):
             return self.theme_kanban.album_kanbans[i].album.date
         elif col == 5:
             mark = self.theme_kanban.album_kanbans[i].album.tracks[j].mark
-            return "❤️" if mark == "1" and role == Qt.ItemDataRole.DisplayRole else mark
+            return "🤍" if mark == "1" and role == Qt.ItemDataRole.DisplayRole else mark
 
 
 class PlayTableView(QTableView):

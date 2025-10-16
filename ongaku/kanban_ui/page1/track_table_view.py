@@ -76,7 +76,7 @@ class TrackTableItemModel(CustomTableItemModel):
 
         if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Vertical:
             if self.album_kanban.album.tracks[self.layout_ps[section]].mark == "1":
-                return f"{section + 1}*"
+                return f"🤍"
 
         return super().headerData(section, orientation, role)
 

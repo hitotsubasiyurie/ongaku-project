@@ -52,7 +52,8 @@ class ToastNotifier(QWidget):
     # 重写方法
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        if obj == self.parent():
+        # 布局存在元素时才需要适应位置
+        if self.layout().count() and obj == self.parent():
             if event.type() in (QEvent.Type.Resize, QEvent.Type.Move):
                 self._set_geometry()
         return super().eventFilter(obj, event)
@@ -67,11 +68,7 @@ class ToastNotifier(QWidget):
 
     def _set_geometry(self):
         parent: QWidget = self.parent()
-        parent_rect = parent.geometry()
-        x = parent_rect.right() - self.width()
-        y = parent_rect.bottom() - self.height()
+        # 坐标 是相对于父类的
+        x = parent.width() - self.width()
+        y = parent.height() - self.height()
         self.move(x, y)
-        print(parent_rect, parent_rect.right(), parent_rect.bottom())
-        print(self.geometry(), self.size(), self.width(), self.height())
-        print(self.layout().count())
-

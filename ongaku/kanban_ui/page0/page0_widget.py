@@ -100,12 +100,12 @@ QPushButton:hover {{
     # 重写方法
 
     def resizeEvent(self, event):
-        self._locate_btns()
+        self._set_btns_geometry()
         super().resizeEvent(event)
 
     # 内部方法
 
-    def _locate_btns(self):
+    def _set_btns_geometry(self):
         index = self.stack.currentIndex()
         if index == 0:
             self.page_btn.setIcon(self.page_btn_icons[0])
@@ -120,7 +120,7 @@ QPushButton:hover {{
         if not dst:
             dst = 0 if self.stack.currentIndex() == 1 else 1
         self.stack.setCurrentIndex(dst)
-        self._locate_btns()
+        self._set_btns_geometry()
 
     def _on_theme_btn_clicked(self):
         if self.theme_box.isHidden():
@@ -136,8 +136,6 @@ QPushButton:hover {{
         self.setWindowTitle(f"KanBan - {self.current_theme_kanban.theme_name if self.current_theme_kanban else ''}")
         self.page1.set_theme_kanban(self.current_theme_kanban)
         self.page2.set_theme_kanban(self.current_theme_kanban)
-        # self.toast_notifier.show_message(self.current_theme_kanban.theme_name)
-        [self.toast_notifier.show_message(self.current_theme_kanban.theme_name) for _ in range(5)]
 
 
 

@@ -106,7 +106,8 @@ class ThemeBoxWidget(QWidget):
 
     def _update_list_items(self) -> None:
         # 等宽 空白字符 两个字符
-        theme_names = [k.theme_name for k in self.kanban.theme_kanbans]
+        theme_names = sorted((k.theme_name for k in self.kanban.theme_kanbans), 
+                             key=lambda x: x != self.selected_theme)
         tmp = [f"⚪️{t}" if t == self.selected_theme else f"　　{t}" for t in theme_names]
         self.list_widget.clear()
         self.list_widget.addItems(tmp)

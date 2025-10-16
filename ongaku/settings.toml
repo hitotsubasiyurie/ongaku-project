@@ -14,7 +14,7 @@ metadata_directory = "D:\\ongaku-metadata"
 resource_directory = "D:\\移动云盘同步盘\\ongaku-resource"
 
 # Visual theme for the interface. Options: "dark" or "light"
-ui_color_theme = "dark"
+ui_color_theme = "light"
 
 # Base font size for the user interface (in points)
 ui_font_size = 9

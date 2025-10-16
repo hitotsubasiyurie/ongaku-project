@@ -102,6 +102,12 @@ QPushButton:hover {{
 
     # 内部方法
 
+    def _toggle_page(self, dst: int = None):
+        if not dst:
+            dst = 0 if self.stack.currentIndex() == 1 else 1
+        self.stack.setCurrentIndex(dst)
+        self._set_btns_geometry()
+
     def _set_btns_geometry(self):
         index = self.stack.currentIndex()
         if index == 0:
@@ -112,12 +118,6 @@ QPushButton:hover {{
             self.page_btn.setIcon(self.page_btn_icons[1])
             self.page_btn.move(0, 0)
             self.theme_btn.move(self.page_btn.width(), 0)
-
-    def _toggle_page(self, dst: int = None):
-        if not dst:
-            dst = 0 if self.stack.currentIndex() == 1 else 1
-        self.stack.setCurrentIndex(dst)
-        self._set_btns_geometry()
 
     def _on_theme_btn_clicked(self):
         if self.theme_box.isHidden():

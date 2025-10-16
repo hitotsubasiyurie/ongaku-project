@@ -35,6 +35,9 @@ class ToastNotifier(QWidget):
         font.setPointSize(font.pointSize() - 1)
         self.setFont(font)
 
+        # 初始化 0 大小
+        self.resize(0, 0)
+
         ToastNotifier._instance = self
 
     def show_message(self, text: str) -> None:

@@ -5,8 +5,8 @@ import itertools
 from pathlib import Path
 from typing import Callable
 
-from PySide6.QtCore import QEvent, QObject, Qt, QTimer
-from PySide6.QtGui import QPixmap, QResizeEvent, QShortcut
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 
 from ongaku.core.basemodels import Album
@@ -14,6 +14,7 @@ from ongaku.core.constants import AUDIO_EXTS, IMG_EXTS
 from ongaku.utils.audiofile_utils import analyze_resource_track
 from ongaku.utils.basemodel_utils import tracks_assignment
 from ongaku.core.kanban import ThemeKanBan, track_filenames
+from ongaku.kanban_ui.toast_notifier import toast_notify
 from ongaku.kanban_ui.page1.album_table_view import AlbumTableView
 from ongaku.kanban_ui.page1.check_message_box import CheckMessageBox
 from ongaku.kanban_ui.page1.link_combo_box import LinkComboBox
@@ -86,11 +87,11 @@ class Page1Widget(QWidget):
 
         self.theme_kanban: ThemeKanBan = None
 
-        # 保存元数据文件 防抖定时器 5 秒
+        # 保存元数据文件 防抖定时器 10 秒
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
-        self._save_timer.setInterval(5000)
-        self._save_timer.timeout.connect(lambda: self.theme_kanban.save_metadata_file())
+        self._save_timer.setInterval(10000)
+        self._save_timer.timeout.connect(lambda: [toast_notify("saved metadata file !"), self.theme_kanban.save_metadata_file()])
 
         self.setup_ui()
         self.setup_event()
@@ -101,15 +102,9 @@ class Page1Widget(QWidget):
         # 清空搜索框
         [x.clear() for x in [self.album_field, self.catno_field, self.date_field]]
         self.cover_label.clear()
-        self.cover_label.toggle_transparent(True)
         self.album_table_view.item_model.reset_theme_kanban(theme_kanban)
         self.track_table_view.item_model.reset_album_kanban(None)
 
-    # 重写方法
-
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        super().resizeEvent(event)
-        self.cover_label.resize(self.size())
 
     # 内部方法
 

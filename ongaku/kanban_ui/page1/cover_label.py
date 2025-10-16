@@ -1,8 +1,8 @@
 import os
 from PIL import Image
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QResizeEvent, QPalette
+from PySide6.QtCore import Qt, QEvent, QObject
+from PySide6.QtGui import QPixmap, QPalette
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from ongaku.core.kanban import AlbumKanBan
@@ -42,6 +42,9 @@ class CoverLabel(QLabel):
         font.setBold(True)
         self.info_label.setFont(font)
 
+        # 监听父类
+        parent.installEventFilter(self)
+
     def set_album_kanban(self, album_kanban: AlbumKanBan) -> None:
         cover = album_kanban.cover
         if not cover:
@@ -59,13 +62,16 @@ class CoverLabel(QLabel):
         self.info_label.adjustSize()
 
         self.pix = QPixmap(cover)
-        self._resize_label()
 
+        self._set_geometry()
+
+# TODO: 改成 show
     def toggle_transparent(self, transparent: bool = None) -> None:
         if transparent is None:
             transparent = self.opacity_effect.opacity() == 1
         
-        if not transparent:
+        # 存在封面时，才非透明化
+        if not transparent and self.pix:
             self.opacity_effect.setOpacity(1)
             self.info_label.show()
         else:
@@ -74,24 +80,33 @@ class CoverLabel(QLabel):
 
     # 重写方法
 
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        super().resizeEvent(event)
-        self._resize_label()
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        # 布局存在元素时才需要适应位置
+        if self.pix and obj == self.parent():
+            if event.type() in (QEvent.Type.Resize, QEvent.Type.Move):
+                self._set_geometry()
+        return super().eventFilter(obj, event)
 
     def clear(self) -> None:
+        self.pix = None
+        self.image_info = None
         self.info_label.clear()
+        self.opacity_effect.setOpacity(0.2)
         return super().clear()
 
     # 内部方法
 
-    def _resize_label(self) -> None:
-        if not self.pix:
-            return
-        
+    def _set_geometry(self):
+        parent: QWidget = self.parent()
+
         # 缩放适配
-        scaled = self.pix.scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        scaled = self.pix.scaled(parent.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.setPixmap(scaled)
+        self.resize(scaled.size())
+        self.info_label.move(5, 5)
 
-        self.info_label.move(self.width() - scaled.width(), 0)
-
+        # 坐标 是相对于父类的
+        x = parent.width() - self.width()
+        y = parent.height() - self.height()
+        self.move(x, y)
 

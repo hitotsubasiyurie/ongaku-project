@@ -10,7 +10,8 @@ from PySide6.QtGui import QIcon
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan
-from ongaku.kanban_ui.page0.init_settings_dialog import InitSettingsDialog
+from ongaku.kanban_ui.init_settings_dialog import InitSettingsDialog
+from ongaku.kanban_ui.toast_notifier import ToastNotifier
 from ongaku.kanban_ui.page0.page0_widget import Page0Widget
 from ongaku.kanban_ui.color_theme import current_theme
 
@@ -37,6 +38,7 @@ if __name__ == "__main__":
     kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
     widget = Page0Widget()
     widget.set_kanban(kanban)
+    ToastNotifier(parent=widget)
 
     screen = app.screens()[0]
     screen_geometry = screen.availableGeometry()

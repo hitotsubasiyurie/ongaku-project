@@ -5,7 +5,6 @@ from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan, ThemeKanBan
 from ongaku.kanban_ui.page0.theme_box_widget import ThemeBoxWidget
-from ongaku.kanban_ui.page0.toast_notifier import ToastNotifier
 from ongaku.kanban_ui.page1.page1_widget import Page1Widget
 from ongaku.kanban_ui.page2.page2_widget import Page2Widget
 
@@ -59,8 +58,6 @@ QPushButton:hover {{
 
         self.theme_box = ThemeBoxWidget(self)
         self.theme_box.hide()
-
-        self.toast_notifier = ToastNotifier(self)
 
     def setup_event(self) -> None:
         # 初始化 事件

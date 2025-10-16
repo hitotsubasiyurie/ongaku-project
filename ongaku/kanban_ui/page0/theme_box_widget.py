@@ -1,5 +1,5 @@
-from PySide6.QtCore import (Qt, QObject, QEvent, Signal, QModelIndex, QRect, QSize, )
-from PySide6.QtGui import (QFocusEvent, QPainter, QFocusEvent, QFont, QFontMetrics)
+from PySide6.QtCore import Qt, Signal, QModelIndex, QRect, QSize
+from PySide6.QtGui import QPainter, QFont, QFontMetrics
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QListWidget, QAbstractScrollArea, QListWidgetItem, 
     QStyledItemDelegate, QStyleOptionViewItem, QStyle, )
 

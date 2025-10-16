@@ -14,6 +14,8 @@ BUBBLE_LABEL_QSS = """
 
 class ToastNotifier(QWidget):
 
+    _instance: "ToastNotifier" = None
+
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
@@ -33,7 +35,9 @@ class ToastNotifier(QWidget):
         font.setPointSize(font.pointSize() - 1)
         self.setFont(font)
 
-    def show_message(self, text: str):
+        ToastNotifier._instance = self
+
+    def show_message(self, text: str) -> None:
 
         label = QLabel(text, self)
         # 高度固定
@@ -72,3 +76,11 @@ class ToastNotifier(QWidget):
         x = parent.width() - self.width()
         y = parent.height() - self.height()
         self.move(x, y)
+
+
+def toast_notify(text: str) -> None:
+    if not ToastNotifier._instance:
+        return
+    
+    ToastNotifier._instance.show_message(text)
+

@@ -4,9 +4,10 @@ from PIL import Image
 from PySide6.QtCore import Qt, QEvent, QObject, Signal, QByteArray, QBuffer
 from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShortcut, QKeySequence, 
     QGuiApplication, QFont)
-from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
+from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget, QApplication
 
 from ongaku.core.kanban import AlbumKanBan
+from ongaku.kanban_ui.utils import with_busy_cursor
 
 
 class CoverLabel(QLabel):
@@ -159,6 +160,7 @@ class CoverLabel(QLabel):
         y = parent.height() - self.height()
         self.move(x, y)
 
+    @with_busy_cursor
     def _on_image_pasted(self) -> None:
         # 不展示详情时 跳过
         if not self.is_show_detail:

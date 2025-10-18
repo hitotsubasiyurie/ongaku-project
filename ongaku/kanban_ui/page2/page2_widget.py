@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
 
 from ongaku.core.kanban import ThemeKanBan
 from ongaku.kanban_ui.toast_notifier import toast_notify
+from ongaku.kanban_ui.utils import with_busy_cursor
 from ongaku.kanban_ui.page2.play_table_view import PlayTableView
 from ongaku.kanban_ui.page2.music_player_bar import MusicPlayerBar
 
@@ -98,7 +99,8 @@ class Page2Widget(QWidget):
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(5000)
-        self._save_timer.timeout.connect(lambda: [toast_notify("saved metadata file !"), self.theme_kanban.save_metadata_file()])
+        self._save_timer.timeout.connect(lambda: [toast_notify("saved metadata file !"), 
+                                                  with_busy_cursor(self.theme_kanban.save_metadata_file)()])
 
         self.setup_ui()
         self.setup_event()

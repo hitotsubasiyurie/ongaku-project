@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan, ThemeKanBan
+from ongaku.kanban_ui.utils import with_busy_cursor
 from ongaku.kanban_ui.page0.theme_box_widget import ThemeBoxWidget
 from ongaku.kanban_ui.page1.page1_widget import Page1Widget
 from ongaku.kanban_ui.page2.page2_widget import Page2Widget
@@ -119,6 +120,7 @@ QPushButton:hover {{
             self.page_btn.move(0, 0)
             self.theme_btn.move(self.page_btn.width(), 0)
 
+    @with_busy_cursor
     def _on_theme_btn_clicked(self):
         if self.theme_box.isHidden():
             self.theme_box.set_kanban(self.kanban)
@@ -128,6 +130,7 @@ QPushButton:hover {{
         else:
             self.theme_box.hide()
 
+    @with_busy_cursor
     def _on_theme_box_selected(self) -> None:
         self.current_theme_kanban = self.kanban.get_theme_kanban(self.theme_box.selected_theme)
         self.setWindowTitle(f"KanBan - {self.current_theme_kanban.theme_name if self.current_theme_kanban else ''}")

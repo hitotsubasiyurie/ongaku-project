@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 
@@ -42,7 +44,7 @@ class ToastNotifier(QWidget):
 
     def show_message(self, text: str) -> None:
 
-        label = QLabel(text, self)
+        label = QLabel(f"{datetime.now().strftime("%H:%M:%S")} {text}", self)
         # 高度固定
         label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         label.setStyleSheet(BUBBLE_LABEL_QSS)

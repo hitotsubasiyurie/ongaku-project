@@ -16,6 +16,7 @@ from ongaku.utils.audiofile_utils import analyze_resource_track
 from ongaku.utils.basemodel_utils import tracks_assignment
 from ongaku.core.kanban import ThemeKanBan, track_filenames
 from ongaku.kanban_ui.toast_notifier import toast_notify
+from ongaku.kanban_ui.utils import with_busy_cursor
 from ongaku.kanban_ui.page1.album_table_view import AlbumTableView
 from ongaku.kanban_ui.page1.check_message_box import CheckMessageBox
 from ongaku.kanban_ui.page1.link_combo_box import LinkComboBox
@@ -94,7 +95,8 @@ class Page1Widget(QWidget):
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(10000)
-        self._save_timer.timeout.connect(lambda: [toast_notify("saved metadata file !"), self.theme_kanban.save_metadata_file()])
+        self._save_timer.timeout.connect(lambda: [toast_notify("saved metadata file !"), 
+                                                  with_busy_cursor(self.theme_kanban.save_metadata_file)()])
 
         self.setup_ui()
         self.setup_event()
@@ -110,6 +112,7 @@ class Page1Widget(QWidget):
 
     # 内部方法
 
+    @with_busy_cursor
     def _on_album_view_selected(self, *args, **kwargs) -> None:
         rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
         if not rows:
@@ -150,7 +153,7 @@ class Page1Widget(QWidget):
         if not rows or not self.theme_kanban:
             return
         
-        sources = ",".join(["amazonmusic","applemusic","itunes","kkbox","lastfm","musicbrainz","ototoy","discogs","soundcloud"])
+        sources = ",".join(["amazonmusic","applemusic","itunes","ototoy","kkbox","lastfm","musicbrainz","discogs","soundcloud"])
         country = "jp"
 
         for p in map(self.album_table_view.item_model.layout_ps.__getitem__, rows):
@@ -266,6 +269,7 @@ Average Similarity:\t{aver_similarity:.02f}
         accept = check_msg.exec() == QMessageBox.StandardButton.Yes
         return accept 
 
+    @with_busy_cursor
     def _on_image_pasted(self, data: bytes) -> None:
         if not self.cover_label.album_kanban:
             return

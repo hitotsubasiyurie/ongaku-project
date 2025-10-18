@@ -7,6 +7,7 @@ os.chdir(Path(__file__).parent.parent)
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan
@@ -35,9 +36,7 @@ if __name__ == "__main__":
             app.quit()
             sys.exit(0)
 
-    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
     widget = Page0Widget()
-    widget.set_kanban(kanban)
     ToastNotifier(parent=widget)
 
     screen = app.screens()[0]
@@ -49,6 +48,11 @@ if __name__ == "__main__":
     widget.show()
 
     widget.showMaximized()
+
+    QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
+    widget.set_kanban(kanban)
+    QApplication.restoreOverrideCursor()
 
     sys.exit(app.exec())
 

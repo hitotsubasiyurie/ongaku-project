@@ -11,7 +11,7 @@ temp_directory = "D:\\ongaku-tmp"
 metadata_directory = "D:\\ongaku-metadata"
 
 # Directory for storing album audio files
-resource_directory = "D:\\移动云盘同步盘\\ongaku-resource"
+resource_directory = "D:\\ongaku-resource"
 
 # Visual theme for the interface. Options: "dark" or "light"
 ui_color_theme = "light"

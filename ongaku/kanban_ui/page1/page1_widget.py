@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import itertools
+import webbrowser
 from pathlib import Path
 from typing import Callable
 
@@ -72,15 +73,17 @@ class Page1Widget(QWidget):
         # album_table_view 右键菜单动作
         self.album_table_view.action_edit_clicked.connect(self._open_metadata_file)
         self.album_table_view.action_locate_clicked.connect(self._locate_album)
+        self.album_table_view.action_search_cover_clicked.connect(self._search_cover)
         # view 编辑数据
         self.track_table_view.item_model.dataChanged.connect(self._save_timer.start)
         self.album_table_view.item_model.dataChanged.connect(self._save_timer.start)
+        self.cover_label.image_pasted.connect(self._on_image_pasted)
 
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
         QShortcut(Qt.Key.Key_Escape, self, activated=
             lambda: [x.clear() for x in [self.album_field, self.catno_field, self.date_field]])
-        QShortcut(Qt.Key.Key_QuoteLeft, self, activated=self.cover_label.toggle_transparent)
+        QShortcut(Qt.Key.Key_QuoteLeft, self, activated=self.cover_label.toggle_detail_show)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -101,10 +104,9 @@ class Page1Widget(QWidget):
         self.theme_kanban = theme_kanban
         # 清空搜索框
         [x.clear() for x in [self.album_field, self.catno_field, self.date_field]]
-        self.cover_label.clear()
+        self.cover_label.set_album_kanban(None)
         self.album_table_view.item_model.reset_theme_kanban(theme_kanban)
         self.track_table_view.item_model.reset_album_kanban(None)
-
 
     # 内部方法
 
@@ -142,6 +144,21 @@ class Page1Widget(QWidget):
         res_dir = self.theme_kanban.album_kanbans[p].album_dir
         if os.path.exists(res_dir):
             subprocess.run(f'explorer "{res_dir}"')
+
+    def _search_cover(self) -> None:
+        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
+        if not rows or not self.theme_kanban:
+            return
+        
+        sources = ",".join(["amazonmusic","applemusic","itunes","kkbox","lastfm","musicbrainz","ototoy","discogs","soundcloud"])
+        country = "jp"
+
+        for p in map(self.album_table_view.item_model.layout_ps.__getitem__, rows):
+            album = self.theme_kanban.album_kanbans[p].album.album
+            url = f"https://www.google.com/search?q={album}&udm=2"
+            webbrowser.open(url)
+            url = f"https://covers.musichoarders.xyz/?sources={sources}&country={country}&album={album}"
+            webbrowser.open(url)
 
     def _on_paths_dropped(self, dropped_strs: list[str]) -> None:
         # selectedIndexes 以索引为单位，一行多个
@@ -181,6 +198,7 @@ class Page1Widget(QWidget):
                 [self._putaway_cover_file(dropped_paths[0], d) for d in album_dirs]
             # 更新视图
             [self.theme_kanban.album_kanbans[p].__post_init__() for p in ps]
+            self.album_table_view.viewport().update()
             self.cover_label.set_album_kanban(self.theme_kanban.album_kanbans[p])
             return
         
@@ -194,6 +212,7 @@ class Page1Widget(QWidget):
             else:
                 self._putaway_track_files(dropped_paths, album_dirs[0], albums[0])
             self.theme_kanban.album_kanbans[ps[0]].__post_init__()
+            self.album_table_view.viewport().update()
             self.track_table_view.viewport().update()
 
     def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
@@ -246,4 +265,19 @@ Average Similarity:\t{aver_similarity:.02f}
         # 阻塞
         accept = check_msg.exec() == QMessageBox.StandardButton.Yes
         return accept 
+
+    def _on_image_pasted(self, data: bytes) -> None:
+        if not self.cover_label.album_kanban:
+            return
+
+        cover = self.cover_label.album_kanban.cover
+        if cover:
+            if not self._show_check_message("Check Again", "Replace cover?"):
+                return
+            os.unlink(cover)
+
+        Path(self.cover_label.album_kanban.album_dir, "cover.png").write_bytes(data)
+        self.cover_label.album_kanban.__post_init__()
+        self.album_table_view.viewport().update()
+        self.cover_label.set_album_kanban(self.cover_label.album_kanban)
 

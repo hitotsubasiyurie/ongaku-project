@@ -210,6 +210,7 @@ class AlbumTableView(QTableView):
 
     action_edit_clicked = Signal()
     action_locate_clicked = Signal()
+    action_search_cover_clicked = Signal()
 
     def setup_context_menu(self) -> None:
         # 初始化 右键菜单
@@ -219,6 +220,9 @@ class AlbumTableView(QTableView):
         self.addAction(action)
         action = QAction("Locate Resource", self)
         action.triggered.connect(self.action_locate_clicked.emit)
+        self.addAction(action)
+        action = QAction("Search Cover", self)
+        action.triggered.connect(self.action_search_cover_clicked.emit)
         self.addAction(action)
 
     def __init__(self, parent: QWidget = None) -> None:

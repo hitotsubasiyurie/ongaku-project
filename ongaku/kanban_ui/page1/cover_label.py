@@ -1,8 +1,9 @@
 import os
 from PIL import Image
 
-from PySide6.QtCore import Qt, QEvent, QObject
-from PySide6.QtGui import QPixmap, QPalette
+from PySide6.QtCore import Qt, QEvent, QObject, Signal, QByteArray, QBuffer
+from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShortcut, QKeySequence, 
+    QGuiApplication, QFont)
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from ongaku.core.kanban import AlbumKanBan
@@ -10,103 +11,163 @@ from ongaku.core.kanban import AlbumKanBan
 
 class CoverLabel(QLabel):
 
+    image_pasted = Signal(bytes)
+
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
+        self.album_kanban: AlbumKanBan = None
+        # 封面
         self.pix: QPixmap = None
+        # 缩放的封面
+        self.scaled_pix: QPixmap = None
+        # 封面信息
         self.image_info: str = None
+        # 是否展示详情
+        self.is_show_detail: bool = None
 
         # 透明效果
         self.opacity_effect = QGraphicsOpacityEffect(self)
-        self.opacity_effect.setOpacity(0.2)
         self.setGraphicsEffect(self.opacity_effect)
 
-        # 鼠标事件透传
-        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.raise_()
+        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+        self.toggle_detail_show(False)
 
-        # 对齐
-        self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
-        # 信息标签
-        self.info_label = QLabel(self)
-        self.info_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        self.info_label.hide()
-        # info_label 字体 黑色
-        palette = self.info_label.palette()
-        palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.black)
-        self.info_label.setPalette(palette)
-
-        # info_label 字体 粗体
-        font = self.info_label.font()
-        font.setBold(True)
-        self.info_label.setFont(font)
-
-        # 监听父类
+        # 监听父类大小变化
         parent.installEventFilter(self)
 
-    def set_album_kanban(self, album_kanban: AlbumKanBan) -> None:
-        cover = album_kanban.cover
-        if not cover:
-            self.clear()
-            return
+        # 快捷键
+        QShortcut(QKeySequence("Ctrl+V"), self, activated=self._on_image_pasted)
 
-        with Image.open(cover) as img:
-            info = {"filename": os.path.basename(cover), "format": img.format, "mode": img.mode,
-                    "resolution": img.size, "file_size": "{:.2f} MiB".format(os.path.getsize(cover) /1024/1024)}
+    def set_album_kanban(self, album_kanban: AlbumKanBan | None) -> None:
+        self.album_kanban = album_kanban
 
-        _len = max(map(len, info.keys()))
-        text = "\n".join(f"{k.ljust(_len)}: {v}" for k, v in info.items())
-        self.info_label.setText(text)
-        # 适应文本大小
-        self.info_label.adjustSize()
+        # 无封面时
+        if not album_kanban or not (cover:= album_kanban.cover):
+            self.pix, self.scaled_pix, self.image_info = None, None, None
 
-        self.pix = QPixmap(cover)
+        # 有封面时
+        else:
+            self.pix = QPixmap(cover)
+            self.scaled_pix = None
+
+            with Image.open(cover) as img:
+                info = {"filename": os.path.basename(cover), "format": img.format, "mode": img.mode, "resolution": img.size, 
+                        "file_size": "{:.2f} MiB".format(os.path.getsize(cover) / 1024 / 1024)}
+
+            _len = max(map(len, info.keys()))
+            self.image_info = "\n".join(f"{k.ljust(_len)}: {v}" for k, v in info.items())
 
         self._set_geometry()
 
-# TODO: 改成 show
-    def toggle_transparent(self, transparent: bool = None) -> None:
-        if transparent is None:
-            transparent = self.opacity_effect.opacity() == 1
-        
-        # 存在封面时，才非透明化
-        if not transparent and self.pix:
+        self.update()
+
+    def toggle_detail_show(self, is_show_detail: bool = None) -> None:
+        if is_show_detail is None:
+            self.is_show_detail = not self.is_show_detail
+
+        if self.is_show_detail:
             self.opacity_effect.setOpacity(1)
-            self.info_label.show()
+            # 拦截鼠标事件
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
         else:
             self.opacity_effect.setOpacity(0.2)
-            self.info_label.hide()
+            # 鼠标事件透传
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+
+        self.update()
 
     # 重写方法
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        # 布局存在元素时才需要适应位置
-        if self.pix and obj == self.parent():
+        # 父控件大小变化时，更新布局
+        if obj == self.parent():
             if event.type() in (QEvent.Type.Resize, QEvent.Type.Move):
                 self._set_geometry()
         return super().eventFilter(obj, event)
 
-    def clear(self) -> None:
-        self.pix = None
-        self.image_info = None
-        self.info_label.clear()
-        self.opacity_effect.setOpacity(0.2)
-        return super().clear()
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+
+        if not self.album_kanban:
+            return
+        
+        margin = 5
+        text_rect = self.rect().adjusted(margin, margin, -margin, -margin)
+        painter = QPainter(self)
+
+        # 有封面 展示详情 时
+        if self.pix and self.is_show_detail:
+            painter.drawPixmap(0, 0, self.scaled_pix)
+
+            font = painter.font()
+            font.setPointSize(font.pointSize() + 2)
+            text_flags = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop | Qt.TextFlag.TextWordWrap
+
+            painter.setPen(Qt.GlobalColor.white)
+            font.setWeight(QFont.Weight.Black)
+            painter.setFont(font)
+            painter.drawText(text_rect, text_flags, self.image_info)
+
+            painter.setPen(Qt.GlobalColor.black)
+            font.setWeight(QFont.Weight.Thin)
+            painter.setFont(font)
+            painter.drawText(text_rect, text_flags, self.image_info)
+
+        # 无封面 展示详情 时
+        elif not self.pix and self.is_show_detail:
+            painter.fillRect(self.rect(), QColor(200, 200, 200))
+            brush = QBrush(QColor(100, 100, 100), Qt.BrushStyle.FDiagPattern)
+            painter.fillRect(self.rect(), brush)
+
+            painter.setPen(Qt.GlobalColor.black)
+            font = painter.font()
+            font.setPointSize(font.pointSize() + 2)
+            painter.setFont(font)
+            painter.drawText(text_rect, 
+                             Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, 
+                             "Ctrl + V to paste image")
+
+        # 有封面 不展示详情 时
+        elif self.pix and not self.is_show_detail:
+            painter.drawPixmap(0, 0, self.scaled_pix)
+
+        # 无封面 不展示详情 时
+        else:
+            # 空白
+            pass
 
     # 内部方法
 
-    def _set_geometry(self):
+    def _set_geometry(self) -> None:
         parent: QWidget = self.parent()
 
-        # 缩放适配
-        scaled = self.pix.scaled(parent.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        self.setPixmap(scaled)
-        self.resize(scaled.size())
-        self.info_label.move(5, 5)
+        if self.pix:
+            # 仅在需要时缩放封面
+            if not self.scaled_pix or (self.scaled_pix.width() != parent.width() and self.scaled_pix.height() != parent.height()):
+                self.scaled_pix = self.pix.scaled(parent.size(), 
+                                                Qt.AspectRatioMode.KeepAspectRatio, 
+                                                Qt.TransformationMode.SmoothTransformation)
+            self.resize(self.scaled_pix.size())
+        else:
+            l = min(parent.size().toTuple())
+            self.resize(l, l)
 
-        # 坐标 是相对于父类的
+        # 坐标是相对于父类的
         x = parent.width() - self.width()
         y = parent.height() - self.height()
         self.move(x, y)
 
+    def _on_image_pasted(self) -> None:
+        # 不展示详情时 跳过
+        if not self.is_show_detail:
+            return
+        
+        img = QGuiApplication.clipboard().image()
+        if not img.isNull():
+            ba = QByteArray()
+            buffer = QBuffer(ba)
+            buffer.open(QBuffer.OpenModeFlag.WriteOnly)
+            img.save(buffer, "PNG")
+            self.image_pasted.emit(bytes(ba))

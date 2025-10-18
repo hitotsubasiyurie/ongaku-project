@@ -112,7 +112,6 @@ class Page1Widget(QWidget):
 
     # 内部方法
 
-    @with_busy_cursor
     def _on_album_view_selected(self, *args, **kwargs) -> None:
         rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
         if not rows:

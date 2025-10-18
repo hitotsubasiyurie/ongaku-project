@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from PySide6.QtCore import QModelIndex, Qt, QObject, Signal
@@ -155,7 +156,9 @@ class PlayTableItemModel(CustomTableItemModel):
     def _apply_filters(self) -> None:
         self.layout_ps = []
         for p, (i, j) in enumerate(self.kanban_ij):
-            if all(pat.search(self._get_data(Qt.ItemDataRole.EditRole, c, i, j)) for c, pat in self.filters.items()):
+            # 全字包含 或 正则匹配
+            if all((t in self._get_data(Qt.ItemDataRole.EditRole, c, i, j) or re.search(t, self._get_data(Qt.ItemDataRole.EditRole, c, i, j))) 
+                   for c, t in self.filters.items()):
                 self.layout_ps.append(p)
         
         # 应用排序

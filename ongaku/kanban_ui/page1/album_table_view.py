@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData
@@ -138,7 +139,9 @@ class AlbumTableItemModel(CustomTableItemModel):
     def _apply_filters(self) -> None:
         self.layout_ps = []
         for p in range(len(self.theme_kanban.album_kanbans)):
-            if all(pat.search(self._get_data(c, p)) for c, pat in self.filters.items()):
+            # 全字包含 或 正则匹配
+            if all((t in self._get_data(c, p) or re.search(t, self._get_data(c, p))) 
+                   for c, t in self.filters.items()):
                 self.layout_ps.append(p)
         
         # 应用排序

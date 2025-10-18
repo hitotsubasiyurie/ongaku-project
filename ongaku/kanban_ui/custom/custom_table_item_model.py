@@ -1,4 +1,3 @@
-import re
 from typing import Any
 
 from PySide6.QtCore import QModelIndex, Qt, QAbstractItemModel, QObject, QTimer
@@ -16,7 +15,7 @@ class CustomTableItemModel(QAbstractItemModel):
         # 排序状态
         self.sort_args: tuple[int, Qt.SortOrder] = (0, Qt.SortOrder.AscendingOrder)
         # 过滤
-        self.filters: dict[int, re.Pattern] = {}
+        self.filters: dict[int, str] = {}
 
         # 过滤 防抖定时器
         self._filter_timer = QTimer(self)
@@ -100,10 +99,7 @@ class CustomTableItemModel(QAbstractItemModel):
 
     def set_filter(self, column: int, text: str) -> None:
         if text:
-            try:
-                self.filters[column] = re.compile(text, re.IGNORECASE)
-            except re.error:
-                self.filters.pop(column, None)
+            self.filters[column] = text
         else:
             self.filters.pop(column, None)
         

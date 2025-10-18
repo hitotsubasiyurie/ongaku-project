@@ -41,6 +41,7 @@ class CoverLabel(QLabel):
         # 快捷键
         QShortcut(QKeySequence("Ctrl+V"), self, activated=self._on_image_pasted)
 
+    @with_busy_cursor
     def set_album_kanban(self, album_kanban: AlbumKanBan | None) -> None:
         self.album_kanban = album_kanban
 

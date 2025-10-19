@@ -19,7 +19,7 @@ set PYTHONPATH=E:\my\ongaku-project
 
 python -m nuitka E:\my\ongaku-project\src\toolkit\main.py --onefile
 
-python -m nuitka E:\my\ongaku-project\src\kanban\main.py --standalone --enable-plugin=pyside6
+python -m nuitka E:\my\ongaku-project\ongaku\kanban_ui\main.py --standalone --enable-plugin=pyside6
 
 ```
 

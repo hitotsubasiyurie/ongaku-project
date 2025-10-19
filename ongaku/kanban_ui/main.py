@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 # 指定运行目录
-os.chdir(Path(__file__).parent.parent)
+os.chdir(Path(sys.argv[0]).parent.parent)
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon

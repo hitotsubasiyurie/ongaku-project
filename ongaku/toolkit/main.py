@@ -4,7 +4,7 @@ import importlib.util
 from pathlib import Path
 
 # 指定运行目录
-os.chdir(Path(__file__).parent.parent)
+os.chdir(Path(sys.argv[0]).parent.parent)
 
 from ongaku.core.logger import set_logger_output
 from ongaku.core.settings import global_settings

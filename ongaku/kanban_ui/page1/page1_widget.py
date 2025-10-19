@@ -279,6 +279,7 @@ Average Similarity:\t{aver_similarity:.02f}
                 return
             os.unlink(cover)
 
+        os.makedirs(self.cover_label.album_kanban.album_dir, exist_ok=True)
         Path(self.cover_label.album_kanban.album_dir, "cover.png").write_bytes(data)
         self.cover_label.album_kanban.__post_init__()
         self.album_table_view.viewport().update()

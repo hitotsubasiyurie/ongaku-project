@@ -31,14 +31,14 @@ class Page0Widget(QWidget):
         self.page2 = Page2Widget()
         self.stack.addWidget(self.page2)
 
-        self.page_btn_icons = [QIcon(f"./kanban_ui/assets/{global_settings.ui_color_theme}/page_next.png"), 
-                               QIcon(f"./kanban_ui/assets/{global_settings.ui_color_theme}/page_prev.png")]
+        self.page_btn_icons = [QIcon(f"./assets/{global_settings.ui_color_theme}/page_next.png"), 
+                               QIcon(f"./assets/{global_settings.ui_color_theme}/page_prev.png")]
         self.page_btn = QPushButton(parent=self)
         self.page_btn.setIcon(self.page_btn_icons[0])
         self.page_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_btn.setIconSize(self.page_btn.size())
 
-        self.theme_btn = QPushButton(QIcon(f"./kanban_ui/assets/{global_settings.ui_color_theme}/details.png"), "", parent=self)
+        self.theme_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/details.png"), "", parent=self)
         self.theme_btn.setFixedSize(fh*1.5, fh*1.5)
         self.theme_btn.setIconSize(self.theme_btn.size())
 

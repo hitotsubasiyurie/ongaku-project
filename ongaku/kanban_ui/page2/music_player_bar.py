@@ -34,18 +34,18 @@ class MusicPlayerBar(QWidget):
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.time_label.setFixedSize(fh * 6, fh * 1.5)
 
-        self.prev_btn = QPushButton(QIcon(f"./kanban_ui/assets/{global_settings.ui_color_theme}/play_prev.png"), "")
+        self.prev_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/play_prev.png"), "")
         self.prev_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.prev_btn.setIconSize(self.prev_btn.size())
 
-        self.play_btn_icons = [QIcon(f"./kanban_ui/assets/{global_settings.ui_color_theme}/play.png"), 
-                               QIcon(f"./kanban_ui/assets/{global_settings.ui_color_theme}/pause.png")]
+        self.play_btn_icons = [QIcon(f"./assets/{global_settings.ui_color_theme}/play.png"), 
+                               QIcon(f"./assets/{global_settings.ui_color_theme}/pause.png")]
         self.play_btn = QPushButton()
         self.play_btn.setIcon(self.play_btn_icons[0])
         self.play_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.play_btn.setIconSize(self.play_btn.size())
 
-        self.next_btn = QPushButton(QIcon(f"./kanban_ui/assets/{global_settings.ui_color_theme}/play_next.png"), "")
+        self.next_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/play_next.png"), "")
         self.next_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.next_btn.setIconSize(self.next_btn.size())
 

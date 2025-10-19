@@ -2,8 +2,12 @@ import os
 import sys
 from pathlib import Path
 
-# 指定运行目录
-os.chdir(Path(sys.argv[0]).parent.parent)
+executable = Path(sys.argv[0])
+# 指定运行目录 当前父目录
+os.chdir(executable.parent)
+# 若是源码运行 添加导包路径
+if executable.suffix == ".py":
+    sys.path[0] = str(executable.parent.parent.parent)
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
@@ -19,7 +23,7 @@ from ongaku.kanban_ui.color_theme import current_theme
 
 if __name__ == "__main__":
     app = QApplication([])
-    app.setWindowIcon(QIcon("./kanban_ui/assets/icon.png"))
+    app.setWindowIcon(QIcon("./assets/icon.png"))
 
     QApplication.setStyle("Fusion")
     current_theme.apply_theme(app)

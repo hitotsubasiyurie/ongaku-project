@@ -99,7 +99,7 @@ class PlayTableItemModel(CustomTableItemModel):
         # 列表头 播放中 仅展示装饰图标
         if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_ij[self.layout_ps[section]] == self.playing_ij:
             if role == Qt.ItemDataRole.DecorationRole:
-                return QIcon(f"./kanban_ui/assets/playing.png")
+                return QIcon(f"./assets/playing.png")
             else:
                 return
         

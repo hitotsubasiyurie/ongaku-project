@@ -17,7 +17,7 @@ cd /d E:\my\ongaku-project-nuitka
 
 set PYTHONPATH=E:\my\ongaku-project
 
-python -m nuitka E:\my\ongaku-project\ongaku\kanban_ui\main.py --standalone --enable-plugin=pyside6
+pythonw -m nuitka E:\my\ongaku-project\ongaku\kanban_ui\main.py --standalone --enable-plugin=pyside6 –-include-data-dir=E:\my\ongaku-project\ongaku\kanban_ui\assets=assets
 
 ```
 

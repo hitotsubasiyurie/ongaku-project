@@ -11,14 +11,25 @@ set https_proxy=http://127.0.0.1:10808
 
 ```sh
 
-conda activate env2
+conda activate ongaku
 
-cd /d E:\my\ongaku-project-nuitka
+cd /d E:\my\ongaku-project
 
-set PYTHONPATH=E:\my\ongaku-project
+set PYTHONPATH=.
 
-pythonw -m nuitka E:\my\ongaku-project\ongaku\kanban_ui\main.py --standalone --enable-plugin=pyside6 –-include-data-dir=E:\my\ongaku-project\ongaku\kanban_ui\assets=assets
+python -m nuitka .\ongaku\kanban_ui\main.py ^
+--standalone ^
+--enable-plugin=pyside6 ^
+--include-data-dir=.\ongaku\kanban_ui\assets=assets ^
+--windows-icon-from-ico=.\ongaku\kanban_ui\assets\icon.png ^
+--output-filename=kanban.exe ^
+--force-stdout-spec={PROGRAM_BASE}.out.txt ^
+--force-stderr-spec={PROGRAM_BASE}.err.txt ^
+--output-dir=..\ongaku-build
+--include-qt-plugins=multimedia ^
 
+
+--windows-console-mode=disable ^
 ```
 
 ```sh

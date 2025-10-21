@@ -55,5 +55,5 @@ jobs:
       with:
         name: ongaku-kanban-${{ runner.os }}
         path: |
-          build/main.dist/**
+          build/test.dist/**
         include-hidden-files: true

@@ -1,0 +1,57 @@
+name: Nuitka Build
+
+on:
+  # 手动触发
+  workflow_dispatch:
+
+jobs:
+  # windows 编译任务
+  build-windows:
+    # 指定任务运行操作系统
+    runs-on: windows-latest
+
+    steps:
+
+    # 检出仓库代码
+    - name: Checkout code
+      # https://github.com/actions/checkout/tree/v5/
+      uses: actions/checkout@v5
+
+    # 配置虚拟环境
+    - name: Set up Python
+      # https://github.com/actions/setup-python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: '.\requirements.txt'
+
+    - name: Install Python Dependencies
+      run: pip install -r .\requirements.txt
+
+    - run: set PYTHONPATH=.
+
+    - name: Build Windows Executable
+      uses: Nuitka/Nuitka-Action@main
+      # https://github.com/Nuitka/Nuitka-Action/blob/main/action.yml
+      with:
+        nuitka-version: main
+        script-name: .\test.py
+        mode: standalone
+        enable-plugins: pyside6
+        windows-console-mode: disable
+        windows-icon-from-ico: .\ongaku\kanban_ui\assets\icon.png
+        force-stdout-spec: "{PROGRAM_BASE}.out.txt"
+        force-stderr-spec: "{PROGRAM_BASE}.err.txt"
+        include-data-dir: |
+          ./ongaku/kanban_ui/assets=assets
+        include-qt-plugins: multimedia
+        output-file: kanban.exe
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ongaku-kanban-${{ runner.os }}
+        path: |
+          build/main.dist/**
+        include-hidden-files: true

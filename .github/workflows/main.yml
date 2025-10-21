@@ -46,8 +46,7 @@ jobs:
         include-data-dir: |
           ./ongaku/kanban_ui/assets=assets
         include-qt-plugins: multimedia
-        extra-options: >
-          --output-filename=kanban.exe
+        output-file: kanban.exe
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4

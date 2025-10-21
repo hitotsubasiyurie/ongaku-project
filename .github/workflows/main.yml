@@ -33,6 +33,7 @@ jobs:
 
     - name: Build Windows Executable
       uses: Nuitka/Nuitka-Action@main
+      # https://github.com/Nuitka/Nuitka-Action/blob/main/action.yml
       with:
         nuitka-version: main
         script-name: .\ongaku\kanban_ui\main.py
@@ -40,20 +41,18 @@ jobs:
         enable-plugins: pyside6
         windows-console-mode: disable
         windows-icon-from-ico: .\ongaku\kanban_ui\assets\icon.png
-        output-filename: kanban.exe
         force-stdout-spec: "{PROGRAM_BASE}.out.txt"
         force-stderr-spec: "{PROGRAM_BASE}.err.txt"
         include-data-dir: |
           ./ongaku/kanban_ui/assets=assets
         include-qt-plugins: multimedia
+        extra-options: >
+          --output-filename=kanban.exe
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ runner.os }} Build
+        name: ongaku-kanban-${{ runner.os }}
         path: |
-          build/*.exe
-          build/*.bin
-          build/*.app/**/*
-          build/*.dist/**/*
+          build/*.dist/**
         include-hidden-files: true

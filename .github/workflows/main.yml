@@ -1,4 +1,4 @@
-name: Nuitka Build
+name: Ongaku Build By Nuitka
 
 on:
   # 手动触发
@@ -48,10 +48,13 @@ jobs:
         include-qt-plugins: multimedia
         output-file: kanban.exe
 
+    - run: tree /f .
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ongaku-kanban-${{ runner.os }}
+        # main.py -> main.dist
         path: |
-          build/*.dist/**
+          build/main.dist/**
         include-hidden-files: true

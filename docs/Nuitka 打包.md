@@ -27,9 +27,24 @@ python -m nuitka .\ongaku\kanban_ui\main.py ^
 --force-stderr-spec={PROGRAM_BASE}.err.txt ^
 --output-dir=..\ongaku-build
 --include-qt-plugins=multimedia ^
-
-
 --windows-console-mode=disable ^
+
+
+
+
+python -m nuitka .\ongaku\toolkit\main.py ^
+--standalone ^
+--include-package=ongaku.toolkit.plugin ^
+--windows-icon-from-ico=.\ongaku\kanban_ui\assets\cmd.png ^
+--output-filename=toolkit.exe ^
+--force-stdout-spec={PROGRAM_BASE}.out.txt ^
+--force-stderr-spec={PROGRAM_BASE}.err.txt ^
+--output-dir=..\ongaku-build-toolkit
+
+
+
+
+
 ```
 
 ```sh

@@ -5,6 +5,7 @@ from pathlib import Path
 executable = Path(sys.argv[0])
 # 指定运行目录 当前父目录
 os.chdir(executable.parent)
+
 # 若是源码运行 添加导包路径
 if executable.suffix == ".py":
     sys.path[0] = str(executable.parent.parent.parent)

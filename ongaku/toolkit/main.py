@@ -4,15 +4,20 @@ import uuid
 import importlib.util
 from pathlib import Path
 
-# 指定运行目录
-os.chdir(Path(sys.argv[0]).parent.parent)
+executable = Path(sys.argv[0])
+# 指定运行目录 当前父目录
+os.chdir(executable.parent)
+
+# 若是源码运行 添加导包路径
+if executable.suffix == ".py":
+    sys.path[0] = str(executable.parent.parent.parent)
 
 from ongaku.core.logger import set_logger_output
 from ongaku.core.settings import global_settings
 from ongaku.toolkit.toolkit_utils import loop_for_actions
 
 
-PLUGIN_DIR = Path("./toolkit/plugin")
+PLUGIN_DIR = Path("./plugin")
 
 
 def main():

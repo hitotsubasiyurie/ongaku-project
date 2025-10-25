@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Literal, ClassVar
+from typing import Any, Literal
 
 import rtoml
 import tomli_w
@@ -11,42 +11,40 @@ SETTINGS_FILE = Path("./settings.toml")
 
 class _GlobalSettings(BaseModel, validate_assignment=True):
 
-    # 支持的语言
-    SUPPORTED_LANGS: ClassVar[list[str]] = ["en", "zh", "ja"]
     # 控制 自动保存
     _auto_save: bool = False
 
-    log_level: Literal["en", "zh", "ja"] = Field(
-        default="en", 
-        description='Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese)'
+    log_level: Literal[1, 2, 3, 4] = Field(
+        default=2, 
+        description='Options: 1 (debug), 2 (info), 3 (warning), 4 (error)'
     )
 
-    language: Literal["en", "zh", "ja"] = Field(
+    language: Literal["en", "zh", "ja", "ko"] = Field(
         default="en", 
-        description='Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese)'
+        description='Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese), "ko" (Korean)'
     )
 
     temp_directory: str = Field(
-        default="./ongaku-temp", 
-        description="Directory for storing temporary files (logs, cache, etc.)",
+        default="D:\\ongaku-tmp", 
+        description=r'Directory for storing temporary files (logs, cache, etc.), e.g. "D:\\ongaku-tmp"',
         min_length=1
     )
 
     metadata_directory: str = Field(
-        default="./ongaku-metadata", 
-        description="Directory for storing album metadata files",
+        default="D:\\ongaku-metadata", 
+        description=r'Directory for storing album metadata files, e.g. "D:\\ongaku-metadata"',
         min_length=1
     )
 
     resource_directory: str = Field(
-        default="./ongaku-resource", 
-        description="Directory for storing album audio files",
+        default="D:\\ongaku-resource", 
+        description=r'Directory for storing album audio files, e.g. "D:\\ongaku-resource"',
         min_length=1
     )
 
     ui_color_theme: Literal["dark", "light"] = Field(
         default="dark", 
-        description='Visual theme for the interface. Options: "dark" or "light"'
+        description='Visual theme for the interface. Options: "dark", "light"'
     )
 
     ui_font_size: int = Field(
@@ -63,6 +61,7 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
 
     @classmethod
     def load(cls) -> "_GlobalSettings":
+        # 生成配置文件
         if not SETTINGS_FILE.exists():
             obj = cls()
             obj.save()
@@ -75,7 +74,7 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
             print(f"Failed to parse settings file. {text} {e}")
             return cls()
         
-        # 逐个字段校验
+        # 非法字段使用默认值
         obj = cls()
         for name, _ in _GlobalSettings.model_fields.items():
             if name not in data:

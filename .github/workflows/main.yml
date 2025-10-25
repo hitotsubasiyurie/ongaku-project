@@ -44,10 +44,16 @@ jobs:
         force-stdout-spec: "{PROGRAM_BASE}.out.txt"
         force-stderr-spec: "{PROGRAM_BASE}.err.txt"
         include-data-dir: |
-          ./ongaku/kanban_ui/assets=assets
+          .\ongaku\kanban_ui\assets=assets
         include-qt-plugins: multimedia
         output-file: kanban.exe
 
+    # 生成配置文件
+    - name: Generate Config File
+      working-directory: .\build\main.dist
+      run: python ".\ongaku\core\settings.py"
+
+    # 用于调试
     - run: tree /f .
 
     - name: Upload Artifact
@@ -56,5 +62,5 @@ jobs:
         name: ongaku-kanban-${{ runner.os }}
         # main.py -> main.dist
         path: |
-          build/main.dist/**
+          .\build\main.dist\**
         include-hidden-files: true

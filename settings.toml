@@ -1,0 +1,23 @@
+# Options: 1 (debug), 2 (info), 3 (warning), 4 (error)
+log_level = 1
+
+# Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese), "ko" (Korean)
+language = "en"
+
+# Directory for storing temporary files (logs, cache, etc.), e.g. "D:\\ongaku-tmp"
+temp_directory = "D:\\ongaku-tmp"
+
+# Directory for storing album metadata files, e.g. "D:\\ongaku-metadata"
+metadata_directory = "D:\\ongaku-metadata"
+
+# Directory for storing album audio files, e.g. "D:\\ongaku-resource"
+resource_directory = "D:\\ongaku-resource"
+
+# Visual theme for the interface. Options: "dark", "light"
+ui_color_theme = "dark"
+
+# Base font size for the user interface (in points)
+ui_font_size = 9
+
+# Font family used throughout the interface. Recommended: "JetBrains Mono"
+ui_font_family = "JetBrains Mono"

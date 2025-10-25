@@ -43,7 +43,7 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
     )
 
     ui_color_theme: Literal["dark", "light"] = Field(
-        default="dark", 
+        default="light", 
         description='Visual theme for the interface. Options: "dark", "light"'
     )
 

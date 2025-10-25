@@ -12,7 +12,7 @@ from ongaku.kanban_ui.toast_notifier import toast_notify
 from ongaku.kanban_ui.utils import with_busy_cursor
 
 
-OPACITY_CYCLE = itertools.cycle([0, 0.2, 1])
+OPACITY_CYCLE = itertools.cycle([0, 0.2, 1, 0.2])
 
 
 class CoverLabel(QLabel):

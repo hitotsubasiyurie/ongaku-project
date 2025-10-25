@@ -16,7 +16,6 @@ from PySide6.QtCore import Qt
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan
-from ongaku.kanban_ui.init_settings_dialog import InitSettingsDialog
 from ongaku.kanban_ui.toast_notifier import ToastNotifier
 from ongaku.kanban_ui.page0.page0_widget import Page0Widget
 from ongaku.kanban_ui.color_theme import current_theme
@@ -33,13 +32,6 @@ if __name__ == "__main__":
     global_settings.ui_font_size and font.setPointSize(global_settings.ui_font_size)
     global_settings.ui_font_family and font.setFamily(global_settings.ui_font_family)
     app.setFont(font)
-
-    if not all([global_settings.metadata_directory, global_settings.resource_directory]):
-        widget = InitSettingsDialog()
-        result = widget.exec()
-        if not result:
-            app.quit()
-            sys.exit(0)
 
     widget = Page0Widget()
     ToastNotifier(parent=widget)

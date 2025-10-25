@@ -84,7 +84,7 @@ class Page1Widget(QWidget):
         # 初始化 快捷键
         QShortcut(Qt.Key.Key_Escape, self, activated=
             lambda: [x.clear() for x in [self.album_field, self.catno_field, self.date_field]])
-        QShortcut(Qt.Key.Key_QuoteLeft, self, activated=self.cover_label.toggle_detail_show)
+        QShortcut(Qt.Key.Key_QuoteLeft, self, activated=self.cover_label.change_opacity)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)

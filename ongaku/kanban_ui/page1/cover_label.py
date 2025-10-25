@@ -1,13 +1,18 @@
 import os
+import itertools
 from PIL import Image
 
 from PySide6.QtCore import Qt, QEvent, QObject, Signal, QByteArray, QBuffer
 from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShortcut, QKeySequence, 
     QGuiApplication, QFont)
-from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget, QApplication
+from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from ongaku.core.kanban import AlbumKanBan
+from ongaku.kanban_ui.toast_notifier import toast_notify
 from ongaku.kanban_ui.utils import with_busy_cursor
+
+
+OPACITY_CYCLE = itertools.cycle([0, 0.2, 1])
 
 
 class CoverLabel(QLabel):
@@ -24,16 +29,15 @@ class CoverLabel(QLabel):
         self.scaled_pix: QPixmap = None
         # 封面信息
         self.image_info: str = None
-        # 是否展示详情
-        self.is_show_detail: bool = None
 
         # 透明效果
+        self.opacity: float = 0
         self.opacity_effect = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity_effect)
 
         self.raise_()
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-        self.toggle_detail_show(False)
+        self.change_opacity(0.2)
 
         # 监听父类大小变化
         parent.installEventFilter(self)
@@ -65,20 +69,23 @@ class CoverLabel(QLabel):
 
         self.update()
 
-    def toggle_detail_show(self, is_show_detail: bool = None) -> None:
-        if is_show_detail is None:
-            self.is_show_detail = not self.is_show_detail
+    def change_opacity(self, opacity: float = None) -> None:
+        if opacity is None:
+            self.opacity = next(OPACITY_CYCLE)
+        else:
+            self.opacity = opacity
 
-        if self.is_show_detail:
-            self.opacity_effect.setOpacity(1)
+        self.opacity_effect.setOpacity(self.opacity)
+
+        if self.opacity == 1:
             # 拦截鼠标事件
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
         else:
-            self.opacity_effect.setOpacity(0.2)
             # 鼠标事件透传
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
 
         self.update()
+        toast_notify(f"Cover opacity: {self.opacity}")
 
     # 重写方法
 
@@ -100,7 +107,7 @@ class CoverLabel(QLabel):
         painter = QPainter(self)
 
         # 有封面 展示详情 时
-        if self.pix and self.is_show_detail:
+        if self.pix and self.opacity == 1:
             painter.drawPixmap(0, 0, self.scaled_pix)
 
             font = painter.font()
@@ -118,7 +125,7 @@ class CoverLabel(QLabel):
             painter.drawText(text_rect, text_flags, self.image_info)
 
         # 无封面 展示详情 时
-        elif not self.pix and self.is_show_detail:
+        elif not self.pix and self.opacity == 1:
             painter.fillRect(self.rect(), QColor(200, 200, 200))
             brush = QBrush(QColor(100, 100, 100), Qt.BrushStyle.FDiagPattern)
             painter.fillRect(self.rect(), brush)
@@ -132,10 +139,10 @@ class CoverLabel(QLabel):
                              "Ctrl + V to paste image")
 
         # 有封面 不展示详情 时
-        elif self.pix and not self.is_show_detail:
+        elif self.pix and self.opacity == 0.2:
             painter.drawPixmap(0, 0, self.scaled_pix)
 
-        # 无封面 不展示详情 时
+        # 其余情况
         else:
             # 空白
             pass
@@ -164,7 +171,7 @@ class CoverLabel(QLabel):
     @with_busy_cursor
     def _on_image_pasted(self) -> None:
         # 不展示详情时 跳过
-        if not self.is_show_detail:
+        if not self.opacity == 1:
             return
         
         img = QGuiApplication.clipboard().image()

@@ -51,7 +51,7 @@ jobs:
     # 生成配置文件
     - name: Generate Config File
       working-directory: .\build\main.dist
-      run: python ".\ongaku\core\settings.py"
+      run: python "..\..\ongaku\core\settings.py"
 
     # 用于调试
     - run: tree /f .

@@ -15,6 +15,7 @@ if executable.suffix == ".py":
 from ongaku.core.logger import set_logger_output
 from ongaku.core.settings import global_settings
 from ongaku.toolkit.toolkit_utils import loop_for_actions
+from ongaku.toolkit.plugin import PLUGINS
 
 
 PLUGIN_DIR = Path("./plugin")
@@ -28,21 +29,21 @@ def main():
     
     set_logger_output(global_settings.temp_directory)
 
-    message2action = {}
+    # message2action = {}
 
-    # 仅扫描 表层 py 文件
-    for file in PLUGIN_DIR.glob("*.py"):
-        spec = importlib.util.spec_from_file_location(f"plugin_{uuid.uuid4().hex}", file)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+    # # 仅扫描 表层 py 文件
+    # for file in PLUGIN_DIR.glob("*.py"):
+    #     spec = importlib.util.spec_from_file_location(f"plugin_{uuid.uuid4().hex}", file)
+    #     module = importlib.util.module_from_spec(spec)
+    #     spec.loader.exec_module(module)
 
-        plugin_main = getattr(module, "main", None)
-        plugin_name = getattr(module, "PLUGIN_NAME", None)
+    #     plugin_main = getattr(module, "main", None)
+    #     plugin_name = getattr(module, "PLUGIN_NAME", None)
 
-        if callable(plugin_main):
-            message2action[plugin_name or file.name] = plugin_main
+    #     if callable(plugin_main):
+    #         message2action[plugin_name or file.name] = plugin_main
     
-    loop_for_actions(message2action)
+    loop_for_actions(PLUGINS)
 
 
 if __name__ == "__main__":

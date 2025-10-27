@@ -34,11 +34,8 @@ python -m nuitka .\ongaku\kanban_ui\main.py ^
 
 python -m nuitka .\ongaku\toolkit\main.py ^
 --standalone ^
---include-package=ongaku.toolkit.plugin ^
 --windows-icon-from-ico=.\ongaku\kanban_ui\assets\cmd.png ^
 --output-filename=toolkit.exe ^
---force-stdout-spec={PROGRAM_BASE}.out.txt ^
---force-stderr-spec={PROGRAM_BASE}.err.txt ^
 --output-dir=..\ongaku-build-toolkit
 
 

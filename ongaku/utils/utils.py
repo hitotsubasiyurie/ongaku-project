@@ -4,13 +4,16 @@
 
 import time
 import uuid
+import mimetypes
+import subprocess
 from functools import wraps
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Mapping, Any
 
-from mutagen.flac import FLAC
+from mutagen.flac import FLAC, Picture
 from mutagen.mp3 import EasyMP3
+from mutagen.id3 import ID3, APIC, PictureType
 
 
 def retry(retries: int = 3, delay: int | float = 5) -> Callable:
@@ -112,7 +115,7 @@ def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
     return text
 
 
-def read_audio_tags(audio: str, standard: bool = True) -> dict[str, Any]:
+def read_audio_tags(audio: str, standard: bool = True) -> dict[str, str]:
     """
     读取音频标准元数据标签。\n
     标准化标签：
@@ -133,4 +136,49 @@ def read_audio_tags(audio: str, standard: bool = True) -> dict[str, Any]:
                      for k in ["catalognumber", "date", "album", "tracknumber", "title", "artist"]}
     return standard_tags
 
+
+def write_audio_tags(audio: str, 
+                     cover: str = "",
+                     catalognumber: str = "", date: str = "", album: str = "",
+                     tracknumber: str = "", title: str = "", artist: str = "") -> None:
+    """
+    写入音频元数据标签。仅更新传入的非空值。
+    """
+    audio = Path(audio)
+
+    tag_fields = ["catalognumber", "date", "album", "tracknumber", "title", "artist"]
+    tags = {k: str(locals().get(k)) for k in tag_fields if locals().get(k)}
+
+    if audio.suffix.lower() == ".flac":
+        flac = FLAC(audio)
+        flac.update(tags)
+
+        if cover:
+            pic = Picture()
+            pic.type = PictureType.COVER_FRONT
+            pic.mime = mimetypes.guess_type(cover)[0] or "image/jpeg"
+            pic.data = Path(cover).read_bytes()
+            flac.clear_pictures()
+            flac.add_picture(pic)
+        
+        flac.save()
+
+    elif audio.suffix.lower() == ".mp3":
+        mp3 = EasyMP3(audio)
+        mp3.update(tags)
+        mp3.save()
+
+        if cover:
+            id3 = ID3(audio)
+            id3.delall("APIC")
+            mime = mimetypes.guess_type(cover)[0] or "image/jpeg"
+            id3.add(APIC(encoding=3, desc="Cover", mime=mime, type=PictureType.COVER_FRONT, 
+                         data=Path(cover).read_bytes()))
+            id3.save(audio)
+
+
+def compress_img_by_pngquant(img_path: str) -> None:
+    pngquant_path = r".\dependency\pngquant.exe"
+    cmd = [pngquant_path, "--force", "--output", img_path, "--", img_path]
+    subprocess.run(cmd, check=True)
 

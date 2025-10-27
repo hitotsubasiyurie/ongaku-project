@@ -2,12 +2,12 @@ from typing import Any
 from datetime import datetime
 
 import orjson
-import psycopg2
-from psycopg2 import extras
+import psycopg
+from psycopg.rows import tuple_row
 
 from ongaku.core.logger import logger
 from ongaku.core.exception import OngakuException
-from ongaku.core.basemodels import Album, Track
+from ongaku.core.basemodels import Album
 from ongaku.utils.basemodel_utils import abstract_tracks_info
 
 
@@ -19,14 +19,14 @@ class MusicBrainzDatabase:
 
     def __init__(self) -> None:
 
-        self.conn = psycopg2.connect(database="musicbrainz", user="Administrator")
-        self.cur = self.conn.cursor()
+        self.conn = psycopg.connect(dbname="musicbrainz", user="Administrator")
+        self.cur = self.conn.cursor(row_factory=tuple_row)
 
     def insert_albums(self, release_ids: list[str], albums: list[Album]) -> None:
-        sql = f'INSERT INTO album ({", ".join(self.COLUMNS[1:])}) VALUES %s;'
+        sql = f'INSERT INTO album ({", ".join(self.COLUMNS[1:])}) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);'
         try:
             values = [self._album_to_record(rid, a) for rid, a in zip(release_ids, albums)]
-            extras.execute_values(self.cur, sql, values, page_size=len(albums))
+            self.cur.executemany(sql, values)
             self.conn.commit()
             logger.info(f"Inserted {len(albums)} albums.")
         except Exception:
@@ -99,19 +99,20 @@ class MusicBrainzDatabase:
             order_clauses.append("similarity(_tracks_abstract, %s)")
             query_params.append(order_tracks_abstract)
 
-        sql = "SELECT * FROM album"
+        sql_query = "SELECT * FROM album"
 
         if where_clauses:
-            sql += " WHERE " + " AND ".join(where_clauses)
+            sql_query += " WHERE " + " AND ".join(where_clauses)
 
         if order_clauses:
-            sql += f" ORDER BY ({' + '.join(order_clauses)}) DESC"
+            sql_query += f" ORDER BY ({' + '.join(order_clauses)}) DESC"
         
-        sql += f" LIMIT {limit};"
+        sql_query += f" LIMIT {limit};"
 
-        logger.info(f"Executing Query: {self.cur.mogrify(sql, query_params).decode('utf-8')}")
+        formatted_query = sql_query.replace("%s", "{}").format(*[repr(p) for p in query_params])
+        logger.info(f"Executing Query: {formatted_query}")
         
-        self.cur.execute(sql, query_params)
+        self.cur.execute(sql_query, query_params)
         records = self.cur.fetchall()
 
         albums = list(map(self._record_to_album, records))
@@ -171,4 +172,3 @@ class MusicBrainzDatabase:
             return _min.days, _max.days
         
         return 0, 0
-

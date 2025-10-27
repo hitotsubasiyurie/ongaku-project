@@ -12,7 +12,7 @@ from ongaku.kanban_ui.toast_notifier import toast_notify
 from ongaku.kanban_ui.utils import with_busy_cursor
 
 
-OPACITY_CYCLE = itertools.cycle([0, 0.2, 1, 0.2])
+OPACITY_CYCLE = itertools.cycle([0.2, 1, 0.2, 0])
 
 
 class CoverLabel(QLabel):
@@ -31,13 +31,13 @@ class CoverLabel(QLabel):
         self.image_info: str = None
 
         # 透明效果
-        self.opacity: float = 0
+        self.opacity: float = None
         self.opacity_effect = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity_effect)
 
         self.raise_()
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-        self.change_opacity(0.2)
+        self.change_opacity()
 
         # 监听父类大小变化
         parent.installEventFilter(self)
@@ -69,11 +69,8 @@ class CoverLabel(QLabel):
 
         self.update()
 
-    def change_opacity(self, opacity: float = None) -> None:
-        if opacity is None:
-            self.opacity = next(OPACITY_CYCLE)
-        else:
-            self.opacity = opacity
+    def change_opacity(self) -> None:
+        self.opacity = next(OPACITY_CYCLE)
 
         self.opacity_effect.setOpacity(self.opacity)
 

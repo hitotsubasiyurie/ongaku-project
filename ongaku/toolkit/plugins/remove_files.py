@@ -8,7 +8,6 @@ from ongaku.core.settings import  global_settings
 from ongaku.toolkit.toolkit_utils import easy_linput
 
 
-
 if global_settings.language == "zh":
     PLUGIN_NAME = "删除文件"
 elif global_settings.language == "ja":

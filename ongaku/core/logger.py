@@ -99,6 +99,7 @@ _ongaku_logger = OngakuLogger()
 
 logger = _ongaku_logger.logger
 set_logger_output = _ongaku_logger.set_output
+set_logger_level = lambda n: logger.setLevel({1: logging.DEBUG, 2: logging.INFO, 3: logging.WARNING, 4: logging.ERROR}.get(n, 2))
 
 
 def lprint(*values: object, sep: str | None = " ", end: str | None = "\n", 

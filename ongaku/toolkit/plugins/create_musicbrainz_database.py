@@ -15,7 +15,6 @@ from ongaku.crawlers.musicbrainz_api import MusicBrainzAPI
 from ongaku.crawlers.musicbrainz_database import MusicBrainzDatabase
 
 
-
 if global_settings.language == "zh":
     PLUGIN_NAME = "创建本地 MusicBrainz 数据库"
 elif global_settings.language == "ja":

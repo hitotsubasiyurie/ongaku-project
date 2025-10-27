@@ -3,12 +3,13 @@ import sys
 from pathlib import Path
 
 executable = Path(sys.argv[0])
-# 指定运行目录 当前父目录
-os.chdir(executable.parent)
 
 # 若是源码运行 添加导包路径
 if executable.suffix == ".py":
     sys.path[0] = str(executable.parent.parent.parent)
+    os.chdir(executable.parent.parent.parent)
+else:
+    os.chdir(executable.parent)
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
@@ -16,12 +17,16 @@ from PySide6.QtCore import Qt
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan
+from ongaku.core.logger import set_logger_output, set_logger_level
 from ongaku.kanban_ui.toast_notifier import ToastNotifier
 from ongaku.kanban_ui.page0.page0_widget import Page0Widget
 from ongaku.kanban_ui.color_theme import current_theme
 
 
 if __name__ == "__main__":
+    set_logger_output(global_settings.temp_directory)
+    set_logger_level(global_settings.log_level)
+
     app = QApplication([])
     app.setWindowIcon(QIcon("./assets/icon.png"))
 

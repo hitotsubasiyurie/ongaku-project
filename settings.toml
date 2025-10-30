@@ -1,5 +1,5 @@
 # Options: 1 (debug), 2 (info), 3 (warning), 4 (error)
-log_level = 1
+log_level = 2
 
 # Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese), "ko" (Korean)
 language = "zh"

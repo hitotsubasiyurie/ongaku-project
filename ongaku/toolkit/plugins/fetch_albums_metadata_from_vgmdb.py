@@ -30,6 +30,7 @@ if global_settings.language == "zh":
     若是已有的元数据文件路径，将会追加它未包含的专辑元数据
 
 VGMDB url ：
+    album 页面，例如：https://vgmdb.net/album/27425
     frachise 页面，例如：https://vgmdb.net/product/3559
     product 页面，例如：https://vgmdb.net/product/7750
     搜索页面，例如：https://vgmdb.net/search?q=Yosuga+no+Sora&type=
@@ -67,8 +68,10 @@ def main():
     # 获取 album ids
 
     a_ids = []
-    for url in list(map(str.strip, input_urls.split(""))):
-        if "/product/" in url:
+    for url in list(map(str.strip, input_urls.split("，"))):
+        if "/album/" in url:
+            a_ids.append(url.split("/album/")[1].split("/")[0])
+        elif "/product/" in url:
             product_id = url.split("/")[-1]
             a_ids.extend(api.get_album_ids_from_product(product_id))
         elif "/search?" in url:

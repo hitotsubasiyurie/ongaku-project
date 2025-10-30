@@ -27,6 +27,7 @@ MESSAGE = SimpleNamespace()
 
 
 if global_settings.language == "zh":
+    MESSAGE.DD5 = "归档音频资源前，请先执行清理音频目录。"
     MESSAGE.XX1 = "请输入一个元数据文件："
     MESSAGE.OG9 = "请输入音频资源父目录："
     MESSAGE.K98 = "请输入归档目标位置的父目录："
@@ -58,6 +59,7 @@ DST_TRACK = "DST_TRACK"
 
 
 def main() -> None:
+    lprint(MESSAGE.DD5)
 
     metadata_file = easy_linput(MESSAGE.XX1, return_type=Path)
     src_parent = easy_linput(MESSAGE.OG9, return_type=Path)
@@ -95,7 +97,7 @@ def main() -> None:
         d[ALBUM_SIMILARITY] = format(a_sim_matrix[a_row][a_col], '.2f')
         d[TRACK_SIMILARITY] = format(t_aver_similarity, '.2f')
         d[SRC_DIRECTORY] = str(src_dir)
-        d[DST_DIRECTORY] = str(dst_parent / album_filename(dst_album))
+        d[DST_DIRECTORY] = str(Path(dst_parent, metadata_file.stem, album_filename(dst_album)))
         d[RESOURCE_ALBUM] = album_to_unique_str(src_album)
         d[MATCHING_ALBUM] = album_to_unique_str(dst_album)
         d["track"] = []

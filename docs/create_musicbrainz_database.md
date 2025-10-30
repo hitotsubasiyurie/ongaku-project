@@ -8,7 +8,7 @@ chcp 65001
 
 E:
 cd E:\tool\pgsql\bin
-set PGDATA=D:\pgdata
+set PGDATA=D:\ongaku-tmp\pgdata
 set PGCLIENTENCODING=UTF8
 
 

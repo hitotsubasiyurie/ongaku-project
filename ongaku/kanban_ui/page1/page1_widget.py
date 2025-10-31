@@ -201,7 +201,7 @@ class Page1Widget(QWidget):
             # 更新视图
             [self.theme_kanban.album_kanbans[p].__post_init__() for p in ps]
             self.album_table_view.viewport().update()
-            self.cover_label.set_album_kanban(self.theme_kanban.album_kanbans[p])
+            self.cover_label.set_album_kanban(self.theme_kanban.album_kanbans[ps[0]])
             return
         
         # 选中一个 album item ，选中多个 track item ，拖入多个音频文件

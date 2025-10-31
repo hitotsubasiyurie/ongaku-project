@@ -1,2 +1,4 @@
 __pycache__
-/dependency/*.exe
+dependency/*
+!dependency/download.bat
+

@@ -68,7 +68,7 @@ def main():
     # 获取 album ids
 
     a_ids = []
-    for url in list(map(str.strip, input_urls.split("，"))):
+    for url in list(map(str.strip, input_urls.split())):
         if "/album/" in url:
             a_ids.append(url.split("/album/")[1].split("/")[0])
         elif "/product/" in url:

@@ -64,7 +64,7 @@ def main():
 
     # 获取 release ids
     r_ids = []
-    for url in list(map(str.strip, input_urls.split("，"))):
+    for url in list(map(str.strip, input_urls.split())):
         if "/artist/" in url:
             resp = api.lookup_entity(url.split("/artist/")[1].split("/")[0], "artist", "releases")
             r_ids.extend([r["id"] for r in resp["releases"]])

@@ -37,8 +37,9 @@ class MusicBrainzAPI:
     def query_albums(self, catno: str = None, date: str = None, release: str = None, tracks_number: int = None,
                       limit: int = 5) -> list[Album]:
         """
+        查询专辑。
         :param catno:
-        :param date: 必须如 2020-01-15
+        :param date: 格式必须如 2020-01-15
         :param release: 标题
         :param tracks_number: 音轨数
         :param limit: 返回结果数，默认 5
@@ -74,7 +75,7 @@ class MusicBrainzAPI:
         raises: OngakuException
         """
         albums = []
-        series = self.lookup_entity("series", series_id)
+        series = self.lookup_entity(series_id, "series", "release-group-rels")
         rg_ids = [r["release_group"]["id"] for r in series["relations"]]
         logger.info(f"Series has {len(rg_ids)} release-groups. {series_id} {rg_ids}")
 
@@ -90,7 +91,7 @@ class MusicBrainzAPI:
         raises: OngakuException
         """
         albums = []
-        release_group = self.lookup_entity("release-group", rg_id)
+        release_group = self.lookup_entity(rg_id, "release-group", "release-group-rels")
         r_ids = [r["id"] for r in release_group["releases"]]
         logger.info(f"Release-group has {len(r_ids)} releases. {rg_id} {r_ids}")
 
@@ -112,12 +113,11 @@ class MusicBrainzAPI:
         logger.info(f"Got {len(albums)} albums from release {release_id}.")
         return albums
 
-    def lookup_entity(self, entity_type: Literal["series", "release-group", "release"], mbid: str) -> dict:
+    def lookup_entity(self, mbid: str, entity_type: str, inc: str = "") -> dict:
         """
         调用 lookup api 。\n
         """
-        inc = {"series": "release-group-rels", "release-group": "release-group-rels", "release": "recordings+labels"}
-        url = f"{self.ROOT_URL}/{entity_type}/{mbid}?fmt=json&inc={inc[entity_type]}"
+        url = f"{self.ROOT_URL}/{entity_type}/{mbid}?fmt=json&inc={inc}"
         logger.info(f"Lookup {entity_type}. {url}")
 
         resp = self._cached_request_get(url)
@@ -156,7 +156,7 @@ class MusicBrainzAPI:
         """
         获取带有 recordings 信息的 release 。\n
         """
-        release = self.lookup_entity("release", release_id)
+        release = self.lookup_entity(release_id, "release", "recordings+labels")
         recordings = self._browse_recordings_of_release(release_id)
 
         _dict = {r["id"]: r for r in recordings}

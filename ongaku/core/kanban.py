@@ -269,8 +269,9 @@ class KanBan:
         """
         扫描文件系统。
         """
-        # 元数据目录，资源目录 可以是嵌套的
+        # 元数据目录 允许嵌套
         theme_mdfs = list(Path(self.metadata_dir).rglob("*.toml"))
+        # 资源目录 与元数据目录 相同结构
         theme_dirs = [os.path.join(self.resource_dir, f.relative_to(self.metadata_dir).with_suffix("")) 
                       for f in theme_mdfs]
 

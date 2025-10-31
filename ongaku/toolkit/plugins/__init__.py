@@ -13,6 +13,9 @@ PLUGINS[PLUGIN_NAME] = main
 from ongaku.toolkit.plugins.fetch_albums_metadata_from_vgmdb import PLUGIN_NAME, main
 PLUGINS[PLUGIN_NAME] = main
 
+from ongaku.toolkit.plugins.fetch_albums_metadata_from_musicbrainz import PLUGIN_NAME, main
+PLUGINS[PLUGIN_NAME] = main
+
 from ongaku.toolkit.plugins.fetch_albums_metadata_from_musicbrainz_database import PLUGIN_NAME, main
 PLUGINS[PLUGIN_NAME] = main
 

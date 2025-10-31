@@ -40,11 +40,11 @@ jobs:
         mode: standalone
         enable-plugins: pyside6
         windows-console-mode: disable
-        windows-icon-from-ico: .\ongaku\kanban_ui\assets\icon.png
+        windows-icon-from-ico: .\assets\icon.png
         force-stdout-spec: "{PROGRAM_BASE}.out.txt"
         force-stderr-spec: "{PROGRAM_BASE}.err.txt"
         include-data-dir: |
-          .\ongaku\kanban_ui\assets=assets
+          .\assets=assets
         include-qt-plugins: multimedia
         output-file: kanban.exe
 

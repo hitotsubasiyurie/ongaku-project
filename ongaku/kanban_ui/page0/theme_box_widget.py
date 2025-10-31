@@ -125,7 +125,7 @@ class ThemeBoxWidget(QWidget):
         text = self.line_edit.text().lower()
         for i in range(self.list_widget.count()):
             item = self.list_widget.item(i)
-            item.setHidden(text not in item.text().lower()[:2])
+            item.setHidden(text not in item.text().lower()[2:])
 
     def _on_line_edit_text_changed(self, text: str) -> None:
         self._hide_list_items()

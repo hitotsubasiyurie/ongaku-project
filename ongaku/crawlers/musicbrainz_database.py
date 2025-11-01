@@ -1,14 +1,82 @@
+import subprocess
 from typing import Any
 from datetime import datetime
 
 import orjson
-import psycopg
+from psycopg.connection import Connection
 from psycopg.rows import tuple_row
 
 from ongaku.core.logger import logger
 from ongaku.core.exception import OngakuException
 from ongaku.core.basemodels import Album
 from ongaku.utils.basemodel_utils import abstract_tracks_info
+
+
+def init_pgdata(pgdata: str) -> None:
+    cmd = fr".\dependency\pgsql\bin\initdb.exe --auth=trust --encoding=UTF8 --no-locale --nosync \
+        --username=postgres -D {pgdata}"
+    process = subprocess.run(cmd)
+    logger.info(f"Initdb pgdata successfully. {cmd}")
+    logger.debug(process.stdout)
+    logger.debug(process.stderr)
+
+
+def pg_ctl_start(pgdata: str) -> None:
+    cmd = fr".\dependency\pgsql\bin\pg_ctl.exe start -D {pgdata}"
+    process = subprocess.run(cmd)
+    logger.info(f"pg_ctl start successfully. {cmd}")
+    logger.debug(process.stdout)
+    logger.debug(process.stderr)
+
+
+def pg_ctl_stop(pgdata: str) -> None:
+    cmd = fr".\dependency\pgsql\bin\pg_ctl.exe stop -D {pgdata}"
+    process = subprocess.run(cmd)
+    logger.info(f"pg_ctl stop successfully. {cmd}")
+    logger.debug(process.stdout)
+    logger.debug(process.stderr)
+
+
+CREATE_EXTENSION_SQL = "CREATE EXTENSION pg_trgm;"
+
+CREATE_ALBUM_SQL = """
+CREATE TABLE album (
+    id SERIAL PRIMARY KEY,
+    release_id VARCHAR(255) NOT NULL DEFAULT '',
+    catalognumber TEXT NOT NULL DEFAULT '',
+    date VARCHAR(255) NOT NULL DEFAULT '',
+    album TEXT NOT NULL DEFAULT '',
+    tracks_json TEXT NOT NULL DEFAULT '',
+    links TEXT[] NOT NULL DEFAULT '{}',
+    _date_min INTEGER NOT NULL DEFAULT 0,
+    _date_max INTEGER NOT NULL DEFAULT 0,
+    _tracks_count INTEGER NOT NULL DEFAULT 0,
+    _tracks_abstract TEXT NOT NULL DEFAULT ''
+);
+"""
+
+CREATE_INDEX_SQL = """
+CREATE INDEX idx_album_release_id ON album(release_id);
+CREATE INDEX idx_album_catalognumber ON album(catalognumber);
+CREATE INDEX idx_album_date ON album(date);
+CREATE INDEX idx_album_date_min ON album(_date_min);
+CREATE INDEX idx_album_date_max ON album(_date_max);
+CREATE INDEX idx_album_tracks_count ON album(_tracks_count);
+CREATE INDEX idx_album_catalognumber_trgm ON album USING gin (catalognumber gin_trgm_ops);
+CREATE INDEX idx_album_album_trgm ON album USING gin (album gin_trgm_ops);
+CREATE INDEX idx_album_tracks_abstract_trgm ON album USING gin (_tracks_abstract gin_trgm_ops);
+"""
+
+
+def init_musicbrainz_database(pgdata: str) -> None:
+    init_pgdata(pgdata)
+    pg_ctl_start(pgdata)
+    db = MusicBrainzDatabase()
+    db.cur.execute(CREATE_EXTENSION_SQL)
+    db.cur.execute(CREATE_ALBUM_SQL)
+    db.cur.execute(CREATE_INDEX_SQL)
+    pg_ctl_stop(pgdata)
+    logger.info(f"Init musicbrainz database successfully.")
 
 
 class MusicBrainzDatabase:
@@ -18,8 +86,8 @@ class MusicBrainzDatabase:
                "_date_min", "_date_max", "_tracks_count", "_tracks_abstract"]
 
     def __init__(self) -> None:
-
-        self.conn = psycopg.connect(dbname="musicbrainz", user="Administrator")
+        self.conn = Connection.connect()
+        self.conn.autocommit = True
         self.cur = self.conn.cursor(row_factory=tuple_row)
 
     def insert_albums(self, release_ids: list[str], albums: list[Album]) -> None:

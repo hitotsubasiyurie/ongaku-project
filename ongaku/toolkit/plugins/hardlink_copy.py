@@ -1,4 +1,5 @@
 import time
+import shutil
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -74,7 +75,6 @@ def main():
     src_given = easy_linput(MESSAGE.OG9, return_type=Path)
     dst_given = easy_linput(MESSAGE.K98, return_type=Path)
 
-
     if not src_given.exists():
         lprint(MESSAGE.AAR)
         return
@@ -85,8 +85,10 @@ def main():
 
     st = time.time()
 
+    # 仅单个文件
     if src_given.is_file():
         dst.hardlink_to(src_given)
+        shutil.copystat(src_given, dst)
         lprint(MESSAGE.B21.format(1, 0, time.time()-st))
         return
 
@@ -102,6 +104,14 @@ def main():
             dir_count += 1
         else:
             d.hardlink_to(s.resolve())
+            shutil.copystat(s, d)
             file_count += 1
+
+    # 倒序 复制目录元数据
+    for s in tqdm(reversed(list(filter(Path.is_dir, src_files)))):
+        d = dst / s.relative_to(src_given)
+        shutil.copystat(s, d)
+
+    shutil.copystat(src_given, dst)
 
     lprint(MESSAGE.B21.format(file_count, dir_count, time.time()-st))

@@ -6,8 +6,7 @@
 # 命令行 字符编码 UTF-8
 chcp 65001
 
-E:
-cd E:\tool\pgsql\bin
+cd /d E:\my\ongaku-project\dependency\pgsql\bin
 set PGDATA=D:\ongaku-tmp\pgdata
 set PGCLIENTENCODING=UTF8
 

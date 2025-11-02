@@ -7,7 +7,7 @@
 chcp 65001
 
 cd /d E:\my\ongaku-project\dependency\pgsql\bin
-set PGDATA=D:\ongaku-tmp\pgdata
+set PGDATA=D:\ongaku-tmp\musicbrainz_pgdata
 set PGCLIENTENCODING=UTF8
 
 

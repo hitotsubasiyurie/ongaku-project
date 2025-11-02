@@ -22,7 +22,8 @@ T = TypeVar("T")
 
 def easy_linput(prompt: object  = "", default: Any = None, return_type: Type[T] = str) -> T:
     """
-    :param default: 默认为 None 时，会循环提示输入。
+    :param default: 默认为 None 时，会循环提示输入
+    :param return_type: 返回结果类型
     """
 
     if default is not None and not isinstance(default, return_type):

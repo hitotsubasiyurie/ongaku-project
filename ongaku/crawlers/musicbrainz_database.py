@@ -22,7 +22,7 @@ def init_pgdata(pgdata: str) -> None:
 
 
 def pg_ctl_start(pgdata: str) -> None:
-    cmd = fr".\dependency\pgsql\bin\pg_ctl.exe start -D {pgdata}"
+    cmd = fr".\dependency\pgsql\bin\pg_ctl.exe start --silent -D {pgdata}"
     process = subprocess.run(cmd)
     logger.info(f"pg_ctl start successfully. {cmd}")
     logger.debug(process.stdout)
@@ -30,7 +30,7 @@ def pg_ctl_start(pgdata: str) -> None:
 
 
 def pg_ctl_stop(pgdata: str) -> None:
-    cmd = fr".\dependency\pgsql\bin\pg_ctl.exe stop -D {pgdata}"
+    cmd = fr".\dependency\pgsql\bin\pg_ctl.exe stop --silent -D {pgdata}"
     process = subprocess.run(cmd)
     logger.info(f"pg_ctl stop successfully. {cmd}")
     logger.debug(process.stdout)
@@ -86,7 +86,7 @@ class MusicBrainzDatabase:
                "_date_min", "_date_max", "_tracks_count", "_tracks_abstract"]
 
     def __init__(self) -> None:
-        self.conn = Connection.connect()
+        self.conn = Connection.connect(dbname="musicbrainz")
         self.conn.autocommit = True
         self.cur = self.conn.cursor(row_factory=tuple_row)
 

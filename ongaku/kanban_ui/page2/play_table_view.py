@@ -253,10 +253,10 @@ class PlayTableView(QTableView):
     def resizeEvent(self, event: QResizeEvent) -> None:
         # 还原默认列宽
         fh = self.fontMetrics().height()
-        column_widths = [fh*5, 0, fh*18, fh*18, fh*5, fh*2]
+        column_widths = [fh*5, 0, fh*18, fh*20, fh*5, fh*2.5]
         [w and self.setColumnWidth(i, w) for i, w in enumerate(column_widths)]
         # Title 占据剩余宽度
-        self.setColumnWidth(1, self.width() - sum(column_widths) - self.verticalHeader().width() - self.verticalScrollBar().width())
+        self.setColumnWidth(1, self.width() - sum(column_widths) - self.verticalHeader().width() - self.verticalScrollBar().width() - 1)
         return super().resizeEvent(event)
 
 

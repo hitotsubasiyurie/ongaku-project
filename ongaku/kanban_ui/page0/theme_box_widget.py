@@ -27,8 +27,11 @@ class ProgressDelegate(QStyledItemDelegate):
         painter.save()
 
         # 先画长进度条
-        params = [(self.coll_dict.get(text, 0), current_theme.THEME_PROGRESS_COLL_COLOR),
-                  (self.mark_dict.get(text, 0), current_theme.THEME_PROGRESS_MARK_COLOR)]
+        coll_p, mark_p = self.coll_dict.get(text, 0), self.mark_dict.get(text, 0)
+        if coll_p == mark_p:
+            coll_p -= 0.01
+        params = [(coll_p, current_theme.THEME_PROGRESS_COLL_COLOR),
+                  (mark_p, current_theme.THEME_PROGRESS_MARK_COLOR)]
         params.sort(key=lambda t: t[0], reverse=True)
         
         for val, color in params:

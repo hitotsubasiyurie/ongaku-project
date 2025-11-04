@@ -11,6 +11,7 @@ from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 
 from ongaku.core.basemodels import Album
+from ongaku.core.settings import global_settings
 from ongaku.core.constants import AUDIO_EXTS, IMG_EXTS
 from ongaku.utils.audiofile_utils import analyze_resource_track
 from ongaku.utils.basemodel_utils import tracks_assignment
@@ -18,7 +19,7 @@ from ongaku.core.kanban import ThemeKanBan, track_filenames
 from ongaku.kanban_ui.toast_notifier import toast_notify
 from ongaku.kanban_ui.utils import with_busy_cursor
 from ongaku.kanban_ui.page1.album_table_view import AlbumTableView
-from ongaku.kanban_ui.page1.check_message_box import CheckMessageBox
+from ongaku.kanban_ui.page1.text_edit_message_box import TextEditMessageBox
 from ongaku.kanban_ui.page1.link_combo_box import LinkComboBox
 from ongaku.kanban_ui.page1.track_table_view import TrackTableView
 from ongaku.kanban_ui.page1.cover_label import CoverLabel
@@ -72,9 +73,10 @@ class Page1Widget(QWidget):
         self.album_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
         # album_table_view 右键菜单动作
-        self.album_table_view.action_edit_clicked.connect(self._open_metadata_file)
-        self.album_table_view.action_locate_clicked.connect(self._locate_album)
-        self.album_table_view.action_search_cover_clicked.connect(self._search_cover)
+        self.album_table_view.action_edit_clicked.connect(self._action_edit)
+        self.album_table_view.action_delete_clicked.connect(self._action_delete)
+        self.album_table_view.action_locate_clicked.connect(self._action_locate)
+        self.album_table_view.action_search_cover_clicked.connect(self._action_search_cover)
         # view 编辑数据
         self.track_table_view.item_model.dataChanged.connect(self._save_timer.start)
         self.album_table_view.item_model.dataChanged.connect(self._save_timer.start)
@@ -112,13 +114,81 @@ class Page1Widget(QWidget):
 
     # 内部方法
 
-    def _on_album_view_selected(self, *args, **kwargs) -> None:
-        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
-        if not rows:
-            return
-        # 原始数据行指针
-        ps = [self.album_table_view.item_model.layout_ps[r] for r in rows]
+    def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        ext = src.suffix.lower()
+        dst = dst_dir / ("cover"+ext)
+        shutil.copy2(src, dst)
+        return True
 
+    def _putaway_track_file(self, src: Path, dst_dir: Path, album: Album, trackidx: int) -> bool:
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        ext = src.suffix.lower()
+        dst = dst_dir / (track_filenames(album)[trackidx]+ext)
+        src.rename(dst)
+        return True
+
+    def _putaway_track_files(self, src_files: list[Path], dst_dir: Path, album: Album) -> bool:
+        dst_dir.mkdir(parents=True, exist_ok=True)
+
+        src_tracks = list(map(analyze_resource_track, src_files))
+        row_ind, col_ind, aver_similarity, _ = tracks_assignment(src_tracks, album.tracks)
+
+        dst_names = track_filenames(album)
+        _map: dict[Path, Path] = {src_files[r]: (dst_dir / (dst_names[c] + src_files[r].suffix.lower())) 
+                                  for r, c in zip(row_ind, col_ind)}
+
+        text = f"""
+Directory:\t\t{src_files[0].parent.name}
+Album:\t\t{album.album}
+Average Similarity:\t{aver_similarity:.02f}
+"""
+        text += "\n"*2 + "\n".join(f"    {k.name}\n->  {v.name}\n" for k, v in _map.items())
+        accept = self._ask_for_confirm("Check Again", text)
+        
+        if not accept:
+            return False
+        
+        [src.rename(dst) for src, dst in _map.items()]
+        return True
+
+    def _ask_for_confirm(self, title: str, text: str, on_yes_clicked: Callable = None, 
+                            on_no_clicked: Callable = None) -> bool:
+        """弹出确认对话框"""
+        check_msg = TextEditMessageBox(title, text, parent=self)
+        check_msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        # 设置默认按钮为 NO
+        check_msg.setDefaultButton(QMessageBox.StandardButton.No)
+        on_yes_clicked and check_msg.button(QMessageBox.StandardButton.Yes).clicked.connect(on_yes_clicked)
+        on_no_clicked and check_msg.button(QMessageBox.StandardButton.No).clicked.connect(on_no_clicked)
+        # 阻塞
+        accept = check_msg.exec() == QMessageBox.StandardButton.Yes
+        return accept 
+
+    @with_busy_cursor
+    def _on_image_pasted(self, data: bytes) -> None:
+        if not self.cover_label.album_kanban:
+            return
+
+        cover = self.cover_label.album_kanban.cover
+        if cover:
+            if not self._ask_for_confirm("Check Again", "Replace cover?"):
+                return
+            os.unlink(cover)
+
+        os.makedirs(self.cover_label.album_kanban.album_dir, exist_ok=True)
+        Path(self.cover_label.album_kanban.album_dir, "cover.png").write_bytes(data)
+        self.cover_label.album_kanban.__post_init__()
+        self.album_table_view.viewport().update()
+        self.cover_label.set_album_kanban(self.cover_label.album_kanban)
+
+    ## 事件动作
+
+    def _on_album_view_selected(self, *args, **kwargs) -> None:
+        ps = self.album_table_view.get_selected_ps()
+        if not ps:
+            return
+        
         # 展示 所有已选 albums 的 links
         links = list(set(itertools.chain.from_iterable(self.theme_kanban.album_kanbans[p].album.links for p in ps)))
         self.link_box.set_links(links)
@@ -132,30 +202,48 @@ class Page1Widget(QWidget):
         self.track_table_view.item_model.reset_album_kanban(album_kanban)
         self.cover_label.set_album_kanban(album_kanban)
 
-    def _open_metadata_file(self) -> None:
-        # 打开 元数据文件
-        if self.theme_kanban:
-            os.startfile(self.theme_kanban.theme_metadata_file)
-
-    def _locate_album(self) -> None:
-        # 打开 首个 album 的 资源位置
-        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
-        if not rows or not self.theme_kanban:
+    def _action_edit(self) -> None:
+        """打开 主题 元数据文件"""
+        if not self.theme_kanban:
             return
-        p = self.album_table_view.item_model.layout_ps[rows[0]]
-        res_dir = self.theme_kanban.album_kanbans[p].album_dir
-        if os.path.exists(res_dir):
-            subprocess.run(f'explorer "{res_dir}"')
+        os.startfile(self.theme_kanban.theme_metadata_file)
 
-    def _search_cover(self) -> None:
-        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
-        if not rows or not self.theme_kanban:
+    def _action_delete(self) -> None:
+        """删除所选 album"""
+        if not self.theme_kanban:
+            return
+        ps = self.album_table_view.get_selected_ps()
+        if not ps:
+            return
+        if any(self.theme_kanban.album_kanbans[p].album_res_state for p in ps):
+            toast_notify("Albums with resources cannot be deleted.", 2)
+            return
+        if not self._ask_for_confirm("Check Again", f"Delete {len(ps)} albums?"):
+            return
+        self.theme_kanban.album_kanbans = [ak for i, ak in enumerate(self.theme_kanban.album_kanbans) 
+                                           if i not in ps]
+        self.theme_kanban.save_metadata_file()
+        self.set_theme_kanban(self.theme_kanban)
+
+    def _action_locate(self) -> None:
+        """打开所选 album 的资源位置"""
+        if not self.theme_kanban:
+            return
+        ps = self.album_table_view.get_selected_ps()
+        for p in ps:
+            res_dir = self.theme_kanban.album_kanbans[p].album_dir
+            os.path.exists(res_dir) and subprocess.run(f'explorer "{res_dir}"')
+
+    def _action_search_cover(self) -> None:
+        """搜索所选 album 的封面"""
+        if not self.theme_kanban:
             return
         
-        sources = ",".join(["amazonmusic","applemusic","itunes","ototoy","kkbox","lastfm","musicbrainz","discogs","soundcloud"])
-        country = "jp"
+        sources = global_settings.cover_search_engine_sources
+        country = global_settings.cover_search_engine_country
 
-        for p in map(self.album_table_view.item_model.layout_ps.__getitem__, rows):
+        ps = self.album_table_view.get_selected_ps()
+        for p in ps:
             album = self.theme_kanban.album_kanbans[p].album.album
             url = f"https://www.google.com/search?q={album}&udm=2"
             webbrowser.open(url)
@@ -163,14 +251,10 @@ class Page1Widget(QWidget):
             webbrowser.open(url)
 
     def _on_paths_dropped(self, dropped_strs: list[str]) -> None:
-        # selectedIndexes 以索引为单位，一行多个
-        rows = list(sorted(set(i.row() for i in self.album_table_view.selectedIndexes())))
+        ps = self.album_table_view.get_selected_ps()
         # album view 至少 选中一个
-        if not rows:
+        if not ps:
             return
-
-        # 原始数据行指针
-        ps = [self.album_table_view.item_model.layout_ps[r] for r in rows]
 
         dropped_paths = list(map(Path, dropped_strs))
         albums = [self.theme_kanban.album_kanbans[p].album for p in ps]
@@ -216,72 +300,4 @@ class Page1Widget(QWidget):
             self.theme_kanban.album_kanbans[ps[0]].__post_init__()
             self.album_table_view.viewport().update()
             self.track_table_view.viewport().update()
-
-    def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
-        dst_dir.mkdir(parents=True, exist_ok=True)
-        ext = src.suffix.lower()
-        dst = dst_dir / ("cover"+ext)
-        shutil.copy2(src, dst)
-        return True
-
-    def _putaway_track_file(self, src: Path, dst_dir: Path, album: Album, trackidx: int) -> bool:
-        dst_dir.mkdir(parents=True, exist_ok=True)
-        ext = src.suffix.lower()
-        dst = dst_dir / (track_filenames(album)[trackidx]+ext)
-        src.rename(dst)
-        return True
-
-    def _putaway_track_files(self, src_files: list[Path], dst_dir: Path, album: Album) -> bool:
-        dst_dir.mkdir(parents=True, exist_ok=True)
-
-        src_tracks = list(map(analyze_resource_track, src_files))
-        row_ind, col_ind, aver_similarity, _ = tracks_assignment(src_tracks, album.tracks)
-
-        dst_names = track_filenames(album)
-        _map: dict[Path, Path] = {src_files[r]: (dst_dir / (dst_names[c] + src_files[r].suffix.lower())) 
-                                  for r, c in zip(row_ind, col_ind)}
-
-        text = f"""
-Directory:\t\t{src_files[0].parent.name}
-Album:\t\t{album.album}
-Average Similarity:\t{aver_similarity:.02f}
-"""
-        text += "\n"*2 + "\n".join(f"    {k.name}\n->  {v.name}\n" for k, v in _map.items())
-        accept = self._show_check_message("Check Again", text)
-        
-        if not accept:
-            return False
-        
-        [src.rename(dst) for src, dst in _map.items()]
-        return True
-
-    def _show_check_message(self, title: str, text: str, on_yes_clicked: Callable = None, 
-                            on_no_clicked: Callable = None) -> bool:
-        """弹出确认对话框"""
-        check_msg = CheckMessageBox(title, text, parent=self)
-        check_msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        # 设置默认按钮为 NO
-        check_msg.setDefaultButton(QMessageBox.StandardButton.No)
-        on_yes_clicked and check_msg.button(QMessageBox.StandardButton.Yes).clicked.connect(on_yes_clicked)
-        on_no_clicked and check_msg.button(QMessageBox.StandardButton.No).clicked.connect(on_no_clicked)
-        # 阻塞
-        accept = check_msg.exec() == QMessageBox.StandardButton.Yes
-        return accept 
-
-    @with_busy_cursor
-    def _on_image_pasted(self, data: bytes) -> None:
-        if not self.cover_label.album_kanban:
-            return
-
-        cover = self.cover_label.album_kanban.cover
-        if cover:
-            if not self._show_check_message("Check Again", "Replace cover?"):
-                return
-            os.unlink(cover)
-
-        os.makedirs(self.cover_label.album_kanban.album_dir, exist_ok=True)
-        Path(self.cover_label.album_kanban.album_dir, "cover.png").write_bytes(data)
-        self.cover_label.album_kanban.__post_init__()
-        self.album_table_view.viewport().update()
-        self.cover_label.set_album_kanban(self.cover_label.album_kanban)
 

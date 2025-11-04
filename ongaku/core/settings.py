@@ -59,6 +59,18 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
         min_length=1
     )
 
+    cover_search_engine_sources: str = Field(
+        default="amazonmusic,applemusic,itunes,ototoy,kkbox,lastfm,musicbrainz,discogs,soundcloud", 
+        description='',
+        min_length=1
+    )
+
+    cover_search_engine_country: str = Field(
+        default="jp", 
+        description='',
+        min_length=1
+    )
+
     @classmethod
     def load(cls) -> "_GlobalSettings":
         # 生成配置文件

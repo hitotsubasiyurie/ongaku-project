@@ -1,16 +1,39 @@
+from typing import Literal
 from datetime import datetime
 
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 
 
-BUBBLE_LABEL_QSS = """
+INFO_LABEL_QSS = """
     /* 边框 1像素 实线 灰色半透明 */
     border: 1px solid rgba(192, 192, 192, 0.6);
     /* 圆角 */
     border-radius: 6px;
     /* 内边距 */
     padding: 4px;
+"""
+
+WARNNING_LABEL_QSS = """
+    /* 边框 1像素 实线 灰色半透明 */
+    border: 1px solid rgba(192, 192, 192, 0.6);
+    /* 圆角 */
+    border-radius: 6px;
+    /* 内边距 */
+    padding: 4px;
+    /* 黄色背景 */
+    background-color: rgba(255, 204, 0, 0.5);
+"""
+
+ERROR_LABEL_QSS = """
+    /* 边框 1像素 实线 灰色半透明 */
+    border: 1px solid rgba(192, 192, 192, 0.6);
+    /* 圆角 */
+    border-radius: 6px;
+    /* 内边距 */
+    padding: 4px;
+    /* 红色背景 */
+    background-color: rgba(204, 51, 51, 0.5);
 """
 
 
@@ -32,28 +55,27 @@ class ToastNotifier(QWidget):
         # 监听父类
         parent.installEventFilter(self)
 
-        # 字体小一号
-        font = self.font()
-        font.setPointSize(font.pointSize() - 1)
-        self.setFont(font)
-
         # 初始化 0 大小
         self.resize(0, 0)
 
         ToastNotifier._instance = self
 
-    def show_message(self, text: str) -> None:
+    _LABEL_QSS = [INFO_LABEL_QSS, WARNNING_LABEL_QSS, ERROR_LABEL_QSS]
 
+    def show_message(self, text: str, level: Literal[0, 1, 2]) -> None:
+        """
+        :param level: 级别。信息 0，警告 1，错误 2
+        """
         label = QLabel(f"{datetime.now().strftime("%H:%M:%S")} {text}", self)
         # 高度固定
         label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        label.setStyleSheet(BUBBLE_LABEL_QSS)
+        label.setStyleSheet(self._LABEL_QSS[level])
         self.layout().addWidget(label)
         # 展示，确定 label size
         label.show()
 
         # 5 秒后移除
-        QTimer.singleShot(5000, lambda: self._remove_message(label))
+        QTimer.singleShot(8000, lambda: self._remove_message(label))
 
         self.adjustSize()
         self._set_geometry()
@@ -83,9 +105,9 @@ class ToastNotifier(QWidget):
         self.move(x, y)
 
 
-def toast_notify(text: str) -> None:
+def toast_notify(text: str, level: Literal[0, 1, 2] = 0) -> None:
     if not ToastNotifier._instance:
         return
     
-    ToastNotifier._instance.show_message(text)
+    ToastNotifier._instance.show_message(text, level)
 

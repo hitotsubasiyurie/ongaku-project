@@ -21,3 +21,7 @@ ui_font_size = 9
 
 # Font family used throughout the interface. Recommended: "JetBrains Mono"
 ui_font_family = "JetBrains Mono"
+
+cover_search_engine_sources = "amazonmusic,applemusic,itunes,ototoy,kkbox,lastfm,musicbrainz,discogs,soundcloud"
+
+cover_search_engine_country = "jp"

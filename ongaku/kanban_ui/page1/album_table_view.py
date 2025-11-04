@@ -212,6 +212,7 @@ class AlbumTableView(QTableView):
     paths_dropped = Signal(list)
 
     action_edit_clicked = Signal()
+    action_delete_clicked = Signal()
     action_locate_clicked = Signal()
     action_search_cover_clicked = Signal()
 
@@ -220,6 +221,9 @@ class AlbumTableView(QTableView):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         action = QAction("Open Metadata File", self)
         action.triggered.connect(self.action_edit_clicked.emit)
+        self.addAction(action)
+        action = QAction("Delete Albums", self)
+        action.triggered.connect(self.action_delete_clicked.emit)
         self.addAction(action)
         action = QAction("Locate Resource", self)
         action.triggered.connect(self.action_locate_clicked.emit)
@@ -276,6 +280,13 @@ class AlbumTableView(QTableView):
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
         self.setup_context_menu()
+
+    def get_selected_ps(self) -> list[int]:
+        # selectedIndexes 以索引为单位，一行多个
+        rows = list(sorted(set(i.row() for i in self.selectedIndexes())))
+        # 原始数据行指针
+        ps = [self.item_model.layout_ps[r] for r in rows]
+        return ps
 
     # 重写方法
 

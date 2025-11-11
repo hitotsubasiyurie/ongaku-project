@@ -66,6 +66,7 @@ class ThemeBoxWidget(QWidget):
 
         self.line_edit = QLineEdit(self)
         self.line_edit.setFixedHeight(fh*1.5)
+        self.line_edit.setPlaceholderText("Search theme...")
         layout.addWidget(self.line_edit)
         self.line_edit.textEdited.connect(self._on_line_edit_text_changed)
 

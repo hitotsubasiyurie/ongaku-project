@@ -126,10 +126,12 @@ def read_audio_tags(audio: str, standard: bool = True) -> dict[str, str]:
     :param standard: 是否返回标准化标签
     """
     audio = Path(audio)
-    if audio.suffix == ".flac":
+    if audio.suffix.lower() == ".flac":
         tags = FLAC(audio).tags
-    elif audio.suffix == ".mp3":
+    elif audio.suffix.lower() == ".mp3":
         tags = EasyMP3(audio).tags
+    if tags is None:
+        tags = {}
     if not standard:
         return dict(tags)
     standard_tags = {k: "//".join(tags.get(k, [])) 
@@ -176,9 +178,4 @@ def write_audio_tags(audio: str,
                          data=Path(cover).read_bytes()))
             id3.save(audio)
 
-
-def compress_img_by_pngquant(img_path: str) -> None:
-    pngquant_path = r".\dependency\pngquant.exe"
-    cmd = [pngquant_path, "--force", "--output", img_path, "--", img_path]
-    subprocess.run(cmd, check=True)
 

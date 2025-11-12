@@ -22,9 +22,10 @@ if global_settings.language == "zh":
     例如 D:\\ongaku-export
     """
         SOP = "请输入导出目录路径："
-        GFD = "【{}/{}】已导出：{} -> {}"
+        GFD = "【{}/{}】导出：{} -> {}"
         RE5 = "【{}/{}】已存在：{} -> {}"
-        DD8 = "【{}/{}】已修改标签：{}"
+        DD8 = "【{}/{}】修改标签：{}"
+        UI7 = "【{}/{}】移动：{} -> {}"
         SS2 = "【{}/{}】资源不存在！{}"
         PO0 = "是否删除导出目录中的多余文件：{} （Y/N）（默认Y）："
         LKO = "压缩封面图像：{}"
@@ -120,6 +121,13 @@ def main() -> None:
                 if dst_file.exists():
                     # 资源已存在
                     lprint(MESSAGE.RE5.format(current, total, src_file, dst_file))
+                    # 重新分配防重后缀
+                    if _UNIQUE_SUFFIX.search(dst_file.stem):
+                        new_file = make_unique_path(remove_unique_suffix(dst_file))
+                        if dst_file != new_file:
+                            dst_file.rename(new_file)
+                            lprint(MESSAGE.UI7.format(current, total, dst_file, new_file))
+                            dst_file = new_file
                     # 元数据不一致 重写标签
                     src_tags = (album.catalognumber, album.date, album.album, str(track.tracknumber), track.title, track.artist)
                     dst_tags = tuple(read_audio_tags(dst_file, standard=True).values())

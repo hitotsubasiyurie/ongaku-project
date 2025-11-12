@@ -1867,3 +1867,6 @@ ffprobe -v quiet -print_format json -show_streams -select_streams a "D:\[OPCD-10
 
 -----------------------------【todo】table view drop 路径不支持长路径
 
+## 2025.11.12
+
+-----------------------------【todo】导出增加功能，文件名去除多余后缀

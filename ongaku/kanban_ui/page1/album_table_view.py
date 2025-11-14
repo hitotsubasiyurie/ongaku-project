@@ -6,6 +6,7 @@ from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPaint
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
     QAbstractItemView, QStyle)
 
+from ongaku.core.logger import logger
 from ongaku.core.kanban import ResourceState, ThemeKanBan
 from ongaku.kanban_ui.color_theme import current_theme
 from ongaku.kanban_ui.custom.custom_table_item_model import CustomTableItemModel
@@ -128,6 +129,11 @@ class AlbumTableItemModel(CustomTableItemModel):
     def canDropMimeData(self, data: QMimeData, action: Qt.DropAction, row: int, column: int, parent: QModelIndex) \
             -> bool:
         return True
+
+    def set_filter(self, column: int, text: str) -> None:
+        if not self.theme_kanban:
+            return
+        super().set_filter(column, text)
 
     def _apply_sort(self) -> None:
         column, order = self.sort_args

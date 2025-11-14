@@ -13,7 +13,7 @@ from ongaku.utils.basemodel_utils import abstract_tracks_info
 
 
 def init_pgdata(pgdata: str) -> None:
-    cmd = fr".\dependency\pgsql\bin\initdb.exe --auth=trust --encoding=UTF8 --no-locale --nosync \
+    cmd = fr".\bin\pgsql\bin\initdb.exe --auth=trust --encoding=UTF8 --no-locale --nosync \
         --username=postgres -D {pgdata}"
     process = subprocess.run(cmd)
     logger.info(f"Initdb pgdata successfully. {cmd}")
@@ -22,7 +22,7 @@ def init_pgdata(pgdata: str) -> None:
 
 
 def pg_ctl_start(pgdata: str) -> None:
-    cmd = fr".\dependency\pgsql\bin\pg_ctl.exe start --silent -D {pgdata}"
+    cmd = fr".\bin\pgsql\bin\pg_ctl.exe start --silent -D {pgdata}"
     process = subprocess.run(cmd)
     logger.info(f"pg_ctl start successfully. {cmd}")
     logger.debug(process.stdout)
@@ -30,7 +30,7 @@ def pg_ctl_start(pgdata: str) -> None:
 
 
 def pg_ctl_stop(pgdata: str) -> None:
-    cmd = fr".\dependency\pgsql\bin\pg_ctl.exe stop --silent -D {pgdata}"
+    cmd = fr".\bin\pgsql\bin\pg_ctl.exe stop --silent -D {pgdata}"
     process = subprocess.run(cmd)
     logger.info(f"pg_ctl stop successfully. {cmd}")
     logger.debug(process.stdout)

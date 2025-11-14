@@ -147,6 +147,11 @@ class PlayTableItemModel(CustomTableItemModel):
         self.dataChanged.emit(index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole])
         return True
 
+    def set_filter(self, column: int, text: str) -> None:
+        if not self.theme_kanban:
+            return
+        super().set_filter(column, text)
+
     def _apply_sort(self) -> None:
         column, order = self.sort_args
         # 忽略大小写，首尾空字符

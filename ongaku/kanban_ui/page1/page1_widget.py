@@ -73,6 +73,8 @@ class Page1Widget(QWidget):
         self.album_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
         # album_table_view 右键菜单动作
+        self.track_table_view.action_copy_filename_clicked.connect(self._action_copy_filename)
+        # album_table_view 右键菜单动作
         self.album_table_view.action_edit_clicked.connect(self._action_edit)
         self.album_table_view.action_delete_clicked.connect(self._action_delete)
         self.album_table_view.action_locate_clicked.connect(self._action_locate)
@@ -202,6 +204,14 @@ Average Similarity:\t{aver_similarity:.02f}
         self.track_table_view.item_model.reset_album_kanban(album_kanban)
         self.cover_label.set_album_kanban(album_kanban)
 
+    def _action_copy_filename(self) -> None:
+        if not self.track_table_view.item_model.album_kanban:
+            return
+        ps = self.track_table_view.get_selected_ps()
+        filenames = track_filenames(self.track_table_view.item_model.album_kanban.album)
+        text = "\n".join(filenames[p] for p in ps)
+        subprocess.run("clip", text=True, input=text)
+
     def _action_edit(self) -> None:
         """打开 主题 元数据文件"""
         if not self.theme_kanban:
@@ -232,7 +242,8 @@ Average Similarity:\t{aver_similarity:.02f}
         ps = self.album_table_view.get_selected_ps()
         for p in ps:
             res_dir = self.theme_kanban.album_kanbans[p].album_dir
-            os.path.exists(res_dir) and subprocess.run(f'explorer "{res_dir}"')
+            not os.path.isdir(res_dir) and os.makedirs(res_dir, exist_ok=True)
+            subprocess.run(f'explorer "{res_dir}"')
 
     def _action_search_cover(self) -> None:
         """搜索所选 album 的封面"""

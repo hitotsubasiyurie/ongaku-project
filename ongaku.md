@@ -1866,7 +1866,17 @@ ffprobe -v quiet -print_format json -show_streams -select_streams a "D:\[OPCD-10
 -----------------------------【todo】table view 要禁止其他键的首字母行定位
 
 -----------------------------【todo】table view drop 路径不支持长路径
+                                至少，解析失败的话，能便捷的手动存放
 
 ## 2025.11.12
 
 -----------------------------【todo】导出增加功能，文件名去除多余后缀
+-----------------------------【todo】toolkit 封入 看板中
+
+
+
+
+
+
+
+

@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData, QSize
-from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMetrics, QBrush
+from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMetrics, QBrush, QAction
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, 
     QHeaderView, QAbstractItemView, QStyle)
 
@@ -202,6 +202,14 @@ class TrackTitleItemDelegate(QStyledItemDelegate):
 class TrackTableView(QTableView):
 
     paths_dropped = Signal(list)
+    action_copy_filename_clicked = Signal()
+
+    def setup_context_menu(self) -> None:
+        # 初始化 右键菜单
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        action = QAction("Copy Filename", self)
+        action.triggered.connect(self.action_copy_filename_clicked.emit)
+        self.addAction(action)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -242,6 +250,13 @@ class TrackTableView(QTableView):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionsClickable(False)
+
+    def get_selected_ps(self) -> list[int]:
+        # selectedIndexes 以索引为单位，一行多个
+        rows = list(sorted(set(i.row() for i in self.selectedIndexes())))
+        # 原始数据行指针
+        ps = [self.item_model.layout_ps[r] for r in rows]
+        return ps
 
     # 重写方法
 

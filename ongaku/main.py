@@ -1,0 +1,63 @@
+import os
+import sys
+from pathlib import Path
+
+executable = Path(sys.argv[0])
+
+# 若是源码运行 添加导包路径
+if executable.suffix == ".py":
+    sys.path[0] = str(executable.parent.parent)
+    os.chdir(executable.parent.parent)
+else:
+    os.chdir(executable.parent)
+
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt
+
+from ongaku.core.settings import global_settings
+from ongaku.core.kanban import KanBan
+from ongaku.core.logger import set_logger_output, set_logger_level
+from ongaku.ui.toast_notifier import ToastNotifier
+from ongaku.ui.main_window import MainWindow
+from ongaku.ui.color_theme import current_theme
+
+
+if __name__ == "__main__":
+    set_logger_output(global_settings.temp_directory)
+    set_logger_level(global_settings.log_level)
+
+    app = QApplication([])
+    app.setWindowIcon(QIcon("./assets/icon.png"))
+
+    QApplication.setStyle("Fusion")
+    current_theme.apply_theme(app)
+
+    font = app.font()
+    global_settings.ui_font_size and font.setPointSize(global_settings.ui_font_size)
+    global_settings.ui_font_family and font.setFamily(global_settings.ui_font_family)
+    app.setFont(font)
+
+    widget = MainWindow()
+    ToastNotifier(parent=widget)
+
+    screen = app.screens()[0]
+    screen_geometry = screen.availableGeometry()
+    width = screen_geometry.width()
+    height = int(screen_geometry.height() * 0.75)
+    widget.resize(width, height)
+    widget.move(screen_geometry.left(), screen_geometry.top())
+    widget.show()
+
+    widget.showMaximized()
+
+    QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
+    widget.set_kanban(kanban)
+    QApplication.restoreOverrideCursor()
+
+    sys.exit(app.exec())
+
+
+
+

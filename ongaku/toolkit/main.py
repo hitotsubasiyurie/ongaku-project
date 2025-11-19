@@ -12,7 +12,7 @@ else:
 
 from ongaku.core.logger import set_logger_output, set_logger_level
 from ongaku.core.settings import global_settings
-from ongaku.toolkit.toolkit_utils import loop_for_actions
+from ongaku.toolkit.utils import loop_for_actions
 from ongaku.toolkit.plugins import PLUGINS
 
 

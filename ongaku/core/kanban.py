@@ -192,7 +192,7 @@ class ThemeKanBan:
     :param theme_metadata_file: 主题元数据文件路径
     :param theme_directory: 主题资源目录路径
 
-    :var album_kanbans: 
+    :var album_kanbans: 专辑看板列表
     """
 
     theme_metadata_file: str
@@ -220,21 +220,31 @@ class ThemeKanBan:
         return Path(self.theme_metadata_file).stem
 
     @property
-    def album_collection_progress(self) -> float:
+    def album_collection_progress(self) -> tuple[int, int]:
         """资源收集进度"""
         albums = [k.album for k in self.album_kanbans]
         if albums:
-            return sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans) / len(albums)
-        return 0
+            return sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans), len(albums)
+        return 0, 0
 
     @property
-    def track_mark_progress(self) -> float:
+    def track_mark_progress(self) -> tuple[int, int]:
         """标记进度"""
         albums = [k.album for k in self.album_kanbans]
         total = sum(len(a.tracks) for a in albums)
         if total:
-            return sum(bool(t.mark) for a in albums for t in a.tracks) / total
-        return 0
+            return sum(bool(t.mark) for a in albums for t in a.tracks), total
+        return 0, 0
+
+    @property
+    def start_date(self) -> tuple[str, str]:
+        dates = list(sorted(filter(None, (k.album.date for k in self.album_kanbans))))
+        return dates[0] if dates else ""
+
+    @property
+    def end_date(self) -> tuple[str, str]:
+        dates = list(sorted(filter(None, (k.album.date for k in self.album_kanbans))))
+        return dates[-1] if dates else ""
 
     def save_metadata_file(self) -> None:
         """

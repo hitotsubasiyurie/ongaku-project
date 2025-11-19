@@ -18,7 +18,7 @@ class Page0Widget(QWidget):
         grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.name_field = QLineEdit()
-        self.name_field.setPlaceholderText("search title...")
+        self.name_field.setPlaceholderText("search name...")
         grid_layout.addWidget(self.name_field, 0, 1, 1, 1)
 
         self.theme_table_view = ThemeTableView()
@@ -33,13 +33,14 @@ class Page0Widget(QWidget):
 
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
-        QShortcut(Qt.Key.Key_Escape, self, activated=
-            lambda: [x.clear() for x in [self.name_field]])
+        QShortcut(Qt.Key.Key_Escape, self, activated=lambda: [x.clear() for x in [self.name_field]])
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.setup_ui()
+        self.setup_event()
+        self.setup_shortcut()
 
     def set_kanban(self, kanban: KanBan = None) -> None:
         self.kanban = kanban

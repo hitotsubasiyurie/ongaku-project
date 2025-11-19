@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Callable
+from functools import cached_property
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
 from concurrent.futures import ThreadPoolExecutor
@@ -214,12 +215,12 @@ class ThemeKanBan:
         album_dirs = [os.path.join(self.theme_directory, album_filename(a)) for a in albums]
         self.album_kanbans = tuple(AlbumKanBan(a, d) for a, d in zip(albums, album_dirs))
 
-    @property
+    @cached_property
     def theme_name(self) -> str:
         """主题名"""
         return Path(self.theme_metadata_file).stem
 
-    @property
+    @cached_property
     def album_collection_progress(self) -> tuple[int, int]:
         """资源收集进度"""
         albums = [k.album for k in self.album_kanbans]
@@ -227,7 +228,7 @@ class ThemeKanBan:
             return sum(k.album_res_state != ResourceState.MISSING for k in self.album_kanbans), len(albums)
         return 0, 0
 
-    @property
+    @cached_property
     def track_mark_progress(self) -> tuple[int, int]:
         """标记进度"""
         albums = [k.album for k in self.album_kanbans]
@@ -236,12 +237,12 @@ class ThemeKanBan:
             return sum(bool(t.mark) for a in albums for t in a.tracks), total
         return 0, 0
 
-    @property
+    @cached_property
     def start_date(self) -> tuple[str, str]:
         dates = list(sorted(filter(None, (k.album.date for k in self.album_kanbans))))
         return dates[0] if dates else ""
 
-    @property
+    @cached_property
     def end_date(self) -> tuple[str, str]:
         dates = list(sorted(filter(None, (k.album.date for k in self.album_kanbans))))
         return dates[-1] if dates else ""

@@ -90,7 +90,8 @@ class ThemeTableItemModel(CustomTableItemModel):
         self.layout_ps = []
         for p in range(len(self.kanban.theme_kanbans)):
             # 全字包含 或 正则匹配
-            is_match = all((t in self._get_data(c, p) or re.search(t, self._get_data(c, p))) for c, t in self.filters.items())
+            is_match = all((t.lower() in self._get_data(c, p).lower() 
+                            or re.search(t, self._get_data(c, p), re.IGNORECASE)) for c, t in self.filters.items())
             if not self.filters or is_match:
                 self.layout_ps.append(p)
         

@@ -35,15 +35,15 @@ class Page1Widget(QWidget):
         grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.album_field = QLineEdit()
-        self.album_field.setPlaceholderText("Search album...")
+        self.album_field.setPlaceholderText("search album...")
         grid_layout.addWidget(self.album_field, 0, 0, 1, 1)
 
         self.catno_field = QLineEdit()
-        self.catno_field.setPlaceholderText("Search catno...")
+        self.catno_field.setPlaceholderText("search catno...")
         grid_layout.addWidget(self.catno_field, 0, 1, 1, 1)
 
         self.date_field = QLineEdit()
-        self.date_field.setPlaceholderText("Search date...")
+        self.date_field.setPlaceholderText("search date...")
         grid_layout.addWidget(self.date_field, 0, 2, 1, 1)
 
         self.link_box = LinkComboBox()

@@ -28,7 +28,6 @@ from ongaku.ui.page1.cover_label import CoverLabel
 class Page1Widget(QWidget):
 
     def setup_ui(self) -> None:
-
         # 初始化 UI
         grid_layout = QGridLayout()
         self.setLayout(grid_layout)

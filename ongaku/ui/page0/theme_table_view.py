@@ -6,12 +6,13 @@ from pathlib import Path
 
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData, QAbstractItemModel, QTimer
-from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush
+from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush, QPalette
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
     QAbstractItemView, QStyle)
 
 from ongaku.core.kanban import KanBan, ThemeKanBan
 from ongaku.ui.custom import CustomTableItemModel
+from ongaku.ui.color_theme import current_theme
 
 
 class ThemeTableItemModel(CustomTableItemModel):
@@ -48,11 +49,29 @@ class ThemeTableItemModel(CustomTableItemModel):
 
         p = self.layout_ps[row]
 
+        # 自定义 进度条 数据
+        if role == Qt.ItemDataRole.UserRole:
+            if col == 1:
+                return self._get_sort_data(4, p), self._get_sort_data(5, p)
+        
+        # 文本对齐
+        if role == Qt.ItemDataRole.TextAlignmentRole:
+            # 文本居中
+            if col in [2, 3, 4, 5]:
+                return Qt.AlignmentFlag.AlignCenter
+        
         # DisplayRole, EditRole
         if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
             return self._get_data(col, p)
 
         return None
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        # Name 列 不可选
+        if index.column() == 1:
+            return Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled
+        else:
+            return super().flags(index)
 
     def set_filter(self, column: int, text: str) -> None:
         if not self.kanban:
@@ -102,7 +121,31 @@ class ThemeTableItemModel(CustomTableItemModel):
 
 
 class ThemeTableItemDelegate(QStyledItemDelegate):
-    pass
+
+    def __init__(self, parent: QWidget = None):
+        super().__init__(parent)
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        rect: QRect = option.rect
+
+        painter.save()
+
+        # 先画长进度条
+        coll_p, mark_p = index.data(Qt.ItemDataRole.UserRole)
+        if coll_p == mark_p:
+            coll_p -= 0.01
+        params = [(coll_p, current_theme.THEME_PROGRESS_COLL_COLOR),
+                  (mark_p, current_theme.THEME_PROGRESS_MARK_COLOR)]
+        params.sort(key=lambda t: t[0], reverse=True)
+        
+        for val, color in params:
+            w = int(rect.width() * val)
+            comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
+            painter.fillRect(comp_rect, color)
+
+        painter.restore()
+
+        super().paint(painter, option, index)
 
 
 class ThemeTableView(QTableView):
@@ -115,6 +158,8 @@ class ThemeTableView(QTableView):
         self.setModel(self.item_model)
         # 重置、排序、筛选 后 滚动至开头
         self.item_model.layoutChanged.connect(self.scrollToTop)
+
+        self.setItemDelegateForColumn(1, ThemeTableItemDelegate(self))
 
         # 表格无边框
         self.setShowGrid(False)
@@ -136,6 +181,11 @@ class ThemeTableView(QTableView):
         self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)
         self.setDropIndicatorShown(True)
 
+        # 字体加 1 号
+        font = self.font()
+        font.setPointSize(font.pointSize()+1)
+        self.setFont(font)
+
         # 字体高度
         fh = self.fontMetrics().height()
 
@@ -148,13 +198,13 @@ class ThemeTableView(QTableView):
         
         # 设置列
         header = self.horizontalHeader()
-        column_widths = [0, 0, fh*6, fh*6, fh*6, fh*6]
-        [self.setColumnWidth(i, w) for i, w in enumerate(column_widths)]
-        column_modes = [QHeaderView.ResizeMode.Fixed if w else QHeaderView.ResizeMode.Stretch for w in column_widths]
+        # 最小列宽
+        header.setMinimumSectionSize(fh*2)
+        # ResizeMode
+        column_modes = [QHeaderView.ResizeMode.ResizeToContents, 
+                        QHeaderView.ResizeMode.Stretch, QHeaderView.ResizeMode.ResizeToContents, QHeaderView.ResizeMode.ResizeToContents, 
+                        QHeaderView.ResizeMode.ResizeToContents, QHeaderView.ResizeMode.ResizeToContents]
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
-
-
-
 
 
 

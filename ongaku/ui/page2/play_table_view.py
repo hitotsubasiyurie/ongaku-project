@@ -43,15 +43,14 @@ class PlayTableItemModel(CustomTableItemModel):
                           for i, ak in enumerate(theme_kanban.album_kanbans)
                           for j, t in enumerate(ak.album.tracks)] if theme_kanban else []
         self.playing_ij = None
-        self.layout_ps = list(range(len(self.kanban_ij))) if theme_kanban else []
 
         # 默认 以 Title 列 排序
         self.sort_args = (1, Qt.SortOrder.AscendingOrder)
-        # 清空筛选
+        # 默认 无筛选
         self.filters = {}
 
-        # 应用排序
-        self._apply_sort()
+        # 生成 layout_ps 、筛选、排序 
+        self._apply_filters()
 
         self.endResetModel()
 
@@ -162,8 +161,9 @@ class PlayTableItemModel(CustomTableItemModel):
         self.layout_ps = []
         for p, (i, j) in enumerate(self.kanban_ij):
             # 全字包含 或 正则匹配
-            if all((t in self._get_data(Qt.ItemDataRole.EditRole, c, i, j) or re.search(t, self._get_data(Qt.ItemDataRole.EditRole, c, i, j))) 
-                   for c, t in self.filters.items()):
+            is_match = all((t in self._get_data(Qt.ItemDataRole.EditRole, c, i, j) or re.search(t, self._get_data(Qt.ItemDataRole.EditRole, c, i, j))) 
+                           for c, t in self.filters.items())
+            if not self.filters or is_match:
                 self.layout_ps.append(p)
         
         # 应用排序

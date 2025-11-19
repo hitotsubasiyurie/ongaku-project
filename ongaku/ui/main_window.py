@@ -60,15 +60,14 @@ QPushButton:hover {{
     def setup_event(self) -> None:
         # 初始化 事件
         self.page_btn.clicked.connect(self._show_menu)
-        self.toolkit_btn.clicked.connect(self._on_theme_btn_clicked)
+        self.toolkit_btn.clicked.connect(self._on_toolkit_btn_clicked)
+        self.stack.currentChanged.connect(self._set_btns_geometry)
 
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
-        QShortcut(QKeySequence("Alt+Left"), self, activated=lambda : self._toggle_page(0))
-        QShortcut(QKeySequence("Alt+Right"), self, activated=lambda : self._toggle_page(1))
-        shortcut = QShortcut(Qt.Key.Key_Tab, self, activated=self._on_theme_btn_clicked)
+        shortcut = QShortcut(Qt.Key.Key_Tab, self, activated=lambda: self.stack.setCurrentIndex((self.stack.currentIndex()+1)%3))
         shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
-        shortcut = QShortcut(Qt.Key.Key_F5, self, activated=self.refresh_current_theme_kanban)
+        shortcut = QShortcut(Qt.Key.Key_F5, self, activated=self.refresh_kanban)
 
     def setup_context_menu(self) -> None:
         # 初始化 页面菜单
@@ -95,13 +94,13 @@ QPushButton:hover {{
         self.kanban = kanban
         self.page0.set_kanban(kanban)
 
-    def refresh_current_theme_kanban(self) -> None:
-        if not self.current_theme_kanban:
+    def refresh_kanban(self) -> None:
+        if not self.kanban:
             return
-        self.current_theme_kanban.scan()
-        self.theme_box.set_kanban(self.kanban)
-        self.page1.set_theme_kanban(self.current_theme_kanban)
-        self.page2.set_theme_kanban(self.current_theme_kanban)
+        # self.current_theme_kanban.scan()
+        # self.theme_box.set_kanban(self.kanban)
+        # self.page1.set_theme_kanban(self.current_theme_kanban)
+        # self.page2.set_theme_kanban(self.current_theme_kanban)
 
     # 重写方法
 
@@ -116,37 +115,17 @@ QPushButton:hover {{
         pos = self.page_btn.mapToGlobal(QPoint(0, self.page_btn.height()))
         self.menu.exec(pos)
 
-    def _toggle_page(self, dst: int = None):
-        if not dst:
-            dst = 0 if self.stack.currentIndex() == 1 else 1
-        self.stack.setCurrentIndex(dst)
-        self._set_btns_geometry()
-
     def _set_btns_geometry(self):
         index = self.stack.currentIndex()
-        if index == 0:
-            self.page_btn.move(self.width() - self.page_btn.width(), 0)
-            self.toolkit_btn.move(self.width() - self.page_btn.width()*2, 0)
-        else:
+        if index == 2:
             self.page_btn.move(0, 0)
             self.toolkit_btn.move(self.page_btn.width(), 0)
-
-    @with_busy_cursor
-    def _on_theme_btn_clicked(self):
-        if self.theme_box.isHidden():
-            self.theme_box.set_kanban(self.kanban)
-            self.theme_box.move((self.width()-self.theme_box.width()) // 2, 
-                                (self.height()-self.theme_box.height()) // 2)
-            self.theme_box.show()
         else:
-            self.theme_box.hide()
-
+            self.page_btn.move(self.width() - self.page_btn.width(), 0)
+            self.toolkit_btn.move(self.width() - self.page_btn.width()*2, 0)
+    
     @with_busy_cursor
-    def _on_theme_box_selected(self) -> None:
-        self.current_theme_kanban = self.kanban.get_theme_kanban(self.theme_box.selected_theme)
-        self.setWindowTitle(f"KanBan - {self.current_theme_kanban.theme_name if self.current_theme_kanban else ''}")
-        self.page1.set_theme_kanban(self.current_theme_kanban)
-        self.page2.set_theme_kanban(self.current_theme_kanban)
-
+    def _on_toolkit_btn_clicked(self):
+        pass
 
 

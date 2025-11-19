@@ -21,9 +21,20 @@ class Page0Widget(QWidget):
         self.name_field.setPlaceholderText("search title...")
         grid_layout.addWidget(self.name_field, 0, 1, 1, 1)
 
-        self.theme_tree_view = ThemeTableView()
-        grid_layout.addWidget(self.theme_tree_view, 1, 0, 1, 6)
+        self.theme_table_view = ThemeTableView()
+        grid_layout.addWidget(self.theme_table_view, 1, 0, 1, 3)
 
+        col_stretch = [1, 8, 8]
+        [s and grid_layout.setColumnStretch(i, s) for i, s in enumerate(col_stretch)]
+
+    def setup_event(self) -> None:
+        # 初始化 事件
+        self.name_field.textChanged.connect(lambda t: self.theme_table_view.item_model.set_filter(1, t))
+
+    def setup_shortcut(self) -> None:
+        # 初始化 快捷键
+        QShortcut(Qt.Key.Key_Escape, self, activated=
+            lambda: [x.clear() for x in [self.name_field]])
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -32,7 +43,7 @@ class Page0Widget(QWidget):
 
     def set_kanban(self, kanban: KanBan = None) -> None:
         self.kanban = kanban
-        self.theme_tree_view.item_model.reset_kanban(kanban)
+        self.theme_table_view.item_model.reset_kanban(kanban)
 
 
 

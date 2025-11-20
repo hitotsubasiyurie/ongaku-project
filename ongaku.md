@@ -1901,4 +1901,6 @@ ffprobe -v quiet -print_format json -show_streams -select_streams a "D:\[OPCD-10
 
 -----------------------------【todo】主题看板不使用树视图了。使用路径展示结构吧
 
+## 2025.11.19
 
+-----------------------------【todo】仍然使用缓存，但是切换页面时刷新

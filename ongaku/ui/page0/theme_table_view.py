@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData, QAbstractItemModel, QTimer
-from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush, QPalette
+from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush, QPalette, QColor
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
     QAbstractItemView, QStyle)
 
@@ -56,8 +56,9 @@ class ThemeTableItemModel(CustomTableItemModel):
         
         # 文本对齐
         if role == Qt.ItemDataRole.TextAlignmentRole:
-            # 文本居中
-            if col in [2, 3, 4, 5]:
+            if col == 0:
+                return Qt.AlignmentFlag.AlignRight
+            if col in (2, 3, 4, 5):
                 return Qt.AlignmentFlag.AlignCenter
         
         # DisplayRole, EditRole
@@ -65,13 +66,6 @@ class ThemeTableItemModel(CustomTableItemModel):
             return self._get_data(col, p)
 
         return None
-
-    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
-        # Name 列 不可选
-        if index.column() == 1:
-            return Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled
-        else:
-            return super().flags(index)
 
     def set_filter(self, column: int, text: str) -> None:
         if not self.kanban:
@@ -128,8 +122,9 @@ class ThemeTableItemDelegate(QStyledItemDelegate):
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         rect: QRect = option.rect
-
-        painter.save()
+        
+        # 覆盖绘制 基背景
+        painter.fillRect(rect, option.palette.color(QPalette.ColorRole.Base))
 
         # 先画长进度条
         coll_p, mark_p = index.data(Qt.ItemDataRole.UserRole)
@@ -141,12 +136,12 @@ class ThemeTableItemDelegate(QStyledItemDelegate):
         
         for val, color in params:
             w = int(rect.width() * val)
-            comp_rect = QRect(rect.left(), rect.top(), w, rect.height())
-            painter.fillRect(comp_rect, color)
+            progress_rect = QRect(rect.left(), rect.top(), w, rect.height())
+            painter.fillRect(progress_rect, color)
 
-        painter.restore()
-
-        super().paint(painter, option, index)
+        # 绘制文字
+        text = index.data()
+        painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
 
 
 class ThemeTableView(QTableView):

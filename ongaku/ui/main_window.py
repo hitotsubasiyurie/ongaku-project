@@ -62,6 +62,7 @@ QPushButton:hover {{
         self.page_btn.clicked.connect(self._show_menu)
         self.toolkit_btn.clicked.connect(self._on_toolkit_btn_clicked)
         self.stack.currentChanged.connect(self._set_btns_geometry)
+        self.page0.theme_kanban_selected.connect(self._on_theme_kanban_selected)
 
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
@@ -83,7 +84,6 @@ QPushButton:hover {{
         super().__init__(parent)
 
         self.kanban: KanBan = None
-        self.current_theme_kanban: ThemeKanBan = None
 
         self.setup_ui()
         self.setup_event()
@@ -128,4 +128,10 @@ QPushButton:hover {{
     def _on_toolkit_btn_clicked(self):
         pass
 
+    # 事件动作
 
+    @with_busy_cursor
+    def _on_theme_kanban_selected(self) -> None:
+        tk = self.kanban.theme_kanbans[self.page0.current_theme_kanban_p]
+        self.page1.set_theme_kanban(tk)
+        self.page2.set_theme_kanban(tk)

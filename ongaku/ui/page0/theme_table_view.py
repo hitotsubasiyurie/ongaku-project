@@ -1,14 +1,13 @@
 import re
-import os
 import operator
 from typing import Any
 from pathlib import Path
 
 
-from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData, QAbstractItemModel, QTimer
-from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush, QPalette, QColor
+from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal
+from PySide6.QtGui import QPainter, QAction, QPalette, QIcon
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
-    QAbstractItemView, QStyle)
+    QAbstractItemView)
 
 from ongaku.core.kanban import KanBan, ThemeKanBan
 from ongaku.ui.custom import CustomTableItemModel
@@ -23,6 +22,8 @@ class ThemeTableItemModel(CustomTableItemModel):
         self.headers: list[str] = ["Path", "Name", "Start Date", "End Date", "Collect", "Mark"]
 
         self.kanban: KanBan = None
+        # 当前选择的主题看板 指针
+        self.current_theme_kanban_p: int = None
 
     def reset_kanban(self, kanban: KanBan = None) -> None:
         # 声明重置模型
@@ -57,7 +58,7 @@ class ThemeTableItemModel(CustomTableItemModel):
         # 文本对齐
         if role == Qt.ItemDataRole.TextAlignmentRole:
             if col == 0:
-                return Qt.AlignmentFlag.AlignRight
+                return Qt.AlignmentFlag.AlignLeft
             if col in (2, 3, 4, 5):
                 return Qt.AlignmentFlag.AlignCenter
         
@@ -66,6 +67,25 @@ class ThemeTableItemModel(CustomTableItemModel):
             return self._get_data(col, p)
 
         return None
+
+    def headerData(self, section: int, orientation: Qt.Orientation,
+                   role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
+
+        # 列表头 播放中 仅展示装饰图标
+        if orientation == Qt.Orientation.Vertical and self.layout_ps and self.layout_ps[section] == self.current_theme_kanban_p:
+            if role == Qt.ItemDataRole.DecorationRole:
+                return QIcon(f"./assets/playing.png")
+            else:
+                return
+        
+        return super().headerData(section, orientation, role)
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        # Path 列 不可编辑
+        if index.column() == 0:
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        
+        return super().flags(index)
 
     def set_filter(self, column: int, text: str) -> None:
         if not self.kanban:
@@ -123,6 +143,7 @@ class ThemeTableItemDelegate(QStyledItemDelegate):
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         rect: QRect = option.rect
         
+        # 选中时不绘制高亮
         # 覆盖绘制 基背景
         painter.fillRect(rect, option.palette.color(QPalette.ColorRole.Base))
 
@@ -145,6 +166,14 @@ class ThemeTableItemDelegate(QStyledItemDelegate):
 
 
 class ThemeTableView(QTableView):
+
+    action_edit_clicked = Signal()
+
+    def setup_context_menu(self) -> None:
+        # 初始化 右键菜单
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        action = QAction("Open Metadata File", self)
+        action.triggered.connect(self.action_edit_clicked.emit)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -202,6 +231,4 @@ class ThemeTableView(QTableView):
                         QHeaderView.ResizeMode.ResizeToContents, QHeaderView.ResizeMode.ResizeToContents]
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
-
-
-
+        self.setup_context_menu()

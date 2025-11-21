@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QModelIndex, QTimer
+from PySide6.QtCore import Qt, QModelIndex, QTimer, Signal
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
 
@@ -9,6 +9,8 @@ from ongaku.ui.page0.theme_table_view import ThemeTableView
 
 
 class Page0Widget(QWidget):
+
+    theme_kanban_selected = Signal()
 
     def setup_ui(self) -> None:
         # 初始化 UI
@@ -30,6 +32,7 @@ class Page0Widget(QWidget):
     def setup_event(self) -> None:
         # 初始化 事件
         self.name_field.textChanged.connect(lambda t: self.theme_table_view.item_model.set_filter(1, t))
+        self.theme_table_view.doubleClicked.connect(self._on_theme_table_double_clicked)
 
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
@@ -37,6 +40,10 @@ class Page0Widget(QWidget):
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
+
+        self.kanban: KanBan = None
+        # 当前选择的主题看板 指针
+        self.current_theme_kanban_p: int = None
 
         self.setup_ui()
         self.setup_event()
@@ -46,8 +53,17 @@ class Page0Widget(QWidget):
         self.kanban = kanban
         self.theme_table_view.item_model.reset_kanban(kanban)
 
+    # 内部方法
 
-
+    def _on_theme_table_double_clicked(self, index: QModelIndex) -> None:
+        # 双击 Path 列 选择主题
+        if index.column() != 0:
+            return
+        self.theme_table_view.item_model.current_theme_kanban_p = self.theme_table_view.item_model.layout_ps[index.row()]
+        self.current_theme_kanban_p = self.theme_table_view.item_model.current_theme_kanban_p
+        # 更新视图 垂直表头
+        self.theme_table_view.verticalHeader().viewport().update()
+        self.theme_kanban_selected.emit()
 
 
 

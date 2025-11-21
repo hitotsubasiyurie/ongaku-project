@@ -93,6 +93,7 @@ class Page2Widget(QWidget):
         self.theme_kanban: ThemeKanBan = None
 
         # 当前播放 视图索引
+        # TODO: widget 肯定不能持有 item model 的索引
         self._playing_ix: QModelIndex = None
 
         # 保存元数据文件 防抖定时器 5 秒

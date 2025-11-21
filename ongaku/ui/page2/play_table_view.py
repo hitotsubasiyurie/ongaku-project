@@ -103,7 +103,7 @@ class PlayTableItemModel(CustomTableItemModel):
                 return
         
         return super().headerData(section, orientation, role)
-    
+
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         # Size 列 不可编辑
         if index.column() == 0:

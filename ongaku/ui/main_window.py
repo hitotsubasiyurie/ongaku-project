@@ -1,11 +1,10 @@
 from PySide6.QtCore import Qt, QPoint
-from PySide6.QtGui import QShortcut, QKeySequence, QIcon, QAction
+from PySide6.QtGui import QShortcut, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget, QMenu
 
 from ongaku.core.settings import global_settings
-from ongaku.core.kanban import KanBan, ThemeKanBan
+from ongaku.core.kanban import KanBan
 from ongaku.ui.utils import with_busy_cursor
-from ongaku.ui.page0.theme_box_widget import ThemeBoxWidget
 from ongaku.ui.page0.page0_widget import Page0Widget
 from ongaku.ui.page1.page1_widget import Page1Widget
 from ongaku.ui.page2.page2_widget import Page2Widget
@@ -34,13 +33,13 @@ class MainWindow(QWidget):
         self.page2 = Page2Widget()
         self.stack.addWidget(self.page2)
 
-        self.page_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page.png"), "", parent=self)
-        self.page_btn.setFixedSize(fh*1.5, fh*1.5)
-        self.page_btn.setIconSize(self.page_btn.size())
+        self.page_prev_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page_prev.png"), "", parent=self)
+        self.page_prev_btn.setFixedSize(fh*1.5, fh*1.5)
+        self.page_prev_btn.setIconSize(self.page_prev_btn.size())
 
-        self.toolkit_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/toolkit.png"), "", parent=self)
-        self.toolkit_btn.setFixedSize(fh*1.5, fh*1.5)
-        self.toolkit_btn.setIconSize(self.toolkit_btn.size())
+        self.page_next_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page_next.png"), "", parent=self)
+        self.page_next_btn.setFixedSize(fh*1.5, fh*1.5)
+        self.page_next_btn.setIconSize(self.page_next_btn.size())
 
         btn_qss = f"""
 QPushButton {{
@@ -55,12 +54,12 @@ QPushButton:hover {{
     background-color: rgba(100, 100, 100, 200);
 }}
 """
-        [b.setStyleSheet(btn_qss) for b in [self.page_btn, self.toolkit_btn]]
+        [b.setStyleSheet(btn_qss) for b in [self.page_prev_btn, self.page_next_btn]]
 
     def setup_event(self) -> None:
         # 初始化 事件
-        self.page_btn.clicked.connect(self._show_menu)
-        self.toolkit_btn.clicked.connect(self._on_toolkit_btn_clicked)
+        self.page_prev_btn.clicked.connect(lambda: self.stack.setCurrentIndex((self.stack.currentIndex()-1)%3))
+        self.page_next_btn.clicked.connect(lambda: self.stack.setCurrentIndex((self.stack.currentIndex()+1)%3))
         self.stack.currentChanged.connect(self._set_btns_geometry)
         self.page0.theme_kanban_selected.connect(self._on_theme_kanban_selected)
 
@@ -97,10 +96,8 @@ QPushButton:hover {{
     def refresh_kanban(self) -> None:
         if not self.kanban:
             return
-        # self.current_theme_kanban.scan()
-        # self.theme_box.set_kanban(self.kanban)
-        # self.page1.set_theme_kanban(self.current_theme_kanban)
-        # self.page2.set_theme_kanban(self.current_theme_kanban)
+        # 扫描 数据会增加
+        # self.kanban.scan()
 
     # 重写方法
 
@@ -110,24 +107,15 @@ QPushButton:hover {{
 
     # 内部方法
 
-    def _show_menu(self) -> None:
-        # 菜单显示在按钮左下角
-        pos = self.page_btn.mapToGlobal(QPoint(0, self.page_btn.height()))
-        self.menu.exec(pos)
-
     def _set_btns_geometry(self):
         index = self.stack.currentIndex()
         if index == 2:
-            self.page_btn.move(0, 0)
-            self.toolkit_btn.move(self.page_btn.width(), 0)
+            self.page_prev_btn.move(0, 0)
+            self.page_next_btn.move(self.page_prev_btn.width(), 0)
         else:
-            self.page_btn.move(self.width() - self.page_btn.width(), 0)
-            self.toolkit_btn.move(self.width() - self.page_btn.width()*2, 0)
+            self.page_next_btn.move(self.width() - self.page_prev_btn.width(), 0)
+            self.page_prev_btn.move(self.width() - self.page_prev_btn.width()*2, 0)
     
-    @with_busy_cursor
-    def _on_toolkit_btn_clicked(self):
-        pass
-
     # 事件动作
 
     @with_busy_cursor

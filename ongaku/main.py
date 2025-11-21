@@ -38,22 +38,23 @@ if __name__ == "__main__":
     global_settings.ui_font_family and font.setFamily(global_settings.ui_font_family)
     app.setFont(font)
 
-    widget = MainWindow()
-    ToastNotifier(parent=widget)
+    main_windows = MainWindow()
+    ToastNotifier(parent=main_windows)
 
     screen = app.screens()[0]
     screen_geometry = screen.availableGeometry()
-    width = screen_geometry.width()
-    height = int(screen_geometry.height() * 0.75)
-    widget.resize(width, height)
-    widget.move(screen_geometry.left(), screen_geometry.top())
-    widget.show()
+    main_windows.resize(screen_geometry.width(), screen_geometry.height() * 0.75)
+    main_windows.move(screen_geometry.left(), screen_geometry.top())
+    main_windows.show()
 
-    widget.showMaximized()
+    main_windows.showMaximized()
+
+    # 先展示界面
+    app.processEvents()
 
     QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
     kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
-    widget.set_kanban(kanban)
+    main_windows.set_kanban(kanban)
     QApplication.restoreOverrideCursor()
 
     sys.exit(app.exec())

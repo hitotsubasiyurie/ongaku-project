@@ -66,7 +66,7 @@ QPushButton:hover {{
         # 初始化 快捷键
         shortcut = QShortcut(Qt.Key.Key_Tab, self, activated=lambda: self._change_page((self.stack.currentIndex()+1)%3))
         shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
-        shortcut = QShortcut(Qt.Key.Key_F5, self, activated=self.refresh_kanban)
+        shortcut = QShortcut(Qt.Key.Key_F5, self, activated=self._refresh_kanban)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -80,12 +80,8 @@ QPushButton:hover {{
     def set_kanban(self, kanban: KanBan) -> None:
         self.kanban = kanban
         self.page0.set_kanban(kanban)
-
-    def refresh_kanban(self) -> None:
-        if not self.kanban:
-            return
-        # 扫描 数据会增加
-        # self.kanban.scan()
+        self.page1.set_theme_kanban(None)
+        self.page2.set_theme_kanban(None)
 
     # 重写方法
 
@@ -105,6 +101,13 @@ QPushButton:hover {{
             self.page_prev_btn.move(self.width() - self.page_prev_btn.width()*2, 0)
 
     # 事件动作
+
+    @with_busy_cursor
+    def _refresh_kanban(self) -> None:
+        if not self.kanban:
+            return
+        self.kanban.scan()
+        self.set_kanban(self.kanban)
 
     @with_busy_cursor
     def _change_page(self, index: int) -> None:

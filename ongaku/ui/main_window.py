@@ -108,9 +108,9 @@ QPushButton:hover {{
 
     @with_busy_cursor
     def _change_page(self, index: int) -> None:
-        self._set_btns_geometry()
         self.kanban.invalidate_cache()
         self.stack.setCurrentIndex(index)
+        self._set_btns_geometry()
 
     @with_busy_cursor
     def _on_theme_kanban_selected(self) -> None:

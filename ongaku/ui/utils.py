@@ -8,14 +8,19 @@ from PySide6.QtCore import Qt
 def with_busy_cursor(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if (cursor:= QApplication.overrideCursor()) and cursor.shape() == Qt.CursorShape.WaitCursor:
-            return func(*args, **kwargs)
-        
-        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        cursor = QApplication.overrideCursor()
+        pushed = False
+
+        if not (cursor and cursor.shape() == Qt.CursorShape.WaitCursor):
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            pushed = True
+
         try:
             return func(*args, **kwargs)
         finally:
-            QApplication.restoreOverrideCursor()
+            if pushed:
+                QApplication.restoreOverrideCursor()
+    
     return wrapper
 
 

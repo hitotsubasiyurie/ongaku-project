@@ -261,9 +261,10 @@ class ThemeKanBan:
         """
         失效缓存。
         """
+        # 先失效子看板缓存 再失效自身缓存
+        [ak.invalidate_cache() for ak in self.album_kanbans]
         names = ["theme_name", "album_collection_progress", "track_mark_progress", "start_date", "end_date"]
         [self.__dict__.pop(n, None) for n in names]
-        [ak.invalidate_cache() for ak in self.album_kanbans]
 
     def save_metadata_file(self) -> None:
         """

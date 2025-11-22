@@ -1,6 +1,6 @@
-from PySide6.QtCore import Qt, QPoint
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QIcon
-from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget, QMenu
+from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan
@@ -58,26 +58,15 @@ QPushButton:hover {{
 
     def setup_event(self) -> None:
         # 初始化 事件
-        self.page_prev_btn.clicked.connect(lambda: self.stack.setCurrentIndex((self.stack.currentIndex()-1)%3))
-        self.page_next_btn.clicked.connect(lambda: self.stack.setCurrentIndex((self.stack.currentIndex()+1)%3))
-        self.stack.currentChanged.connect(self._set_btns_geometry)
+        self.page_prev_btn.clicked.connect(lambda: self._change_page((self.stack.currentIndex()-1)%3))
+        self.page_next_btn.clicked.connect(lambda: self._change_page((self.stack.currentIndex()+1)%3))
         self.page0.theme_kanban_selected.connect(self._on_theme_kanban_selected)
 
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
-        shortcut = QShortcut(Qt.Key.Key_Tab, self, activated=lambda: self.stack.setCurrentIndex((self.stack.currentIndex()+1)%3))
+        shortcut = QShortcut(Qt.Key.Key_Tab, self, activated=lambda: self._change_page((self.stack.currentIndex()+1)%3))
         shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
         shortcut = QShortcut(Qt.Key.Key_F5, self, activated=self.refresh_kanban)
-
-    def setup_context_menu(self) -> None:
-        # 初始化 页面菜单
-        self.menu = QMenu()
-        action_page0 = self.menu.addAction("Theme Kanban")
-        action_page0.triggered.connect(lambda: self.stack.setCurrentIndex(0))
-        action_page1 = self.menu.addAction("Album Kanban")
-        action_page1.triggered.connect(lambda: self.stack.setCurrentIndex(1))
-        action_page2 = self.menu.addAction("Track Kanban")
-        action_page2.triggered.connect(lambda: self.stack.setCurrentIndex(2))
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -87,7 +76,6 @@ QPushButton:hover {{
         self.setup_ui()
         self.setup_event()
         self.setup_shortcut()
-        self.setup_context_menu()
 
     def set_kanban(self, kanban: KanBan) -> None:
         self.kanban = kanban
@@ -115,11 +103,18 @@ QPushButton:hover {{
         else:
             self.page_next_btn.move(self.width() - self.page_prev_btn.width(), 0)
             self.page_prev_btn.move(self.width() - self.page_prev_btn.width()*2, 0)
-    
+
     # 事件动作
+
+    @with_busy_cursor
+    def _change_page(self, index: int) -> None:
+        self._set_btns_geometry()
+        self.kanban.invalidate_cache()
+        self.stack.setCurrentIndex(index)
 
     @with_busy_cursor
     def _on_theme_kanban_selected(self) -> None:
         tk = self.kanban.theme_kanbans[self.page0.current_theme_kanban_p]
         self.page1.set_theme_kanban(tk)
         self.page2.set_theme_kanban(tk)
+        self.setWindowTitle(f"KanBan - {tk.theme_name}")

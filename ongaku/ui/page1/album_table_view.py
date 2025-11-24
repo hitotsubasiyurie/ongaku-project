@@ -141,6 +141,9 @@ class AlbumTableItemModel(CustomTableItemModel):
 
     def _apply_filters(self) -> None:
         self.layout_ps = []
+        if not self.theme_kanban:
+            return
+        
         for p in range(len(self.theme_kanban.album_kanbans)):
             # 全字包含 或 正则匹配
             is_match = all((t.lower() in self._get_data(c, p).lower() 

@@ -159,6 +159,10 @@ class PlayTableItemModel(CustomTableItemModel):
 
     def _apply_filters(self) -> None:
         self.layout_ps = []
+        
+        if not self.theme_kanban:
+            return
+        
         for p, (i, j) in enumerate(self.kanban_ij):
             # 全字包含 或 正则匹配
             is_match = all((t.lower() in self._get_data(Qt.ItemDataRole.EditRole, c, i, j).lower() 

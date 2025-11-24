@@ -258,6 +258,22 @@ class PlayTableView(QTableView):
 
         self.setup_context_menu()
 
+    def hightlight_row(self, row: int) -> None:
+        """
+        高亮聚焦行。
+        """
+        self.clearSelection()
+        
+        if not (0 <= row < self.item_model.rowCount()):
+            return
+        
+        # table 选中行
+        self.selectRow(row)
+        ix = self.item_model.createIndex(row, 1)
+        self.setCurrentIndex(ix)
+        self.scrollTo(ix, QTableView.ScrollHint.PositionAtCenter)
+        self.setFocus()
+
     # 重写方法
 
     def resizeEvent(self, event: QResizeEvent) -> None:

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from PySide6.QtCore import Qt, QModelIndex, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
@@ -68,8 +70,8 @@ class Page2Widget(QWidget):
         self.play_table_view.item_model.dataChanged.connect(self._save_timer.start)
         # 播放器事件
         self.music_player_bar.playback_finished.connect(self._on_playback_finished)
-        self.music_player_bar.prev_btn.clicked.connect(lambda: self._play_next_no_mark_ix(-1))
-        self.music_player_bar.next_btn.clicked.connect(lambda: self._play_next_no_mark_ix(1))
+        self.music_player_bar.prev_btn.clicked.connect(lambda: self._search_no_mark_ix(-1))
+        self.music_player_bar.next_btn.clicked.connect(lambda: self._search_no_mark_ix(1))
 
     def setup_shortcut(self) -> None:
         # 初始化 快捷键
@@ -79,13 +81,13 @@ class Page2Widget(QWidget):
         # 主键盘 和 小键盘 Enter
         for key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             QShortcut(key, self, activated=self._play_selected)
-        QShortcut(QKeySequence("Alt+Up"), self, activated=lambda: self._play_next_no_mark_ix(-1))
-        QShortcut(QKeySequence("Alt+Down"), self, activated=lambda: self._play_next_no_mark_ix(1))
-        QShortcut(QKeySequence("-"), self, activated=lambda: [self._set_track_mark([], "0", force=True), self._hightlight_row(self._select_next().row())])
-        QShortcut(QKeySequence("+"), self, activated=lambda: [self._set_track_mark([], "1", force=True), self._hightlight_row(self._select_next().row())])
+        QShortcut(QKeySequence("Alt+Up"), self, activated=lambda: self._search_no_mark_ix(-1))
+        QShortcut(QKeySequence("Alt+Down"), self, activated=lambda: self._search_no_mark_ix(1))
+        QShortcut(QKeySequence("-"), self, activated=lambda: [self._set_track_mark([], "0", force=True), self.play_table_view.hightlight_row(self._select_next().row())])
+        QShortcut(QKeySequence("+"), self, activated=lambda: [self._set_track_mark([], "1", force=True), self.play_table_view.hightlight_row(self._select_next().row())])
         QShortcut(Qt.Key.Key_Escape, self, activated=
                   lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
-        QShortcut(Qt.Key.Key_Period, self, activated=lambda: self._hightlight_row(self._playing_ix.row()))
+        QShortcut(Qt.Key.Key_Period, self, activated=lambda: self.play_table_view.hightlight_row(self._playing_ix.row()))
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -127,18 +129,6 @@ class Page2Widget(QWidget):
                 continue
             self.play_table_view.item_model.setData(ix, mark, Qt.ItemDataRole.EditRole)
 
-    def _hightlight_row(self, row: int) -> None:
-        self.play_table_view.clearSelection()
-        
-        if not (0 < row < self.play_table_view.item_model.rowCount()):
-            return
-        
-        # track table 选中行
-        self.play_table_view.selectRow(row)
-        ix = self.play_table_view.item_model.createIndex(row, 1)
-        self.play_table_view.setCurrentIndex(ix)
-        self.play_table_view.scrollTo(ix, QAbstractItemView.ScrollHint.PositionAtCenter)
-
     def _select_next(self) -> QModelIndex:
         ixs = self.play_table_view.selectedIndexes()
         if not ixs:
@@ -166,7 +156,7 @@ class Page2Widget(QWidget):
         p = self.play_table_view.item_model.layout_ps[row]
         i, j = self.play_table_view.item_model.kanban_ij[p]
         file = self.theme_kanban.album_kanbans[i].track_files[j]
-        self._hightlight_row(row)
+        self.play_table_view.hightlight_row(row)
         # 播放
         self.music_player_bar.set_media(file)
         # 更新播放图标
@@ -183,29 +173,28 @@ class Page2Widget(QWidget):
         # 清空播放器
         self.music_player_bar.set_media("")
         # 高光下一行
-        self._hightlight_row(self._playing_ix.row() + 1)
+        self.play_table_view.hightlight_row(self._playing_ix.row() + 1)
     
-    def _play_next_no_mark_ix(self, direction: int) -> None:
-        if not self._playing_ix or not self._playing_ix.isValid():
+    # 事件动作
+
+    def _search_no_mark_ix(self, direction: Literal[-1, 1]) -> None:
+        if not self.theme_kanban:
             return
-        
-        while True:
-            row = self._playing_ix.row()
-            self._playing_ix = self._playing_ix.siblingAtRow(row + direction)
 
-            # 至尽头，退出循环
-            if not self._playing_ix.isValid():
-                break
+        layout_ps = self.play_table_view.item_model.layout_ps
 
-            p = self.play_table_view.item_model.layout_ps[row]
+        rows = range(len(layout_ps)) if direction == 1 else reversed(range(len(layout_ps)))
+
+        for row in rows:
+            p = layout_ps[row]
             i, j = self.play_table_view.item_model.kanban_ij[p]
-            
-            # 无 mark 信息，且有文件，退出循环
-            if (not self.theme_kanban.album_kanbans[i].album.tracks[j].mark 
+
+            if (not self.theme_kanban.album_kanbans[i].album.tracks[j].mark
                 and self.theme_kanban.album_kanbans[i].track_files[j]):
+                self.play_table_view.hightlight_row(row)
                 break
-        
-        self._play()
+
+        self.play_table_view.hightlight_row(row)
 
     def _on_track_table_double_clicked(self, index: QModelIndex) -> None:
         # 双击 Size 列 播放

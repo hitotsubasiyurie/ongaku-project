@@ -206,11 +206,6 @@ class ThemeTableView(QTableView):
         self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)
         self.setDropIndicatorShown(True)
 
-        # 字体加 1 号
-        font = self.font()
-        font.setPointSize(font.pointSize()+1)
-        self.setFont(font)
-
         # 字体高度
         fh = self.fontMetrics().height()
 

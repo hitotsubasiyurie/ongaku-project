@@ -54,6 +54,14 @@ class PlayTableItemModel(CustomTableItemModel):
 
         self.endResetModel()
 
+    def locate_playing_row(self) -> int | None:
+        playing_row = None
+        for row, p in enumerate(self.layout_ps):
+            if self.kanban_ij[p] == self.playing_ij:
+                playing_row = row
+                break
+        return playing_row
+
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
         row, col = index.row(), index.column()
 
@@ -258,10 +266,13 @@ class PlayTableView(QTableView):
 
         self.setup_context_menu()
 
-    def hightlight_row(self, row: int) -> None:
+    def hightlight_row(self, row: int | None) -> None:
         """
         高亮聚焦行。
         """
+        if row is None:
+            return
+        
         self.clearSelection()
         
         if not (0 <= row < self.item_model.rowCount()):

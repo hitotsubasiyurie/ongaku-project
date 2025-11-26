@@ -103,7 +103,7 @@ class AlbumKanBan:
     album_dir: str
 
     cover: str = field(init=False)
-    """封面路径"""
+    """封面路径。封面不存在时为空字符串。"""
     track_files: tuple[str, ...] = field(init=False)
     """音轨文件路径列表。文件不存在时为空字符串。"""
 
@@ -168,6 +168,7 @@ class AlbumKanBan:
         """
         扫描文件系统。
         """
+        self.invalidate_cache()
         # 专辑目录 不存在时
         if not os.path.exists(self.album_dir):
             self.cover = ""

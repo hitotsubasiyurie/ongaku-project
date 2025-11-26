@@ -2,7 +2,7 @@ from typing import Literal
 
 from PySide6.QtCore import Qt, QModelIndex, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
+from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from ongaku.core.kanban import ThemeKanBan
 from ongaku.ui.toast_notifier import toast_notify
@@ -87,16 +87,12 @@ class Page2Widget(QWidget):
         QShortcut(QKeySequence("+"), self, activated=lambda: [self._set_track_mark([], "1", force=True), self.play_table_view.hightlight_row(self._select_next().row())])
         QShortcut(Qt.Key.Key_Escape, self, activated=
                   lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
-        QShortcut(Qt.Key.Key_Period, self, activated=lambda: self.play_table_view.hightlight_row(self._playing_ix.row()))
+        QShortcut(Qt.Key.Key_Period, self, activated=lambda: self.play_table_view.hightlight_row(self.play_table_view.item_model.locate_playing_row()))
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.theme_kanban: ThemeKanBan = None
-
-        # 当前播放 视图索引
-        # TODO: widget 肯定不能持有 item model 的索引
-        self._playing_ix: QModelIndex = None
 
         # 保存元数据文件 防抖定时器 5 秒
         self._save_timer = QTimer(self)
@@ -111,7 +107,6 @@ class Page2Widget(QWidget):
 
     def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
-        self._playing_ix = None
         # 清空搜索框
         [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]]
         self.play_table_view.item_model.reset_theme_kanban(theme_kanban)
@@ -138,21 +133,7 @@ class Page2Widget(QWidget):
 
         return next_ix if next_ix.isValid() else ix
 
-    def _play_selected(self) -> None:
-        ixs = self.play_table_view.selectedIndexes()
-        if not ixs:
-            return
-        # 播放选择的第一个
-        self._playing_ix = ixs[0]
-        self._play()
-
-    def _play(self) -> None:
-        # index 无效 清空播放器
-        if not self._playing_ix or not self._playing_ix.isValid():
-            self.music_player_bar.set_media("")
-            return
-
-        row = self._playing_ix.row()
+    def _play(self, row: int) -> None:
         p = self.play_table_view.item_model.layout_ps[row]
         i, j = self.play_table_view.item_model.kanban_ij[p]
         file = self.theme_kanban.album_kanbans[i].track_files[j]
@@ -169,12 +150,6 @@ class Page2Widget(QWidget):
         if not file:
             self._on_playback_finished()
 
-    def _on_playback_finished(self) -> None:
-        # 清空播放器
-        self.music_player_bar.set_media("")
-        # 高光下一行
-        self.play_table_view.hightlight_row(self._playing_ix.row() + 1)
-    
     # 事件动作
 
     def _search_no_mark_ix(self, direction: Literal[-1, 1]) -> None:
@@ -200,6 +175,18 @@ class Page2Widget(QWidget):
         # 双击 Size 列 播放
         if index.column() != 0:
             return
-        self._playing_ix = index
-        self._play()
+        self._play(index.row())
 
+    def _on_playback_finished(self) -> None:
+        # 清空播放器
+        self.music_player_bar.set_media("")
+        # 高光下一行
+        playing_row = self.play_table_view.item_model.locate_playing_row()
+        playing_row is not None and self.play_table_view.hightlight_row(playing_row + 1)
+
+    def _play_selected(self) -> None:
+        ixs = self.play_table_view.selectedIndexes()
+        if not ixs:
+            return
+        # 播放选择的第一个
+        self._play(ixs[0].row())

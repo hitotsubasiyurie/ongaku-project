@@ -115,6 +115,10 @@ class AlbumKanBan:
     def metadata_state(self) -> MetadataState:
         """专辑元数据状态"""
         s = MetadataState.NONE
+
+        # 无 links 信息来源
+        if not self.album.links:
+            return s
         
         if self.album.album:
             s |= MetadataState.TITLE_EXIST

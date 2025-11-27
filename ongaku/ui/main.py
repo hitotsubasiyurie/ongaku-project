@@ -6,8 +6,8 @@ executable = Path(sys.argv[0])
 
 # 若是源码运行 添加导包路径
 if executable.suffix == ".py":
-    sys.path[0] = str(executable.parent.parent)
-    os.chdir(executable.parent.parent)
+    sys.path[0] = str(executable.parent.parent.parent)
+    os.chdir(executable.parent.parent.parent)
 else:
     os.chdir(executable.parent)
 

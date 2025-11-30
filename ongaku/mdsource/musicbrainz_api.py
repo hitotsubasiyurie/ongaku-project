@@ -10,7 +10,7 @@ import requests
 from ongaku.core.logger import logger, logger_watched
 from ongaku.core.basemodels import Album, Disc, Track
 from ongaku.utils.utils import retry, RateLimiter
-from ongaku.crawlers.vgmdb_api import VGMdbAPI
+from ongaku.mdsource.vgmdb_api import VGMdbAPI
 
 
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')

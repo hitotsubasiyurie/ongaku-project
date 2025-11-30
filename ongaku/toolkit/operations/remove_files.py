@@ -10,39 +10,33 @@ from ongaku.toolkit.utils import easy_linput
 
 if global_settings.language == "zh":
     PLUGIN_NAME = "删除文件"
+    class MESSAGE:
+        OLI4J5 = """
+删除路径文件或目录。不会挪至回收站，所以速度较快。
+    """
+        SOPLP0 = "请输入路径："
+        GFD8P9 = "路径不存在。"
+        RE5LKM = "是否确认删除（Y/N）（默认N）："
+        IOP596 = "已删除。耗时 {:.2f} 秒。"
 elif global_settings.language == "ja":
     pass
 else:
-    PLUGIN_NAME = "Remove file"
+    pass
 
 
-MESSAGE = SimpleNamespace()
-
-
-if global_settings.language == "zh":
-    MESSAGE.C3X = \
-"""
-删除路径文件或目录。不会挪至回收站，所以速度较快。
-"""
-    MESSAGE.OG9 = "请输入路径："
-    MESSAGE.AAR = "路径不存在。"
-    MESSAGE.G9R = "是否确认删除（Y/N）（默认N）："
-    MESSAGE.B21 = "已删除。耗时 {:.2f} 秒。"
-
+################ 主函数 ################
 
 def main():
 
-    lprint(MESSAGE.C3X)
+    lprint(MESSAGE.OLI4J5)
 
-    given_path = easy_linput(MESSAGE.OG9, return_type=Path)
+    given_path = easy_linput(MESSAGE.SOPLP0, return_type=Path)
 
     if not given_path.exists():
-        lprint(MESSAGE.AAR)
+        lprint(MESSAGE.GFD8P9)
         return
     
-    confirm = easy_linput(MESSAGE.G9R, default="N", return_type=str)  == "Y"
-
-    if not confirm:
+    if not easy_linput(MESSAGE.RE5LKM, default="N", return_type=str)  == "Y":
         return
     
     st = time.time()
@@ -51,5 +45,5 @@ def main():
     else:
         shutil.rmtree(given_path)
     
-    lprint(MESSAGE.B21.format(time.time() - st))
+    lprint(MESSAGE.IOP596.format(time.time() - st))
 

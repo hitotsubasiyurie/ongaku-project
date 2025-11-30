@@ -11,8 +11,8 @@ from ongaku.core.basemodels import Album
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import  global_settings
 from ongaku.toolkit.utils import easy_linput
-from ongaku.crawlers.musicbrainz_api import MusicBrainzAPI
-from ongaku.crawlers.musicbrainz_database import MusicBrainzDatabase
+from ongaku.mdsource.musicbrainz_api import MusicBrainzAPI
+from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase
 
 
 if global_settings.language == "zh":

@@ -126,7 +126,7 @@ class Page1Widget(QWidget):
         dst_dir.mkdir(parents=True, exist_ok=True)
         ext = src.suffix.lower()
         dst = dst_dir / (track_filenames(album)[trackidx]+ext)
-        src.rename(dst)
+        shutil.move(src, dst)
         return True
 
     def _putaway_track_files(self, src_files: list[Path], dst_dir: Path, album: Album) -> bool:
@@ -150,7 +150,7 @@ Average Similarity:\t{aver_similarity:.02f}
         if not accept:
             return False
         
-        [src.rename(dst) for src, dst in _map.items()]
+        [shutil.move(src, dst) for src, dst in _map.items()]
         return True
 
     def _ask_for_confirm(self, title: str, text: str, on_yes_clicked: Callable = None, 

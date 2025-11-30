@@ -136,7 +136,7 @@ class VGMdbAPI:
 
         return self._assemble_albums(catnos, date, album_title, discs, url)
 
-    # 内部方法
+    ################ 内部方法 ################
 
     @staticmethod
     def _assemble_albums(catnos: list[str], date: str, album_title: str, discs: list[Disc], link: str) -> list[Album]:

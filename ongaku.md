@@ -1917,5 +1917,8 @@ ffprobe -v quiet -print_format json -show_streams -select_streams a "D:\[OPCD-10
 
 -----------------------------【todo】寻找上下一首未听过的，可以不基于当前，而是作为方向
 
+## 2025.11.27
+
+-----------------------------【todo】收集进度条和mark进度条改造
 
 

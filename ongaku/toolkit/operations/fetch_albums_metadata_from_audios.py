@@ -1,22 +1,15 @@
 import re
-import json
-import shutil
 import itertools
-from collections import defaultdict
 from pathlib import Path
-
-from mutagen.flac import FLAC
-from mutagen.mp3 import MP3
-from mutagen.id3 import ID3
+from datetime import datetime
 
 from ongaku.core.logger import lprint, logger
 from ongaku.core.settings import global_settings
-from ongaku.core.kanban import KanBan, track_filenames, load_albums_from_toml, dump_albums_to_toml
+from ongaku.core.kanban import load_albums_from_toml, dump_albums_to_toml
 from ongaku.core.constants import AUDIO_EXTS
 from ongaku.core.basemodels import Album, Track
 from ongaku.toolkit.utils import easy_linput
-from ongaku.utils.utils import write_audio_tags, read_audio_tags
-from ongaku.external import show_audio_stream_info, compress_image
+from ongaku.utils.utils import read_audio_tags
 
 
 if global_settings.language == "zh":
@@ -117,8 +110,17 @@ def analyze_album(album_dir: str | Path) -> Album | None:
 def main() -> None:
     lprint(MESSAGE.OLI4J5)
 
-    metadata_file = easy_linput(MESSAGE.SOPLP0, return_type=Path)
+    input_path = easy_linput(MESSAGE.SOPLP0, return_type=Path)
     resource_directory = easy_linput(MESSAGE.DFT895, return_type=Path)
+
+    # 创建目录
+    if input_path.is_file():
+        input_path.parent.mkdir(parents=True, exist_ok=True)
+        metadata_file = input_path
+    else:
+        input_path.mkdir(parents=True, exist_ok=True)
+        metadata_file = input_path / f"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"
+
 
     # 扁平、存在音频 的目录 认为是专辑目录
     album_dirs = [d for d in resource_directory.rglob("*") 
@@ -135,7 +137,8 @@ def main() -> None:
     if not easy_linput(MESSAGE.GFD8P9.format(len(albums), metadata_file), default="Y", return_type=str)  == "Y":
         return
 
-    dump_albums_to_toml(load_albums_from_toml(metadata_file) + albums, metadata_file)
+    exist_albums = load_albums_from_toml(metadata_file) if metadata_file.is_file() else []
+    dump_albums_to_toml(exist_albums + albums, metadata_file)
     lprint(MESSAGE.IOP596)
 
 

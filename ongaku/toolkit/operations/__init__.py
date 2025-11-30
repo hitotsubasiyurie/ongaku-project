@@ -19,6 +19,9 @@ PLUGINS[PLUGIN_NAME] = main
 from ongaku.toolkit.operations.fetch_albums_metadata_from_musicbrainz_database import PLUGIN_NAME, main
 PLUGINS[PLUGIN_NAME] = main
 
+from ongaku.toolkit.operations.fetch_albums_metadata_from_doujin_music_info import PLUGIN_NAME, main
+PLUGINS[PLUGIN_NAME] = main
+
 from ongaku.toolkit.operations.fetch_albums_metadata_from_audios import PLUGIN_NAME, main
 PLUGINS[PLUGIN_NAME] = main
 

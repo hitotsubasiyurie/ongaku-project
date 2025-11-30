@@ -1,30 +1,20 @@
 from pathlib import Path
 from datetime import datetime
-from types import SimpleNamespace
 
 from tqdm import tqdm
 
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
 from ongaku.toolkit.utils import easy_linput
-from ongaku.crawlers.musicbrainz_api import MusicBrainzAPI
+from ongaku.mdsource.musicbrainz_api import MusicBrainzAPI
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
+from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
 
 
 if global_settings.language == "zh":
     PLUGIN_NAME = "从 MusicBrainz 获取专辑元数据"
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
-
-
-MESSAGE = SimpleNamespace()
-
-
-if global_settings.language == "zh":
-    MESSAGE.C3X = \
-"""
+    class MESSAGE:
+        OLI4J5 = """
 保存路径：
     若是文件夹，将会在其下生成新的元数据文件。
     若是已有的元数据文件路径，将会追加它未包含的专辑元数据
@@ -32,22 +22,28 @@ if global_settings.language == "zh":
 MusicBrainz url ：
     artist 页面，例如：https://beta.musicbrainz.org/artist/f960979c-fc79-4cef-8cf5-fda334e11445
     如果有多个 url ，请使用空格分隔，例如：url1 url2 url3
-"""
-    MESSAGE.OG9 = "请输入保存路径："
-    MESSAGE.K98 = "请输入 MusicBrainz url ："
-    MESSAGE.D96 = "不支持的 MusicBrainz url 。"
-    MESSAGE.ERT = "成功获取 {:d} 张专辑元数据。元数据文件：{}"
+    """
+        SOPOPL = "请输入保存路径："
+        GFD8P9 = "请输入 MusicBrainz url ："
+        RE5LKM = "不支持的 MusicBrainz url 。"
+        SOPLP0 = "本地 MusicBrainz 数据库 PGDATA 路径不存在。{}"
+        DRPPP0 = "本地 MusicBrainz 数据库 PGDATA 路径存在。{}"
+        IOP596 = "成功获取 {:d} 张专辑元数据。元数据文件：{}"
+        DFFBHJ = "正在启动 MusicBrainz 数据库..."
+        MKLP9O = "正在关闭 MusicBrainz 数据库..."
 elif global_settings.language == "ja":
     pass
 else:
     pass
 
 
-def main():
-    lprint(MESSAGE.C3X)
+################ 主函数 ################
 
-    input_path = easy_linput(MESSAGE.OG9, return_type=Path)
-    input_urls = easy_linput(MESSAGE.K98, return_type=str)
+def main():
+    lprint(MESSAGE.OLI4J5)
+
+    input_path = easy_linput(MESSAGE.SOPOPL, return_type=Path)
+    input_urls = easy_linput(MESSAGE.GFD8P9, return_type=str)
 
     # 创建目录
     if input_path.is_file():
@@ -69,7 +65,7 @@ def main():
             resp = api.lookup_entity(url.split("/artist/")[1].split("/")[0], "artist", "releases")
             r_ids.extend([r["id"] for r in resp["releases"]])
         else:
-            lprint(MESSAGE.D96)
+            lprint(MESSAGE.RE5LKM)
             return
     
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
@@ -80,11 +76,28 @@ def main():
 
     # 开始 获取 元数据
 
+    # 检查 PGDATA 路径
+    pgdata = Path(global_settings.temp_directory, "musicbrainz_pgdata")
+    if not pgdata.is_dir() or not Path(pgdata, "postgresql.conf").is_file():
+        lprint(MESSAGE.SOPLP0.format(pgdata))
+        database = None
+    else:
+        lprint(MESSAGE.DRPPP0.format(pgdata))
+        database = MusicBrainzDatabase()
+
+    if database:
+        lprint(MESSAGE.DFFBHJ)
+        pg_ctl_start(pgdata)
+
     new_albums = []
     pbar = tqdm(total=len(r_ids), mininterval=0)
     for r_id in r_ids:
         try:
-            new_albums.extend(api.get_album_from_release(r_id))
+            if database:
+                albums = database.select_albums(filter_release_id=r_id)
+            else:
+                albums = api.get_album_from_release(r_id)
+            new_albums.extend(albums)
         except Exception as e:
             logger.error("", exc_info=1)
             raise e
@@ -95,4 +108,11 @@ def main():
     
     dump_albums_to_toml(exist_albums + new_albums, metadata_file)
     
-    lprint(MESSAGE.ERT.format(len(new_albums), metadata_file))
+    lprint(MESSAGE.IOP596.format(len(new_albums), metadata_file))
+
+    if database:
+        lprint(MESSAGE.MKLP9O)
+        pg_ctl_stop(pgdata)
+
+
+

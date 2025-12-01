@@ -1,3 +1,4 @@
+import shutil
 import itertools
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,7 +11,7 @@ from ongaku.core.kanban import load_albums_from_toml, album_filename, track_file
 from ongaku.core.constants import AUDIO_EXTS
 from ongaku.utils.basemodel_utils import (album_to_unique_str, track_to_unique_str, 
     albums_assignment, tracks_assignment)
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 from ongaku.utils.audiofile_utils import analyze_resource_album, analyze_resource_track
 from ongaku.utils.utils import dump_toml
 
@@ -70,7 +71,7 @@ def main() -> None:
     # 扁平、存在音频 的目录 认为是专辑目录
     src_dirs = [d for d in src_parent.rglob("*") 
                 if d.is_dir() 
-                and all(f.is_file() for f in d.glob("*"))
+                # and all(f.is_file() for f in d.glob("*"))
                 and list(itertools.chain.from_iterable(d.glob(f"*{ext}") for ext in AUDIO_EXTS))]
 
     # 加载 来源和目标 专辑模型
@@ -139,7 +140,7 @@ def main() -> None:
             if dst.is_file():
                 if replace_same and src.is_file():
                     dst.unlink()
-                    src.rename(dst)
+                    shutil.move(src, dst)
                 else:
                     src.unlink()
             
@@ -149,11 +150,11 @@ def main() -> None:
 
             # 无损 替换 有损
             elif src.suffix.lower() == ".flac" and (dst_lossy:= dst.with_suffix(".mp3")).exists():
-                src.rename(dst)
+                shutil.move(src, dst)
                 dst_lossy.unlink()
 
             else:
-                src.rename(dst)
+                shutil.move(src, dst)
 
     lprint(MESSAGE.R96)
 

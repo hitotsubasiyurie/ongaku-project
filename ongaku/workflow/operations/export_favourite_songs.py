@@ -13,7 +13,7 @@ from ongaku.core.logger import lprint, logger
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan, track_filenames
 from ongaku.core.basemodels import Album, Track
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 from ongaku.utils.utils import write_audio_tags, read_audio_tags
 from ongaku.external import show_audio_stream_info, compress_image
 

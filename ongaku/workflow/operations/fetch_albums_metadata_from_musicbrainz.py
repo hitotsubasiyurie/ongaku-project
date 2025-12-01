@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 from ongaku.mdsource.musicbrainz_api import MusicBrainzAPI
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
@@ -62,8 +62,9 @@ def main():
     r_ids = []
     for url in list(map(str.strip, input_urls.split())):
         if "/artist/" in url:
-            resp = api.lookup_entity(url.split("/artist/")[1].split("/")[0], "artist", "releases")
+            resp = api.lookup_entity(url.split("/artist/")[1].split("/")[0], "artist", "releases+release-groups")
             r_ids.extend([r["id"] for r in resp["releases"]])
+            [r_ids.extend(api.get_album_ids_from_release_group(rg["id"])) for rg in resp["release-groups"]]
         else:
             lprint(MESSAGE.RE5LKM)
             return
@@ -83,11 +84,9 @@ def main():
         database = None
     else:
         lprint(MESSAGE.DRPPP0.format(pgdata))
-        database = MusicBrainzDatabase()
-
-    if database:
         lprint(MESSAGE.DFFBHJ)
         pg_ctl_start(pgdata)
+        database = MusicBrainzDatabase()
 
     new_albums = []
     pbar = tqdm(total=len(r_ids), mininterval=0)

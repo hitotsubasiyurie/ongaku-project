@@ -10,7 +10,7 @@ from ongaku.core.settings import global_settings
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from ongaku.utils.basemodel_utils import album_to_unique_str, albums_assignment, abstract_tracks_info
 from ongaku.utils.utils import dump_toml
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 
 
 if global_settings.language == "zh":

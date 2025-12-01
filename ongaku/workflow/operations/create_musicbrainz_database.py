@@ -10,7 +10,7 @@ from tqdm import tqdm
 from ongaku.core.basemodels import Album
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import  global_settings
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 from ongaku.mdsource.musicbrainz_api import MusicBrainzAPI
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase
 

@@ -69,36 +69,31 @@ class MusicBrainzAPI:
         return albums
 
     @logger_watched(3)
-    def get_albums_from_series(self, series_id: str) -> list[Album]:
+    def get_album_ids_from_series(self, series_id: str) -> list[str]:
         """
-        给定 series mbid 获取 Album 模型列表。\n
+        给定 series mbid 获取 release mbid 列表。\n
         raises: OngakuException
         """
-        albums = []
+        r_ids = []
         series = self.lookup_entity(series_id, "series", "release-group-rels")
         rg_ids = [r["release_group"]["id"] for r in series["relations"]]
         logger.info(f"Series has {len(rg_ids)} release-groups. {series_id} {rg_ids}")
 
-        [albums.extend(self.get_albums_from_release_group(rg_id)) for rg_id in rg_ids]
+        [r_ids.extend(self.get_album_ids_from_release_group(rg_id)) for rg_id in rg_ids]
+        logger.info(f"Series has {len(r_ids)} releases. {series_id} {r_ids}")
 
-        logger.info(f"Got {len(albums)} albums from series {series_id}.")
-        return albums
+        return r_ids
 
     @logger_watched(2)
-    def get_albums_from_release_group(self, rg_id: str) -> list[Album]:
+    def get_album_ids_from_release_group(self, rg_id: str) -> list[str]:
         """
-        给定 release-group mbid 获取 Album 模型列表。\n
+        给定 release-group mbid 获取 release mbid 列表。\n
         raises: OngakuException
         """
-        albums = []
-        release_group = self.lookup_entity(rg_id, "release-group", "release-group-rels")
+        release_group = self.lookup_entity(rg_id, "release-group", "releases")
         r_ids = [r["id"] for r in release_group["releases"]]
         logger.info(f"Release-group has {len(r_ids)} releases. {rg_id} {r_ids}")
-
-        [albums.extend(self.get_album_from_release(r_id)) for r_id in r_ids]
-
-        logger.info(f"Got {len(albums)} albums from release-group {rg_id}.")
-        return albums
+        return r_ids
 
     @logger_watched(1)
     def get_album_from_release(self, release_id: str) -> list[Album]:
@@ -123,7 +118,7 @@ class MusicBrainzAPI:
         resp = self._cached_request_get(url)
         return resp.json()
 
-    # 内部方法
+    ################ 内部方法 ################
 
     def _browse_recordings_of_release(self, release_id: str) -> list[dict]:
         """

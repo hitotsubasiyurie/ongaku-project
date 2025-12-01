@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from ongaku.core.settings import global_settings
 from ongaku.core.constants import AUDIO_EXTS
 from ongaku.core.logger import lprint
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 
 
 if global_settings.language == "zh":

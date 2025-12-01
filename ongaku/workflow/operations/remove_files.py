@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from ongaku.core.logger import lprint
 from ongaku.core.settings import  global_settings
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 
 
 if global_settings.language == "zh":

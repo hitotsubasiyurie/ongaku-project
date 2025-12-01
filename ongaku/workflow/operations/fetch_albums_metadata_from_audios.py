@@ -8,7 +8,7 @@ from ongaku.core.settings import global_settings
 from ongaku.core.kanban import load_albums_from_toml, dump_albums_to_toml
 from ongaku.core.constants import AUDIO_EXTS
 from ongaku.core.basemodels import Album, Track
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 from ongaku.utils.utils import read_audio_tags
 
 

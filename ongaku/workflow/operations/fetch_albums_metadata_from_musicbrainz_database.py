@@ -6,7 +6,7 @@ from tqdm import tqdm
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
-from ongaku.toolkit.utils import easy_linput
+from ongaku.workflow.utils import easy_linput
 from ongaku.utils.basemodel_utils import abstract_tracks_info
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
 

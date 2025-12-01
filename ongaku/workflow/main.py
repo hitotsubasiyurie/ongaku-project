@@ -12,8 +12,8 @@ else:
 
 from ongaku.core.logger import set_logger_output, set_logger_level
 from ongaku.core.settings import global_settings
-from ongaku.toolkit.utils import loop_for_actions
-from ongaku.toolkit.operations import PLUGINS
+from ongaku.workflow.utils import loop_for_actions
+from ongaku.workflow.operations import PLUGINS
 
 
 PLUGIN_DIR = Path("./plugin")

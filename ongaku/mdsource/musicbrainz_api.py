@@ -10,7 +10,7 @@ import requests
 from ongaku.core.logger import logger, logger_watched
 from ongaku.core.basemodels import Album, Disc, Track
 from ongaku.utils.utils import retry, RateLimiter
-from ongaku.mdsource.vgmdb_api import VGMdbAPI
+from ongaku.mdsource.common import assemble_albums_from_discs
 
 
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')
@@ -181,7 +181,7 @@ class MusicBrainzAPI:
         discs = sorted(MusicBrainzAPI._build_disc_from_release(release), key=lambda d: d.discnumber)
 
         url = MusicBrainzAPI.RELEASE_PAGE_URL.format(release["id"])
-        return VGMdbAPI._assemble_albums(catnos, date, title, discs, url)
+        return assemble_albums_from_discs(catnos, date, title, discs, url)
 
     @staticmethod
     def _build_disc_from_release(release: dict) -> list[Disc]:

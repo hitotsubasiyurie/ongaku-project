@@ -4,7 +4,6 @@ import pickle
 import re
 import uuid
 from pathlib import Path
-from collections import Counter
 
 import requests
 from lxml import etree
@@ -13,6 +12,7 @@ from ongaku.core.exception import OngakuException
 from ongaku.core.logger import logger, logger_watched
 from ongaku.core.basemodels import Album, Disc, Track
 from ongaku.utils.utils import retry, RateLimiter
+from ongaku.mdsource.common import assemble_albums_from_discs
 
 
 class VGMdbAPI:
@@ -129,58 +129,14 @@ class VGMdbAPI:
         # https://vgmdb.net/album/105234 tracklist 为空
         if not tl_id:
             logger.warning(f"No tracklist span. {url}")
-            return self._assemble_albums(catnos, date, album_title, [], url)
+            return assemble_albums_from_discs(catnos, date, album_title, [], url)
 
         tl_span: etree._Element = html.xpath(f"//span[@class='tl' and @id='{tl_id[0]}']")[0]
         discs = self._get_discs(tl_span)
 
-        return self._assemble_albums(catnos, date, album_title, discs, url)
+        return assemble_albums_from_discs(catnos, date, album_title, discs, url)
 
     ################ 内部方法 ################
-
-    @staticmethod
-    def _assemble_albums(catnos: list[str], date: str, album_title: str, discs: list[Disc], link: str) -> list[Album]:
-        """
-        | catno | discs | Album |   | |
-        |-------|-------|-------|---|-|
-        | 0     | 0     | 1     |   | 1 张专辑，无 catno 无 tracks |
-        | 0     | 1     | 1     |   | 1 张专辑，无 catno |
-        | 0     | n     | n     |   | n 张专辑，无 catno |
-        | 1     | 0     | 1     |   | 1 张专辑，无 tracks |
-        | 1     | 1     | 1     |   | 1 张专辑 |
-        | 1     | n     | n     |   | n 张专辑 |
-        | n     | 0     | n     |   | n 张专辑，无 tracks |
-        | n     | 1     | 1     | × | 1 张专辑，无法确定 catno |
-        | n     | n     | n     |   | n 张专辑 |
-        | n     | n < m | m     | × | m 张专辑，无法确定 catno |
-        | n     | n > m | n     | × | m 张专辑，无法确定 catno |
-        """
-        if len(catnos) <= 1 and len(discs) <= 1:
-            albums = [Album(catalognumber=catnos[0] if catnos else "", date=date, album=album_title,
-                                    tracks=discs[0].tracks if discs else [], links=[link])]
-        elif len(catnos) <= 1:
-            albums = [Album(catalognumber=catnos[0] if catnos else "", date=date,
-                                      album=f"{album_title} {d.disc}", tracks=d.tracks, links=[link])
-                      for d in discs]
-        elif len(discs) == 0:
-            albums = [Album(catalognumber=c, date=date, album=album_title, tracks=[], links=[link]) for c in catnos]
-        elif len(catnos) == len(discs):
-            albums = [Album(catalognumber=c, date=date, album=f"{album_title} {d.disc}", tracks=d.tracks, links=[link])
-                      for c, d in zip(catnos, discs)]
-        else:
-            logger.warning(f"Failed to assign albums. {catnos, date, album_title}")
-            albums = [Album(catalognumber=", ".join(catnos), date=date, album=f"{album_title} {d.disc}", 
-                            tracks=d.tracks, links=[link])
-                      for d in discs]
-        
-        # 处理同名专辑
-        _count = Counter([a.album for a in albums])
-        for i, a in enumerate(albums):
-            if _count[a.album] > 1:
-                a.album += f" Disc {i+1}"
-
-        logger.info(f"Got {len(albums)} albums. {[(a.catalognumber, a.album) for a in albums]}")
-        return albums
 
     @staticmethod
     def _get_album_info(info_table: etree._Element) -> dict:

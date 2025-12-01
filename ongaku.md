@@ -1921,4 +1921,8 @@ ffprobe -v quiet -print_format json -show_streams -select_streams a "D:\[OPCD-10
 
 -----------------------------【todo】收集进度条和mark进度条改造
 
+## 2025.12.01
 
+代码约定：
+utils 存放的是与项目完全无关的，完全不依赖项目代码的工具函数
+common 存放的是依赖项目代码的工具函数

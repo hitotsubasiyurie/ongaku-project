@@ -6,13 +6,13 @@ from tqdm import tqdm
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
-from ongaku.workflow.utils import easy_linput
-from ongaku.utils.basemodel_utils import abstract_tracks_info
+from ongaku.workflow.common import easy_linput
+from ongaku.workflow.common import abstract_tracks_info
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "从本地 MusicBrainz 数据库获取专辑元数据"
+    OPERATION_NAME = "从本地 MusicBrainz 数据库获取专辑元数据"
     class MESSAGE:
         OLI4J5 = """
 给定一个元数据文件，从本地 MusicBrainz 数据库中查询对应的专辑。

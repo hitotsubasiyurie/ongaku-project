@@ -13,13 +13,13 @@ from ongaku.core.logger import lprint, logger
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan, track_filenames
 from ongaku.core.basemodels import Album, Track
-from ongaku.workflow.utils import easy_linput
-from ongaku.utils.utils import write_audio_tags, read_audio_tags
+from ongaku.workflow.common import easy_linput
+from ongaku.utils import write_audio_tags, read_audio_tags
 from ongaku.external import show_audio_stream_info, compress_image
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "导出喜欢的歌曲"
+    OPERATION_NAME = "导出喜欢的歌曲"
     class MESSAGE:
         OLI4J5 = """
 导出目录路径：

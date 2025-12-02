@@ -12,8 +12,8 @@ else:
 
 from ongaku.core.logger import set_logger_output, set_logger_level
 from ongaku.core.settings import global_settings
-from ongaku.workflow.utils import loop_for_actions
-from ongaku.workflow.operations import PLUGINS
+from ongaku.workflow.common import loop_for_actions
+from ongaku.workflow.operations import OPERATIONS
 
 
 PLUGIN_DIR = Path("./plugin")
@@ -28,7 +28,7 @@ def main():
     set_logger_output(global_settings.temp_directory)
     set_logger_level(global_settings.log_level)
 
-    loop_for_actions(PLUGINS)
+    loop_for_actions(OPERATIONS)
 
 
 if __name__ == "__main__":

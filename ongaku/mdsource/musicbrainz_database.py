@@ -9,7 +9,7 @@ from psycopg.rows import tuple_row
 from ongaku.core.logger import logger
 from ongaku.core.exception import OngakuException
 from ongaku.core.basemodels import Album
-from ongaku.utils.basemodel_utils import abstract_tracks_info
+from ongaku.workflow.common import abstract_tracks_info
 
 
 def init_pgdata(pgdata: str) -> None:

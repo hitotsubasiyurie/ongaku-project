@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from ongaku.core.kanban import AlbumKanBan
 from ongaku.ui.toast_notifier import toast_notify
-from ongaku.ui.utils import with_busy_cursor
+from ongaku.ui.common import with_busy_cursor
 
 
 OPACITY_CYCLE = itertools.cycle([0.2, 1, 0])

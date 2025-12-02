@@ -4,12 +4,12 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from ongaku.core.logger import lprint
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import easy_linput
 from ongaku.core.settings import  global_settings
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "重新编码文本文件"
+    OPERATION_NAME = "重新编码文本文件"
 elif global_settings.language == "ja":
     pass
 else:

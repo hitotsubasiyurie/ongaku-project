@@ -13,11 +13,10 @@ from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 from ongaku.core.basemodels import Album
 from ongaku.core.settings import global_settings
 from ongaku.core.constants import AUDIO_EXTS, IMG_EXTS
-from ongaku.utils.audiofile_utils import analyze_resource_track
-from ongaku.utils.basemodel_utils import tracks_assignment
+from ongaku.workflow.common import tracks_assignment, analyze_track
 from ongaku.core.kanban import ThemeKanBan, track_filenames
 from ongaku.ui.toast_notifier import toast_notify
-from ongaku.ui.utils import with_busy_cursor
+from ongaku.ui.common import with_busy_cursor
 from ongaku.ui.page1.album_table_view import AlbumTableView
 from ongaku.ui.page1.text_edit_message_box import TextEditMessageBox
 from ongaku.ui.page1.link_combo_box import LinkComboBox
@@ -132,7 +131,7 @@ class Page1Widget(QWidget):
     def _putaway_track_files(self, src_files: list[Path], dst_dir: Path, album: Album) -> bool:
         dst_dir.mkdir(parents=True, exist_ok=True)
 
-        src_tracks = list(map(analyze_resource_track, src_files))
+        src_tracks = list(map(analyze_track, src_files))
         row_ind, col_ind, aver_similarity, _ = tracks_assignment(src_tracks, album.tracks)
 
         dst_names = track_filenames(album)

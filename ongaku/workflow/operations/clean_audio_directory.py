@@ -6,11 +6,11 @@ from types import SimpleNamespace
 from ongaku.core.settings import global_settings
 from ongaku.core.constants import AUDIO_EXTS
 from ongaku.core.logger import lprint
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import easy_linput
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "清理音频目录"
+    OPERATION_NAME = "清理音频目录"
 elif global_settings.language == "ja":
     pass
 else:

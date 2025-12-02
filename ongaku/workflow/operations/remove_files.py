@@ -5,11 +5,11 @@ from types import SimpleNamespace
 
 from ongaku.core.logger import lprint
 from ongaku.core.settings import  global_settings
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import easy_linput
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "删除文件"
+    OPERATION_NAME = "删除文件"
     class MESSAGE:
         OLI4J5 = """
 删除路径文件或目录。不会挪至回收站，所以速度较快。

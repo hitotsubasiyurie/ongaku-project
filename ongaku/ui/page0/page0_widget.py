@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
 
 from ongaku.core.kanban import KanBan
 from ongaku.ui.toast_notifier import toast_notify
-from ongaku.ui.utils import with_busy_cursor
+from ongaku.ui.common import with_busy_cursor
 from ongaku.ui.page0.theme_table_view import ThemeTableView
 
 

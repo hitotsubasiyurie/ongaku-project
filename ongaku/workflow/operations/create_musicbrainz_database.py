@@ -10,13 +10,13 @@ from tqdm import tqdm
 from ongaku.core.basemodels import Album
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import  global_settings
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import easy_linput
 from ongaku.mdsource.musicbrainz_api import MusicBrainzAPI
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "创建本地 MusicBrainz 数据库"
+    OPERATION_NAME = "创建本地 MusicBrainz 数据库"
 elif global_settings.language == "ja":
     pass
 else:

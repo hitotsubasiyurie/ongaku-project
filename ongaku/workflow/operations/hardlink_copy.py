@@ -6,11 +6,11 @@ from tqdm import tqdm
 
 from ongaku.core.logger import lprint
 from ongaku.core.settings import  global_settings
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import easy_linput
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "硬链接克隆"
+    OPERATION_NAME = "硬链接克隆"
     class MESSAGE:
         OLI4J5 = """
 通过创建文件硬链接，镜像复制目标文件或文件夹。

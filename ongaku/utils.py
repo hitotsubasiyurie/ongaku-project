@@ -5,7 +5,6 @@
 import time
 import uuid
 import mimetypes
-import subprocess
 from functools import wraps
 from pathlib import Path
 from threading import Lock

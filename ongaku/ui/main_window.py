@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan
-from ongaku.ui.utils import with_busy_cursor
+from ongaku.ui.common import with_busy_cursor
 from ongaku.ui.page0.page0_widget import Page0Widget
 from ongaku.ui.page1.page1_widget import Page1Widget
 from ongaku.ui.page2.page2_widget import Page2Widget

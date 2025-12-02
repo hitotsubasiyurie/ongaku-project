@@ -5,14 +5,14 @@ from tqdm import tqdm
 
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import easy_linput
 from ongaku.mdsource.musicbrainz_api import MusicBrainzAPI
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "从 MusicBrainz 获取专辑元数据"
+    OPERATION_NAME = "从 MusicBrainz 获取专辑元数据"
     class MESSAGE:
         OLI4J5 = """
 保存路径：

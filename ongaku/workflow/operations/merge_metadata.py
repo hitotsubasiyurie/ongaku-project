@@ -8,13 +8,13 @@ import rtoml
 from ongaku.core.logger import lprint
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
-from ongaku.utils.basemodel_utils import album_to_unique_str, albums_assignment, abstract_tracks_info
-from ongaku.utils.utils import dump_toml
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import album_to_unique_str, albums_assignment, abstract_tracks_info
+from ongaku.utils import dump_toml
+from ongaku.workflow.common import easy_linput
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "合并元数据"
+    OPERATION_NAME = "合并元数据"
 elif global_settings.language == "ja":
     pass
 else:

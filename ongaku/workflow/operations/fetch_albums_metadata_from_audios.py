@@ -6,12 +6,12 @@ from ongaku.core.logger import lprint, logger
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import load_albums_from_toml, dump_albums_to_toml
 from ongaku.core.constants import AUDIO_EXTS
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import easy_linput
 from ongaku.workflow.common import analyze_track, analyze_album
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "从本地音频获取专辑元数据"
+    OPERATION_NAME = "从本地音频获取专辑元数据"
     class MESSAGE:
         OLI4J5 = """
 保存路径：

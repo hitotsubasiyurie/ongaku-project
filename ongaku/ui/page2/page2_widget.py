@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from ongaku.core.kanban import ThemeKanBan
 from ongaku.ui.toast_notifier import toast_notify
-from ongaku.ui.utils import with_busy_cursor
+from ongaku.ui.common import with_busy_cursor
 from ongaku.ui.page2.play_table_view import PlayTableView
 from ongaku.ui.page2.music_player_bar import MusicPlayerBar
 

@@ -12,7 +12,7 @@ from lxml import etree
 from ongaku.core.exception import OngakuException
 from ongaku.core.logger import logger, logger_watched
 from ongaku.core.basemodels import Album, Disc, Track
-from ongaku.utils.utils import retry, RateLimiter
+from ongaku.utils import retry, RateLimiter
 
 
 class DoujinMusicInfoAPI:

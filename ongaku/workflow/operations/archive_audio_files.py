@@ -1,7 +1,6 @@
 import shutil
 import itertools
 from pathlib import Path
-from types import SimpleNamespace
 
 import rtoml
 
@@ -9,34 +8,22 @@ from ongaku.core.logger import lprint
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import load_albums_from_toml, album_filename, track_filenames
 from ongaku.core.constants import AUDIO_EXTS
-from ongaku.utils.basemodel_utils import (album_to_unique_str, track_to_unique_str, 
-    albums_assignment, tracks_assignment)
-from ongaku.workflow.utils import easy_linput
-from ongaku.utils.audiofile_utils import analyze_resource_album, analyze_resource_track
-from ongaku.utils.utils import dump_toml
+from ongaku.workflow.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str, 
+    track_to_unique_str, albums_assignment, tracks_assignment)
+from ongaku.utils import dump_toml
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "归档音频资源"
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
-
-
-MESSAGE = SimpleNamespace()
-
-
-if global_settings.language == "zh":
-    MESSAGE.DD5 = "归档音频资源前，请先执行清理音频目录。"
-    MESSAGE.XX1 = "请输入一个元数据文件："
-    MESSAGE.OG9 = "请输入音频资源父目录："
-    MESSAGE.K98 = "请输入归档目标位置的父目录："
-    MESSAGE.C99 = "匹配元数据时是否音轨数目必须相等（Y/N）（默认Y）："
-    MESSAGE.D99 = "请修改归档详细文件：{}"
-    MESSAGE.SRH = "请决定是否应用归档（Y/N）（默认N）："
-    MESSAGE.D7I = "目标位置存在同级别资源时，是否替换成当前资源（Y/N）（默认N）："
-    MESSAGE.R96 = "归档资源成功。"
+    OPERATION_NAME = "归档音频资源"
+    class MESSAGE:
+        XX1GO9 = "请输入元数据文件："
+        OG955I = "请输入音频资源父目录："
+        K98JF4 = "请输入归档目标位置的父目录："
+        C99DV4 = "匹配元数据时是否音轨数目必须相等（Y/N）（默认Y）："
+        D998O9 = "请修改归档详细文件：{}"
+        SRHBNM = "请决定是否应用归档（Y/N）（默认N）："
+        D7IAA4 = "目标位置存在同级别资源时，是否替换成当前资源（Y/N）（默认N）："
+        R96CC5 = "归档资源成功。"
 elif global_settings.language == "ja":
     pass
 else:
@@ -59,23 +46,23 @@ SRC_TRACK = "SRC_TRACK"
 DST_TRACK = "DST_TRACK"
 
 
+################ 主函数 ################
+
 def main() -> None:
-    lprint(MESSAGE.DD5)
 
-    metadata_file = easy_linput(MESSAGE.XX1, return_type=Path)
-    src_parent = easy_linput(MESSAGE.OG9, return_type=Path)
-    dst_parent = easy_linput(MESSAGE.K98, return_type=Path)
+    metadata_file = easy_linput(MESSAGE.XX1GO9, return_type=Path)
+    src_parent = easy_linput(MESSAGE.OG955I, return_type=Path)
+    dst_parent = easy_linput(MESSAGE.K98JF4, return_type=Path)
 
-    filter_trackcount = easy_linput(MESSAGE.C99, default="Y", return_type=str)  != "N"
+    filter_trackcount = easy_linput(MESSAGE.C99DV4, default="Y", return_type=str)  != "N"
 
-    # 扁平、存在音频 的目录 认为是专辑目录
+    # 存在音频 的目录 认为是专辑目录
     src_dirs = [d for d in src_parent.rglob("*") 
                 if d.is_dir() 
-                # and all(f.is_file() for f in d.glob("*"))
                 and list(itertools.chain.from_iterable(d.glob(f"*{ext}") for ext in AUDIO_EXTS))]
 
     # 加载 来源和目标 专辑模型
-    src_albums = list(map(analyze_resource_album, src_dirs))
+    src_albums = list(map(analyze_album, src_dirs))
     dst_albums = load_albums_from_toml(metadata_file)
 
     archive_details = []
@@ -89,7 +76,7 @@ def main() -> None:
 
         src_dir = src_dirs[a_row]
         src_audios = list(itertools.chain.from_iterable(src_dir.glob(f"*{ext}") for ext in AUDIO_EXTS))
-        src_tracks = list(map(analyze_resource_track, src_audios))
+        src_tracks = list(map(analyze_track, src_audios))
 
         t_row_ind, t_col_ind, t_aver_similarity, _ = tracks_assignment(src_tracks, dst_album.tracks)
 
@@ -116,15 +103,15 @@ def main() -> None:
     dump_toml({str(i+1): d for i, d in enumerate(archive_details)}, archive_details_file)
 
     # 等待用户编辑 archive_details
-    lprint(MESSAGE.D99.format(archive_details_file))
-    _continue = easy_linput(MESSAGE.SRH, default="N", return_type=str)  == "Y"
+    lprint(MESSAGE.D998O9.format(archive_details_file))
+    _continue = easy_linput(MESSAGE.SRHBNM, default="N", return_type=str)  == "Y"
     if not _continue:
         return
     
     # 应用 archive_details
     archive_details = list(rtoml.loads(archive_details_file.read_text(encoding="utf-8")).values())
 
-    replace_same = easy_linput(MESSAGE.D7I, default="N", return_type=str)  == "Y"
+    replace_same = easy_linput(MESSAGE.D7IAA4, default="N", return_type=str)  == "Y"
 
     for d in archive_details:
 
@@ -156,7 +143,7 @@ def main() -> None:
             else:
                 shutil.move(src, dst)
 
-    lprint(MESSAGE.R96)
+    lprint(MESSAGE.R96CC5)
 
 
 

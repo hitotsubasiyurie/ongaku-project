@@ -6,13 +6,13 @@ from tqdm import tqdm
 
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
-from ongaku.workflow.utils import easy_linput
+from ongaku.workflow.common import easy_linput
 from ongaku.mdsource.vgmdb_api import VGMdbAPI
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
 
 
 if global_settings.language == "zh":
-    PLUGIN_NAME = "从 VGMDB 获取专辑元数据"
+    OPERATION_NAME = "从 VGMDB 获取专辑元数据"
 elif global_settings.language == "ja":
     pass
 else:

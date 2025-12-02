@@ -10,7 +10,7 @@ import rtoml
 
 from ongaku.core.basemodels import Album
 from ongaku.core.constants import IMG_EXTS
-from ongaku.utils.utils import legalize_filename, dump_toml
+from ongaku.utils import legalize_filename, dump_toml
 
 
 ALBUM_FILENAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"

@@ -126,7 +126,7 @@ class TrackTableItemModel(CustomTableItemModel):
             -> bool:
         return True
 
-    # 内部方法
+    #################### 内部方法 ####################
 
     def _get_data(self, col: int, p: int) -> str:
         ms = 0b111110
@@ -190,7 +190,7 @@ class TrackTitleItemDelegate(QStyledItemDelegate):
         # 被编辑时，展示 json 格式化内容
         editor.setText(json.dumps(index.data(Qt.ItemDataRole.DisplayRole), ensure_ascii=False))
 
-    # 内部方法
+    #################### 内部方法 ####################
 
     @staticmethod
     def _get_content_height(font: QFont, width: int, text: str) -> int:
@@ -258,7 +258,7 @@ class TrackTableView(QTableView):
         ps = [self.item_model.layout_ps[r] for r in rows]
         return ps
 
-    # 重写方法
+    #################### 重写方法 ####################
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         # 激活窗口

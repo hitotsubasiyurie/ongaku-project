@@ -113,7 +113,7 @@ class Page1Widget(QWidget):
         self.album_table_view.item_model.reset_theme_kanban(theme_kanban)
         self.track_table_view.item_model.reset_album_kanban(None)
 
-    # 内部方法
+    #################### 内部方法 ####################
 
     def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
         dst_dir.mkdir(parents=True, exist_ok=True)
@@ -183,7 +183,7 @@ Average Similarity:\t{aver_similarity:.02f}
         self.album_table_view.viewport().update()
         self.cover_label.set_album_kanban(self.cover_label.album_kanban)
 
-    ## 事件动作
+    ##################### 事件动作 ####################
 
     def _on_album_view_selected(self, *args, **kwargs) -> None:
         ps = self.album_table_view.get_selected_ps()

@@ -84,7 +84,7 @@ class CoverLabel(QLabel):
         self.update()
         toast_notify(f"Cover opacity: {self.opacity}")
 
-    # 重写方法
+    #################### 重写方法 ####################
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         # 父控件大小变化时，更新布局
@@ -144,7 +144,7 @@ class CoverLabel(QLabel):
             # 空白
             pass
 
-    # 内部方法
+    #################### 内部方法 ####################
 
     def _set_geometry(self) -> None:
         parent: QWidget = self.parent()

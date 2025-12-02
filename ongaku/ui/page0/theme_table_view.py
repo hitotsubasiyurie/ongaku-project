@@ -92,7 +92,7 @@ class ThemeTableItemModel(CustomTableItemModel):
             return
         super().set_filter(column, text)
 
-    # 内部方法
+    #################### 内部方法 ####################
 
     def _apply_sort(self) -> None:
         column, order = self.sort_args
@@ -149,7 +149,7 @@ class ThemeTableItemDelegate(QStyledItemDelegate):
 
         # 先画长进度条
         coll_p, mark_p = index.data(Qt.ItemDataRole.UserRole)
-        if coll_p == mark_p:
+        if coll_p == mark_p != 0:
             coll_p -= 0.01
         params = [(coll_p, current_theme.THEME_PROGRESS_COLL_COLOR),
                   (mark_p, current_theme.THEME_PROGRESS_MARK_COLOR)]

@@ -83,13 +83,13 @@ class MetadataState(IntFlag):
     """
     专辑元数据文件状态
     """
-    NONE = 0
-    TITLE_EXIST = 1 << 0
-    DATE_EXIST = 1 << 1
-    CATNO_EXIST = 1 << 2
-    TRACK_EXIST = 1 << 3
-    ARTIST_EXIST = 1 << 4
-    COVER_EXIST = 1 << 5
+    NONE         = 0b000000
+    TITLE_EXIST  = 0b000001
+    DATE_EXIST   = 0b000010
+    CATNO_EXIST  = 0b000100
+    TRACK_EXIST  = 0b001000
+    ARTIST_EXIST = 0b010000
+    COVER_EXIST  = 0b100000
 
 
 @dataclass
@@ -116,10 +116,6 @@ class AlbumKanBan:
         """专辑元数据状态"""
         s = MetadataState.NONE
 
-        # 无 links 信息来源
-        if not self.album.links:
-            return s
-        
         if self.album.album:
             s |= MetadataState.TITLE_EXIST
         if self.album.date:

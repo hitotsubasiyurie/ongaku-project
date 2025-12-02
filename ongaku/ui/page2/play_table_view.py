@@ -182,7 +182,7 @@ class PlayTableItemModel(CustomTableItemModel):
         # 应用排序
         self._apply_sort()
 
-    # 内部方法
+    #################### 内部方法 ####################
 
     def _get_data(self, role: Qt.ItemDataRole, col: int, i: int, j: int) -> str:
         if col == 0:
@@ -285,7 +285,7 @@ class PlayTableView(QTableView):
         self.scrollTo(ix, QTableView.ScrollHint.PositionAtCenter)
         self.setFocus()
 
-    # 重写方法
+    #################### 重写方法 ####################
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         # 还原默认列宽

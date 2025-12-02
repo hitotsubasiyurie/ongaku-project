@@ -124,7 +124,7 @@ QPushButton:hover {{
         pos = max(0, min(pos, self.player.duration()))
         self.player.setPosition(pos)
     
-    # 内部方法
+    #################### 内部方法 ####################
 
     def _on_player_position_changed(self, position: int) -> None:
         if not self.slider.isSliderDown():

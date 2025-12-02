@@ -154,11 +154,12 @@ class AlbumTableItemModel(CustomTableItemModel):
         # 应用排序
         self._apply_sort()
 
-    # 内部方法
+    #################### 内部方法 ####################
 
     def _get_data(self, col: int, p: int) -> str:
         if col == 0:
-            return (self.theme_kanban.album_kanbans[p].album_res_state, 
+            return (bool(self.theme_kanban.album_kanbans[p].album.links),
+                    self.theme_kanban.album_kanbans[p].album_res_state, 
                     self.theme_kanban.album_kanbans[p].metadata_state)
         elif col == 1:
             return self.theme_kanban.album_kanbans[p].album.album
@@ -194,7 +195,7 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
             painter.fillRect(option.rect, QBrush(bg))
         
         painter.save()
-        rs, ms = index.data(Qt.ItemDataRole.DisplayRole)
+        has_link, rs, ms = index.data(Qt.ItemDataRole.DisplayRole)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(self.RESOURCE_STATE_COLORS[rs])
         # 抗锯齿
@@ -202,7 +203,12 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
         
         rect: QRect = option.rect
         center = rect.center()
-        radius = min(rect.width(), rect.height()) / 2 - 1
+
+        if has_link:
+            radius = min(rect.width(), rect.height()) / 2 - 0.5
+        else:
+            radius = min(rect.width(), rect.height()) / 3
+        
         diameter = radius * 2
         left, top = center.x() - radius, center.y() - radius
 
@@ -277,6 +283,10 @@ class AlbumTableView(QTableView):
         # 字体高度
         fh = self.fontMetrics().height()
 
+        font = self.font()
+        font.setPointSize(font.pointSize()+1)
+        self.setFont(font)
+
         # 设置行
         header = self.verticalHeader()
         header.setDefaultSectionSize(fh)
@@ -300,7 +310,7 @@ class AlbumTableView(QTableView):
         ps = [self.item_model.layout_ps[r] for r in rows]
         return ps
 
-    # 重写方法
+    #################### 重写方法 ####################
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         # 拖入内容时 激活窗口

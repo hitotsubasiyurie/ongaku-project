@@ -118,7 +118,7 @@ class MusicBrainzAPI:
         resp = self._cached_request_get(url)
         return resp.json()
 
-    ################ 内部方法 ################
+    ################################### 内部方法 #################### ################
 
     def _browse_recordings_of_release(self, release_id: str) -> list[dict]:
         """

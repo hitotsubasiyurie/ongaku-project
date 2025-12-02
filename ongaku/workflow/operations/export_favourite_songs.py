@@ -34,6 +34,7 @@ if global_settings.language == "zh":
         DR955G = "【{}/{}】封面不存在！{}\n是否继续（Y/N）（默认N）："
         PO02LP = "是否删除导出目录中的多余文件：{} ："
         LKOD96 = "压缩封面图像：{}"
+        R96CC5 = "导出喜欢的歌曲已完成。"
 elif global_settings.language == "ja":
     pass
 else:
@@ -206,5 +207,6 @@ def main() -> None:
         if easy_linput(MESSAGE.PO02LP.format(f), default="Y", return_type=str)  == "Y":
             f.unlink()
 
+    lprint(MESSAGE.R96CC5)
 
 

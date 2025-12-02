@@ -85,7 +85,7 @@ def main():
         return
 
     filter_catno = easy_linput(MESSAGE.C99, default="N", return_type=str) == "Y"
-    filter_trackcount = easy_linput(MESSAGE.D7I, default="Y", return_type=str) != "N"
+    filter_trackcount = easy_linput(MESSAGE.D7I, default="Y", return_type=str) == "Y"
 
     files_albums = list(map(load_albums_from_toml, metadata_files))
 
@@ -136,7 +136,7 @@ def main():
         lprint(MESSAGE.GGG)
         return
     
-    replace_blank = easy_linput(MESSAGE.CS5, default="Y", return_type=str)  != "N"
+    replace_blank = easy_linput(MESSAGE.CS5, default="Y", return_type=str)  == "Y"
 
     remove_srcs = set()
 

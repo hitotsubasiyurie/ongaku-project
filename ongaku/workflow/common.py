@@ -49,7 +49,7 @@ def loop_for_actions(message2action: dict[str, Callable]) -> None:
     messages, actions = list(message2action.keys()), list(message2action.values())
     while True:
         lprint("\n".join(f"{i+1}. {m}" for i, m in enumerate(messages)) + "\n")
-        number = easy_linput(MESSAGE.OG9, return_type=int)
+        number = easy_linput("?: ", return_type=int)
         lprint()
 
         if not (0 <= number - 1 <= len(messages)):
@@ -207,13 +207,17 @@ def analyze_track(track_file: str | Path) -> Track | None:
     
     return Track(tracknumber=tracknumber, title=title, artist=artist)
 
-
-# "[ANZX-6810] [2012-02-23] PERFECT IDOL 03 [4]", "[ANZX-6810] [2012.02.23] PERFECT IDOL 03 [4]"
-_ALBUM_PAT_1 = re.compile(r"^\[([A-Za-z0-9-]+)\]\s+\[([0-9.-]+)\]\s+(.+)$")
-# [2021-01-02] xxx
-_ALBUM_PAT_2 = re.compile(r"^\[*([0-9.-]+)\]*\s+(.+)$")
-# xxx [210102]
+# 按优先级排序
+# "[ANZX-6810] [2012-02-23] PERFECT IDOL 03 [4]"
+_ALBUM_PAT_1 = re.compile(r"^\[([A-Za-z0-9-]+)\]\s*\[([0-9.-]{4,10})\]\s*(.+)$")
+# "[2021-01-02] SPCD Drama (flac)"
+_ALBUM_PAT_2 = re.compile(r"^\[([0-9.-]{4,10})\]\s*(.+)$")
+# "プリパラ プロミス! リズム! パラダイス! [210102]"
 _ALBUM_PAT_3 = re.compile(r"^(.+)\[([0-9]{6})\]$")
+# "[190911]プリパラ プロミス! リズム! パラダイス![320K]"
+_ALBUM_PAT_4 = re.compile(r"^\[([0-9]{6})\](.+)$")
+# "2007.09.27 Mayumi Gojo - Iridescent+"
+_ALBUM_PAT_5 = re.compile(r"^([0-9.-]{4,10})\s*(.+)$")
 
 
 def analyze_album(album_dir: str | Path) -> Album | None:
@@ -246,6 +250,15 @@ def analyze_album(album_dir: str | Path) -> Album | None:
             d = match.group(2)
             date = f"20{d[:2]}-{d[2:4]}-{d[4:6]}"
         if not album: album = match.group(1)
+    if match := _ALBUM_PAT_4.search(album_dir.name):
+        if not date: 
+            d = match.group(1)
+            date = f"20{d[:2]}-{d[2:4]}-{d[4:6]}"
+        if not album: album = match.group(2)
+    if match := _ALBUM_PAT_5.search(album_dir.name):
+        if not date or len(date) < len(match.group(1)): date = match.group(1)
+        if not album: album = match.group(2)
+    
     if not album: album = album_dir.name
 
     # date 字段替换常见字符

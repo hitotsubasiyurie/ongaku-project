@@ -16,9 +16,6 @@ from ongaku.workflow.common import loop_for_actions
 from ongaku.workflow.operations import OPERATIONS
 
 
-PLUGIN_DIR = Path("./plugin")
-
-
 def main():
 
     # 初始化 目录

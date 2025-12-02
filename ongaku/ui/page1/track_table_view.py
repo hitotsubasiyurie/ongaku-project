@@ -132,7 +132,8 @@ class TrackTableItemModel(CustomTableItemModel):
         ms = 0b111110
 
         if col == 0:
-            return (self.album_kanban.track_res_states[p], 
+            return (True,
+                    self.album_kanban.track_res_states[p], 
                     ms | bool(self.album_kanban.album.tracks[p].artist))
         elif col == 1:
             return (self.album_kanban.album.tracks[p].title, 

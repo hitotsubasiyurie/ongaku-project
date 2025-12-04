@@ -10,7 +10,6 @@ if executable.suffix == ".py":
 else:
     os.chdir(executable.parent)
 
-from ongaku.core.logger import set_logger_output, set_logger_level
 from ongaku.core.settings import global_settings
 from ongaku.workflow.common import loop_for_actions
 from ongaku.workflow.operations import OPERATIONS
@@ -19,12 +18,9 @@ from ongaku.workflow.operations import OPERATIONS
 def main():
 
     # 初始化 目录
-    for p in [global_settings.temp_directory, global_settings.metadata_directory, global_settings.resource_directory]:
+    for p in [global_settings.metadata_directory, global_settings.resource_directory]:
         os.makedirs(p, exist_ok=True)
     
-    set_logger_output(global_settings.temp_directory)
-    set_logger_level(global_settings.log_level)
-
     loop_for_actions(OPERATIONS)
 
 

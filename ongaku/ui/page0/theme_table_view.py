@@ -92,7 +92,7 @@ class ThemeTableItemModel(CustomTableItemModel):
             return
         super().set_filter(column, text)
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _apply_sort(self) -> None:
         column, order = self.sort_args

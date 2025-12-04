@@ -89,7 +89,7 @@ QPushButton:hover {{
         self._set_btns_geometry()
         super().resizeEvent(event)
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _set_btns_geometry(self):
         index = self.stack.currentIndex()
@@ -100,7 +100,7 @@ QPushButton:hover {{
             self.page_next_btn.move(self.width() - self.page_prev_btn.width(), 0)
             self.page_prev_btn.move(self.width() - self.page_prev_btn.width()*2, 0)
 
-    #################### 事件动作 ####################
+    ######## 事件动作 ########
 
     @with_busy_cursor
     def _refresh_kanban(self) -> None:

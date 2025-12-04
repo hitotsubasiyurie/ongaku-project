@@ -1,47 +1,26 @@
 from pathlib import Path
 from datetime import datetime
-from types import SimpleNamespace
 
 from tqdm import tqdm
 
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
+from ongaku.lang import MESSAGE
 from ongaku.workflow.common import easy_linput
 from ongaku.mdsource.dojin_music_info_api import DoujinMusicInfoAPI
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
 
 
-if global_settings.language == "zh":
-    OPERATION_NAME = "从 同人音楽info 获取专辑元数据"
-    class MESSAGE:
-        C3XYH9 = \
-"""
-保存路径：
-    若是文件夹，将会在其下生成新的元数据文件。
-    若是已有的元数据文件路径，将会追加它未包含的专辑元数据
-
-同人音楽info url ：
-    circle 页面，例如：https://www.dojin-music.info/circle/115
-    cd 页面，例如：https://www.dojin-music.info/cd/458
-    如果有多个 url ，请使用空格分隔，例如：
-"""
-        OG9DF4 = "请输入保存路径："
-        K98BVF = "请输入 同人音楽info url ："
-        D96HN3 = "不支持的 同人音楽info url 。"
-        EREE5T = "成功获取 {:d} 张专辑元数据。元数据文件：{}"
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
+OPERATION_NAME = MESSAGE.WF_20251204_194820
 
 
-################ 主函数 ################
+######## 主函数 ########
 
 def main():
-    lprint(MESSAGE.C3XYH9)
+    lprint(MESSAGE.WF_20251204_194821)
 
-    input_path = easy_linput(MESSAGE.OG9DF4, return_type=Path)
-    input_urls = easy_linput(MESSAGE.K98BVF, return_type=str)
+    input_path = easy_linput(MESSAGE.WF_20251204_194822, return_type=Path)
+    input_urls = easy_linput(MESSAGE.WF_20251204_194823, return_type=str)
 
     # 创建目录
     if input_path.is_file():
@@ -66,7 +45,7 @@ def main():
             circle_id = url.split("/")[-1]
             cd_ids.extend(api.get_cd_ids_from_circle(circle_id))
         else:
-            lprint(MESSAGE.D96HN3)
+            lprint(MESSAGE.WF_20251204_194824)
             return
     
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
@@ -92,4 +71,4 @@ def main():
     
     dump_albums_to_toml(exist_albums + new_albums, metadata_file)
     
-    lprint(MESSAGE.EREE5T.format(len(new_albums), metadata_file))
+    lprint(MESSAGE.WF_20251204_194825.format(len(new_albums), metadata_file))

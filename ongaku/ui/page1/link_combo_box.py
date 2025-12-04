@@ -39,7 +39,7 @@ class LinkComboBox(QComboBox):
         # 禁用鼠标滚轮选择
         return None
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _open_link(self, index: int) -> None:
         webbrowser.open(self.links[index])

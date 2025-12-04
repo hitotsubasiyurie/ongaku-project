@@ -2,7 +2,7 @@
 log_level = 2
 
 # Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese), "ko" (Korean)
-language = "zh"
+language = "zh_cn"
 
 # Directory for storing temporary files (logs, cache, etc.), e.g. "D:\\ongaku-tmp"
 temp_directory = "D:\\ongaku-tmp"

@@ -104,7 +104,7 @@ class CustomTableItemModel(QAbstractItemModel):
         # 启动定时器
         self._filter_timer.start()
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _apply_sort(self) -> None:
         """

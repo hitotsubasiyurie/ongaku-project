@@ -6,52 +6,35 @@ from tqdm import tqdm
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
+from ongaku.lang import MESSAGE
 from ongaku.workflow.common import easy_linput
 from ongaku.workflow.common import abstract_tracks_info
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
 
 
-if global_settings.language == "zh":
-    OPERATION_NAME = "从本地 MusicBrainz 数据库获取专辑元数据"
-    class MESSAGE:
-        OLI4J5 = """
-给定一个元数据文件，从本地 MusicBrainz 数据库中查询对应的专辑。
-    """
-        SOPLP0 = "本地 MusicBrainz 数据库 PGDATA 路径不存在。{}"
-        DRPPP0 = "本地 MusicBrainz 数据库 PGDATA 路径存在。{}"
-        GFD8P9 = "请输入待查询的元数据文件："
-        RE5LKM = "请输入筛选掩码列表 [catalognumber, date, date_int, track_count]（默认为 1000,0101）："
-        IOP596 = "请输入排序掩码 [catalognumber, album, tracks_abstract]（默认为 111）："
-        OKI890 = "请输入每张专辑查询结果数限制（默认为 10）："
-        DFFBHJ = "正在启动 MusicBrainz 数据库..."
-        DVG877 = "成功获取 {:d} 张专辑元数据。元数据文件：{}"
-        MKLP9O = "正在关闭 MusicBrainz 数据库..."
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
+OPERATION_NAME = MESSAGE.WF_20251204_195520
 
 
-################ 主函数 ################
+######## 主函数 ########
 
 def main():
-    lprint(MESSAGE.OLI4J5)
+    lprint(MESSAGE.WF_20251204_195521)
 
     # 检查 PGDATA 路径
     pgdata = Path(global_settings.temp_directory, "musicbrainz_pgdata")
     if not pgdata.is_dir() or not Path(pgdata, "postgresql.conf").is_file():
-        lprint(MESSAGE.SOPLP0.format(pgdata))
+        lprint(MESSAGE.WF_20251204_195522.format(pgdata))
         return
-    lprint(MESSAGE.DRPPP0.format(pgdata))
+    lprint(MESSAGE.WF_20251204_195523.format(pgdata))
     
-    metadata_file = easy_linput(MESSAGE.GFD8P9, return_type=Path)
-    filter_masks = easy_linput(MESSAGE.RE5LKM, default="1000, 0101", return_type=str)
-    order_mask = easy_linput(MESSAGE.IOP596, default="111", return_type=str)
-    limit = easy_linput(MESSAGE.OKI890, default=10, return_type=int)
+    metadata_file = easy_linput(MESSAGE.WF_20251204_195524, return_type=Path)
+    filter_masks = easy_linput(MESSAGE.WF_20251204_195525, default="1000, 0101", return_type=str)
+    order_mask = easy_linput(MESSAGE.WF_20251204_195526, default="111", return_type=str)
+    limit = easy_linput(MESSAGE.WF_20251204_195527, default=10, return_type=int)
 
     result_file = metadata_file.parent / f"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"
 
-    lprint(MESSAGE.DFFBHJ)
+    lprint(MESSAGE.WF_20251204_195528)
     pg_ctl_start(pgdata)
 
     database = MusicBrainzDatabase()
@@ -87,9 +70,9 @@ def main():
     
     dump_albums_to_toml(result_albums, result_file)
 
-    lprint(MESSAGE.DVG877.format(len(result_albums), result_file))
+    lprint(MESSAGE.WF_20251204_195529.format(len(result_albums), result_file))
 
-    lprint(MESSAGE.MKLP9O)
+    lprint(MESSAGE.WF_20251204_195530)
     pg_ctl_stop(pgdata)
 
 

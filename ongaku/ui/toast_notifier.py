@@ -89,7 +89,7 @@ class ToastNotifier(QWidget):
                 self._set_geometry()
         return super().eventFilter(obj, event)
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _remove_message(self, label: QLabel):
         self.layout().removeWidget(label)

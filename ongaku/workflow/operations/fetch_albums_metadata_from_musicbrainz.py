@@ -5,45 +5,23 @@ from tqdm import tqdm
 
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
+from ongaku.lang import MESSAGE
 from ongaku.workflow.common import easy_linput
 from ongaku.mdsource.musicbrainz_api import MusicBrainzAPI
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
 
 
-if global_settings.language == "zh":
-    OPERATION_NAME = "从 MusicBrainz 获取专辑元数据"
-    class MESSAGE:
-        OLI4J5 = """
-保存路径：
-    若是文件夹，将会在其下生成新的元数据文件。
-    若是已有的元数据文件路径，将会追加它未包含的专辑元数据
-
-MusicBrainz url ：
-    artist 页面，例如：https://beta.musicbrainz.org/artist/f960979c-fc79-4cef-8cf5-fda334e11445
-    如果有多个 url ，请使用空格分隔，例如：url1 url2 url3
-    """
-        SOPOPL = "请输入保存路径："
-        GFD8P9 = "请输入 MusicBrainz url ："
-        RE5LKM = "不支持的 MusicBrainz url 。"
-        SOPLP0 = "本地 MusicBrainz 数据库 PGDATA 路径不存在。{}"
-        DRPPP0 = "本地 MusicBrainz 数据库 PGDATA 路径存在。{}"
-        IOP596 = "成功获取 {:d} 张专辑元数据。元数据文件：{}"
-        DFFBHJ = "正在启动 MusicBrainz 数据库..."
-        MKLP9O = "正在关闭 MusicBrainz 数据库..."
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
+OPERATION_NAME = MESSAGE.WF_20251204_195320
 
 
-################ 主函数 ################
+######## 主函数 ########
 
 def main():
-    lprint(MESSAGE.OLI4J5)
+    lprint(MESSAGE.WF_20251204_195321)
 
-    input_path = easy_linput(MESSAGE.SOPOPL, return_type=Path)
-    input_urls = easy_linput(MESSAGE.GFD8P9, return_type=str)
+    input_path = easy_linput(MESSAGE.WF_20251204_195322, return_type=Path)
+    input_urls = easy_linput(MESSAGE.WF_20251204_195323, return_type=str)
 
     # 创建目录
     if input_path.is_file():
@@ -66,7 +44,7 @@ def main():
             r_ids.extend([r["id"] for r in resp["releases"]])
             [r_ids.extend(api.get_album_ids_from_release_group(rg["id"])) for rg in resp["release-groups"]]
         else:
-            lprint(MESSAGE.RE5LKM)
+            lprint(MESSAGE.WF_20251204_195324)
             return
     
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
@@ -80,11 +58,11 @@ def main():
     # 检查 PGDATA 路径
     pgdata = Path(global_settings.temp_directory, "musicbrainz_pgdata")
     if not pgdata.is_dir() or not Path(pgdata, "postgresql.conf").is_file():
-        lprint(MESSAGE.SOPLP0.format(pgdata))
+        lprint(MESSAGE.WF_20251204_195325.format(pgdata))
         database = None
     else:
-        lprint(MESSAGE.DRPPP0.format(pgdata))
-        lprint(MESSAGE.DFFBHJ)
+        lprint(MESSAGE.WF_20251204_195326.format(pgdata))
+        lprint(MESSAGE.WF_20251204_195328)
         pg_ctl_start(pgdata)
         database = MusicBrainzDatabase()
 
@@ -107,10 +85,10 @@ def main():
     
     dump_albums_to_toml(exist_albums + new_albums, metadata_file)
     
-    lprint(MESSAGE.IOP596.format(len(new_albums), metadata_file))
+    lprint(MESSAGE.WF_20251204_195327.format(len(new_albums), metadata_file))
 
     if database:
-        lprint(MESSAGE.MKLP9O)
+        lprint(MESSAGE.WF_20251204_195329)
         pg_ctl_stop(pgdata)
 
 

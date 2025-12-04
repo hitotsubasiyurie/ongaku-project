@@ -2,47 +2,19 @@ import os
 import subprocess
 from pathlib import Path
 from typing import Generator
-from types import SimpleNamespace
 
 import orjson
 from tqdm import tqdm
 
 from ongaku.core.basemodels import Album
 from ongaku.core.logger import logger, lprint
-from ongaku.core.settings import  global_settings
+from ongaku.lang import MESSAGE
 from ongaku.workflow.common import easy_linput
 from ongaku.mdsource.musicbrainz_api import MusicBrainzAPI
 from ongaku.mdsource.musicbrainz_database import MusicBrainzDatabase
 
 
-if global_settings.language == "zh":
-    OPERATION_NAME = "创建本地 MusicBrainz 数据库"
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
-
-
-MESSAGE = SimpleNamespace()
-
-
-if global_settings.language == "zh":
-    MESSAGE.C3X = \
-"""
-使用 MusicBrainz JSON Data Dumps 文件创建本地 Album 数据库。
-
-转储文件目录：
-    包含 recording.tar.xz、release.tar.xz。
-    下载地址：https://metabrainz.org/datasets/download
-tar 可执行文件路径：
-    用于解压 .tar.gz 文件。
-"""
-    MESSAGE.OG9 = "请输入 MusicBrainz 转储文件目录："
-    MESSAGE.K98 = "请输入 tar 可执行文件路径："
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
+OPERATION_NAME = MESSAGE.WF_20251204_194120
 
 
 def read_musicbrainz_tar_dump(tar_exe: str, tar_file: str) -> Generator[str, None, None]:
@@ -68,10 +40,10 @@ def release_to_albums(recordings: dict, release: dict) -> list[Album]:
 
 
 def main():
-    lprint(MESSAGE.C3X)
+    lprint(MESSAGE.WF_20251204_194121)
 
-    parent_directory: Path = easy_linput(MESSAGE.OG9, return_type=Path)
-    tar_exe = easy_linput(MESSAGE.K98, return_type=str)
+    parent_directory: Path = easy_linput(MESSAGE.WF_20251204_194122, return_type=Path)
+    tar_exe = easy_linput(MESSAGE.WF_20251204_194123, return_type=str)
 
     recording_tar, release_tar = parent_directory / "recording.tar.xz", parent_directory / "release.tar.xz"
 

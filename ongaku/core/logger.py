@@ -9,12 +9,11 @@ from pathlib import Path
 from typing import TextIO, Callable
 from logging.handlers import RotatingFileHandler
 
-
-LOG_FILENAME = "ongaku.log"
-MAX_LOG_FILE_SIZE = 10 * 1024 * 1024
+from ongaku.core.settings import global_settings
 
 
 class CompressedRotatingFileHandler(RotatingFileHandler):
+    """压缩转储"""
 
     def doRollover(self) -> None:
         if self.stream:
@@ -36,25 +35,31 @@ class CompressedRotatingFileHandler(RotatingFileHandler):
 
 
 class WithRawFormatter(logging.Formatter):
+    """生打印格式化"""
+
+    IN_RAW_KEY = "IS_IN_RAW"
 
     def __init__(self, fmt: str) -> None:
         super().__init__(fmt)
         self.raw_formatter = logging.Formatter("%(message)s")
 
     def format(self, record: logging.LogRecord) -> str:
-        if getattr(record, "raw_output", False):
+        if getattr(record, WithRawFormatter.IN_RAW_KEY, False):
             return self.raw_formatter.format(record)
         return super().format(record)
 
 
 class OngakuLogger:
 
+    LOGGER_NAME = "ongaku"
+    MAX_LOG_FILE_SIZE = 10 * 1024 * 1024
+
     def __init__(self, level: int = logging.INFO, outfile: str = None) -> None:
 
         # 抑制其他库的日志输出
         logging.getLogger().setLevel(logging.WARNING)
 
-        self.logger = logging.getLogger("ongaku")
+        self.logger = logging.getLogger(OngakuLogger.LOGGER_NAME)
         self.logger.setLevel(level)
 
         fmt= "[%(asctime)s][%(levelname)s] %(message)s [%(funcName)s, %(filename)s, line %(lineno)d][process %(process)d, thread %(thread)d]"
@@ -74,11 +79,11 @@ class OngakuLogger:
         elif os.path.isfile(anypath):
             self.outfile = anypath
         elif os.path.isdir(anypath):
-            self.outfile = os.path.join(anypath, LOG_FILENAME)
+            self.outfile = os.path.join(anypath, f"{OngakuLogger.LOGGER_NAME}.log")
 
         self._set_handler()
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _set_handler(self) -> None:
         # 清空 handlers
@@ -87,7 +92,8 @@ class OngakuLogger:
             h.close()
 
         if self.outfile:
-            handler = CompressedRotatingFileHandler(self.outfile, mode="a", maxBytes=MAX_LOG_FILE_SIZE, encoding="utf-8")
+            handler = CompressedRotatingFileHandler(self.outfile, mode="a", encoding="utf-8", 
+                                                    maxBytes=OngakuLogger.MAX_LOG_FILE_SIZE)
         else:
             handler = logging.StreamHandler()
 
@@ -98,8 +104,13 @@ class OngakuLogger:
 _ongaku_logger = OngakuLogger()
 
 logger = _ongaku_logger.logger
-set_logger_output = _ongaku_logger.set_output
-set_logger_level = lambda n: logger.setLevel({1: logging.DEBUG, 2: logging.INFO, 3: logging.WARNING, 4: logging.ERROR}.get(n, 2))
+
+# 设置 日志
+os.makedirs(global_settings.temp_directory, exist_ok=True)
+_ongaku_logger.set_output(global_settings.temp_directory)
+
+_level_map = {1: logging.DEBUG, 2: logging.INFO, 3: logging.WARNING, 4: logging.ERROR}
+logger.setLevel(_level_map.get(global_settings.log_level, 2))
 
 
 def lprint(*values: object, sep: str | None = " ", end: str | None = "\n", 
@@ -108,7 +119,7 @@ def lprint(*values: object, sep: str | None = " ", end: str | None = "\n",
     print 函数，在调用之前先将内容原样写入日志文件。
     """
     s = sep.join(str(a) for a in values) + end
-    logger.info(s, extra={"raw_output": True})
+    logger.info(s, extra={WithRawFormatter.IN_RAW_KEY: True})
 
     print(*values, sep=sep, end=end, file=file, flush=flush)
 
@@ -118,7 +129,7 @@ def linput(prompt: object  = "") -> str:
     input 函数，在调用之后将提示和输入原样写入日志文件。
     """
     s = input(prompt)
-    logger.info(prompt + s + "\n", extra={'raw_output': True})
+    logger.info(prompt + s + "\n", extra={WithRawFormatter.IN_RAW_KEY: True})
 
     return s
 

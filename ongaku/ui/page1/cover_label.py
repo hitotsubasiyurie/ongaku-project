@@ -144,7 +144,7 @@ class CoverLabel(QLabel):
             # 空白
             pass
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _set_geometry(self) -> None:
         parent: QWidget = self.parent()

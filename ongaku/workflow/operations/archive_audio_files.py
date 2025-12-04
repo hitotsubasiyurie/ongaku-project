@@ -9,36 +9,16 @@ from ongaku.core.settings import global_settings
 from ongaku.core.kanban import load_albums_from_toml, album_filename, track_filenames
 from ongaku.core.basemodels import Album
 from ongaku.core.constants import AUDIO_EXTS
+from ongaku.lang import MESSAGE
 from ongaku.workflow.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str, 
     track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 from ongaku.utils import dump_toml
 
 
-if global_settings.language == "zh":
-    OPERATION_NAME = "归档音频资源"
-    class MESSAGE:
-        OLI4J5 = """
-主题目录的父目录：
-    例如 "D:\\ongaku-resource\\AnimeComicGame" ，将会在这里创建主题目录 "D:\\ongaku-resource\\AnimeComicGame\\Aチャンネル [A频道] [A-Channel]"
-是否替换同级别资源：
-    自动以 flac 替换 mp3 。
-    替换同级别资源时，会以 flac 替换 flac ，以 mp3 替换 mp3 。
-    """
-        XX1GO9 = "请输入元数据文件："
-        OG955I = "请输入音频资源父目录："
-        K98JF4 = "请输入主题目录的父目录："
-        C99DV4 = "匹配元数据时是否音轨数目必须相等（Y/N）（默认Y）："
-        D998O9 = "请修改归档详细文件：{}"
-        SRHBNM = "请决定是否应用归档（Y/N）（默认N）："
-        D7IAA4 = "是否替换同级别资源（Y/N）（默认N）："
-        R96CC5 = "归档音频资源已完成。"
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
+OPERATION_NAME = MESSAGE.WF_20251204_190036
 
 
-################ 业务函数 ################
+######## 业务函数 ########
 
 IS_APPLY = "IS_APPLY"
 ALBUM_SIMILARITY = "ALBUM_SIMILARITY"
@@ -130,15 +110,15 @@ def apply_archive_detail(detail: dict, is_replace_same: bool) -> None:
             shutil.move(src, dst)
 
 
-################ 主函数 ################
+######## 主函数 ########
 
 def main() -> None:
-    lprint(MESSAGE.OLI4J5)
+    lprint(MESSAGE.WF_20251204_190037)
 
-    metadata_file = easy_linput(MESSAGE.XX1GO9, return_type=Path)
-    src_parent = easy_linput(MESSAGE.OG955I, return_type=Path)
-    dst_parent = easy_linput(MESSAGE.K98JF4, return_type=Path)
-    filter_trackcount = easy_linput(MESSAGE.C99DV4, default="Y", return_type=str)  == "Y"
+    metadata_file = easy_linput(MESSAGE.WF_20251204_190038, return_type=Path)
+    src_parent = easy_linput(MESSAGE.WF_20251204_190039, return_type=Path)
+    dst_parent = easy_linput(MESSAGE.WF_20251204_190040, return_type=Path)
+    filter_trackcount = easy_linput(MESSAGE.WF_20251204_190041, default="Y", return_type=str)  == "Y"
 
     archive_details_file = Path(global_settings.temp_directory, "archive_details.toml")
 
@@ -163,19 +143,19 @@ def main() -> None:
     dump_toml({str(i+1): d for i, d in enumerate(archive_details)}, archive_details_file)
 
     # 等待用户编辑 archive_details
-    lprint(MESSAGE.D998O9.format(archive_details_file))
-    if not easy_linput(MESSAGE.SRHBNM, default="N", return_type=str)  == "Y":
+    lprint(MESSAGE.WF_20251204_190042.format(archive_details_file))
+    if not easy_linput(MESSAGE.WF_20251204_190043, default="N", return_type=str)  == "Y":
         return
     
     # 应用 archive_details
     archive_details = list(rtoml.loads(archive_details_file.read_text(encoding="utf-8")).values())
 
-    is_replace_same = easy_linput(MESSAGE.D7IAA4, default="N", return_type=str)  == "Y"
+    is_replace_same = easy_linput(MESSAGE.WF_20251204_190044, default="N", return_type=str)  == "Y"
 
     for d in archive_details:
         apply_archive_detail(d, is_replace_same)
 
-    lprint(MESSAGE.R96CC5)
+    lprint(MESSAGE.WF_20251204_190045)
 
 
 

@@ -154,7 +154,7 @@ class AlbumTableItemModel(CustomTableItemModel):
         # 应用排序
         self._apply_sort()
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _get_data(self, col: int, p: int) -> str:
         if col == 0:

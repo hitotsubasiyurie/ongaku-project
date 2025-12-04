@@ -13,35 +13,16 @@ from ongaku.core.logger import lprint, logger
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan, track_filenames
 from ongaku.core.basemodels import Album, Track
+from ongaku.lang import MESSAGE
 from ongaku.workflow.common import easy_linput
 from ongaku.utils import write_audio_tags, read_audio_tags
 from ongaku.external import show_audio_stream_info, compress_image
 
 
-if global_settings.language == "zh":
-    OPERATION_NAME = "导出喜欢的歌曲"
-    class MESSAGE:
-        OLI4J5 = """
-导出目录路径：
-    例如 D:\\ongaku-export
-    """
-        SOPLP0 = "请输入导出目录路径："
-        GFD8P9 = "【{}/{}】导出：{} -> {}"
-        RE5LKM = "【{}/{}】已存在：{} -> {}"
-        IOP596 = "【{}/{}】修改元数据：{}"
-        UI7MKO = "【{}/{}】重命名：{} -> {}"
-        SS2HBG = "【{}/{}】资源不存在！{}\n是否继续（Y/N）（默认N）："
-        DR955G = "【{}/{}】封面不存在！{}\n是否继续（Y/N）（默认N）："
-        PO02LP = "是否删除导出目录中的多余文件：{} ："
-        LKOD96 = "压缩封面图像：{}"
-        R96CC5 = "导出喜欢的歌曲已完成。"
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
+OPERATION_NAME = MESSAGE.WF_20251204_194420
 
 
-################ 工具函数 ################
+######## 工具函数 ########
 
 def fuzzy_compare_audios(audio1: str | Path, audio2: str | Path) -> True:
     """
@@ -84,7 +65,7 @@ def write_metadata(dst_file: str | Path, cover: str, album: Album, track: Track)
     """
     # flac 格式封面限制 16 MiB
     if Path(cover).stat().st_size >= 16 * 1024 * 1024:
-        lprint(MESSAGE.LKOD96.format(cover))
+        lprint(MESSAGE.WF_20251204_194431.format(cover))
         compress_image(cover)
 
     write_audio_tags(str(dst_file), cover, 
@@ -115,12 +96,12 @@ def remove_non_conflicting_suffix(anypath: Path) -> Path:
     return anypath.with_name(f"{base_name}{anypath.suffix}")
 
 
-################ 主函数 ################
+######## 主函数 ########
 
 def main() -> None:
-    lprint(MESSAGE.OLI4J5)
+    lprint(MESSAGE.WF_20251204_194421)
 
-    export_dir = easy_linput(MESSAGE.SOPLP0, return_type=Path)
+    export_dir = easy_linput(MESSAGE.WF_20251204_194422, return_type=Path)
     
     kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
 
@@ -150,12 +131,12 @@ def main() -> None:
                 # 资源不存在
                 if not album_kanban.track_files[idx]:
                     src_file = Path(album_kanban.album_dir, track_filenames(album)[idx])
-                    if not easy_linput(MESSAGE.SS2HBG.format(current, total, src_file), default="N", return_type=str)  == "Y":
+                    if not easy_linput(MESSAGE.WF_20251204_194427.format(current, total, src_file), default="N", return_type=str)  == "Y":
                         return
                 
                 # 封面不存在
                 if not album_kanban.cover:
-                    if not easy_linput(MESSAGE.SS2HBG.format(current, total, album_kanban.album_dir), default="N", return_type=str)  == "Y":
+                    if not easy_linput(MESSAGE.WF_20251204_194428.format(current, total, album_kanban.album_dir), default="N", return_type=str)  == "Y":
                         return
 
                 src_file = Path(album_kanban.track_files[idx])
@@ -177,13 +158,13 @@ def main() -> None:
 
                 # 资源已存在
                 if dst_file.exists():
-                    lprint(MESSAGE.RE5LKM.format(current, total, src_file, dst_file))
+                    lprint(MESSAGE.WF_20251204_194424.format(current, total, src_file, dst_file))
                     # 重新计算 非冲突后缀
                     if _NON_CONFLICTING_SUFFIX.search(dst_file.stem):
                         new_file = get_non_conflicting_path(remove_non_conflicting_suffix(dst_file))
                         if dst_file != new_file:
                             dst_file.rename(new_file)
-                            lprint(MESSAGE.UI7MKO.format(current, total, dst_file, new_file))
+                            lprint(MESSAGE.WF_20251204_194426.format(current, total, dst_file, new_file))
                             dst_file = new_file
                     # 元数据不一致 封面不一致 重新写入 元数据
                     src_tags = (album.catalognumber, album.date, album.album, str(track.tracknumber), track.title, track.artist)
@@ -191,12 +172,12 @@ def main() -> None:
                     if any((v1 and v1 != v2) for v1, v2 in zip(src_tags, dst_tags)) or not fuzzy_compare_cover(dst_file, album_kanban.cover):
                         logger.info(f"Metadata are not the same. {src_tags} {dst_tags}")
                         write_metadata(dst_file, album_kanban.cover, album, track)
-                        lprint(MESSAGE.IOP596.format(current, total, dst_file))
+                        lprint(MESSAGE.WF_20251204_194425.format(current, total, dst_file))
                 # 资源不存在 导出资源
                 else:
                     shutil.copy2(src_file, dst_file)
                     write_metadata(dst_file, album_kanban.cover, album, track)
-                    lprint(MESSAGE.GFD8P9.format(current, total, src_file, dst_file))
+                    lprint(MESSAGE.WF_20251204_194423.format(current, total, src_file, dst_file))
                     continue
 
         # 剩余存在的未处理的文件
@@ -204,9 +185,9 @@ def main() -> None:
     
     # 删除多余导出文件
     for f in delete_files:
-        if easy_linput(MESSAGE.PO02LP.format(f), default="Y", return_type=str)  == "Y":
+        if easy_linput(MESSAGE.WF_20251204_194429.format(f), default="Y", return_type=str)  == "Y":
             f.unlink()
 
-    lprint(MESSAGE.R96CC5)
+    lprint(MESSAGE.WF_20251204_194432)
 
 

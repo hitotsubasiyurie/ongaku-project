@@ -35,7 +35,7 @@ class TextEditMessageBox(QMessageBox):
         # 中心 展示
         self.move(QApplication.primaryScreen().availableGeometry().center() - self.rect().center())
 
-    #################### 内部方法 ####################
+    ######## 内部方法 ########
 
     def _adjust_size(self, text: str) -> None:
         # 获取屏幕尺寸

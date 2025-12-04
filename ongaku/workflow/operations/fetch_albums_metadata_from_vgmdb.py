@@ -1,56 +1,24 @@
 from pathlib import Path
 from datetime import datetime
-from types import SimpleNamespace
 
 from tqdm import tqdm
 
 from ongaku.core.logger import logger, lprint
 from ongaku.core.settings import global_settings
+from ongaku.lang import MESSAGE
 from ongaku.workflow.common import easy_linput
 from ongaku.mdsource.vgmdb_api import VGMdbAPI
 from ongaku.core.kanban import dump_albums_to_toml, load_albums_from_toml
 
 
-if global_settings.language == "zh":
-    OPERATION_NAME = "从 VGMDB 获取专辑元数据"
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
-
-
-MESSAGE = SimpleNamespace()
-
-
-if global_settings.language == "zh":
-    MESSAGE.C3X = \
-"""
-保存路径：
-    若是文件夹，将会在其下生成新的元数据文件。
-    若是已有的元数据文件路径，将会追加它未包含的专辑元数据
-
-VGMDB url ：
-    album 页面，例如：https://vgmdb.net/album/27425
-    frachise 页面，例如：https://vgmdb.net/product/3559
-    product 页面，例如：https://vgmdb.net/product/7750
-    搜索页面，例如：https://vgmdb.net/search?q=Yosuga+no+Sora&type=
-    如果有多个 url ，请使用空格分隔，例如：https://vgmdb.net/product/3559 https://vgmdb.net/product/7750 https://vgmdb.net/search?q=Yosuga+no+Sora&type=
-"""
-    MESSAGE.OG9 = "请输入保存路径："
-    MESSAGE.K98 = "请输入 VGMDB url ："
-    MESSAGE.D96 = "不支持的 VGMDB url 。"
-    MESSAGE.ERT = "成功获取 {:d} 张专辑元数据。元数据文件：{}"
-elif global_settings.language == "ja":
-    pass
-else:
-    pass
+OPERATION_NAME = MESSAGE.WF_20251204_194920
 
 
 def main():
-    lprint(MESSAGE.C3X)
+    lprint(MESSAGE.WF_20251204_194921)
 
-    input_path = easy_linput(MESSAGE.OG9, return_type=Path)
-    input_urls = easy_linput(MESSAGE.K98, return_type=str)
+    input_path = easy_linput(MESSAGE.WF_20251204_194922, return_type=Path)
+    input_urls = easy_linput(MESSAGE.WF_20251204_194923, return_type=str)
 
     # 创建目录
     if input_path.is_file():
@@ -77,7 +45,7 @@ def main():
         elif "/search?" in url:
             a_ids.extend(api.get_album_ids_from_search_page(url))
         else:
-            lprint(MESSAGE.D96)
+            lprint(MESSAGE.WF_20251204_194924)
             return
     
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
@@ -103,4 +71,4 @@ def main():
     
     dump_albums_to_toml(exist_albums + new_albums, metadata_file)
     
-    lprint(MESSAGE.ERT.format(len(new_albums), metadata_file))
+    lprint(MESSAGE.WF_20251204_194925.format(len(new_albums), metadata_file))

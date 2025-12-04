@@ -17,16 +17,12 @@ from PySide6.QtCore import Qt
 
 from ongaku.core.settings import global_settings
 from ongaku.core.kanban import KanBan
-from ongaku.core.logger import set_logger_output, set_logger_level
 from ongaku.ui.toast_notifier import ToastNotifier
 from ongaku.ui.main_window import MainWindow
 from ongaku.ui.color_theme import current_theme
 
 
 if __name__ == "__main__":
-    set_logger_output(global_settings.temp_directory)
-    set_logger_level(global_settings.log_level)
-
     app = QApplication([])
     app.setWindowIcon(QIcon("./assets/icon.png"))
 

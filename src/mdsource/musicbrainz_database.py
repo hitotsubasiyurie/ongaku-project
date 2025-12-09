@@ -1,0 +1,242 @@
+import subprocess
+from typing import Any
+from datetime import datetime
+
+import orjson
+from psycopg.connection import Connection
+from psycopg.rows import tuple_row
+
+from src.core.logger import logger
+from src.core.exception import OngakuException
+from src.core.basemodels import Album
+from src.workflow.common import abstract_tracks_info
+
+
+def init_pgdata(pgdata: str) -> None:
+    cmd = fr".\bin\pgsql\bin\initdb.exe --auth=trust --encoding=UTF8 --no-locale --nosync \
+        --username=postgres -D {pgdata}"
+    process = subprocess.run(cmd)
+    logger.info(f"Initdb pgdata successfully. {cmd}")
+    logger.debug(process.stdout)
+    logger.debug(process.stderr)
+
+
+def pg_ctl_start(pgdata: str) -> None:
+    cmd = fr".\bin\pgsql\bin\pg_ctl.exe start --silent -D {pgdata}"
+    process = subprocess.run(cmd)
+    logger.info(f"pg_ctl start successfully. {cmd}")
+    logger.debug(process.stdout)
+    logger.debug(process.stderr)
+
+
+def pg_ctl_stop(pgdata: str) -> None:
+    cmd = fr".\bin\pgsql\bin\pg_ctl.exe stop --silent -D {pgdata}"
+    process = subprocess.run(cmd)
+    logger.info(f"pg_ctl stop successfully. {cmd}")
+    logger.debug(process.stdout)
+    logger.debug(process.stderr)
+
+
+CREATE_EXTENSION_SQL = "CREATE EXTENSION pg_trgm;"
+
+CREATE_ALBUM_SQL = """
+CREATE TABLE album (
+    id SERIAL PRIMARY KEY,
+    release_id VARCHAR(255) NOT NULL DEFAULT '',
+    catalognumber TEXT NOT NULL DEFAULT '',
+    date VARCHAR(255) NOT NULL DEFAULT '',
+    album TEXT NOT NULL DEFAULT '',
+    tracks_json TEXT NOT NULL DEFAULT '',
+    links TEXT[] NOT NULL DEFAULT '{}',
+    _date_min INTEGER NOT NULL DEFAULT 0,
+    _date_max INTEGER NOT NULL DEFAULT 0,
+    _tracks_count INTEGER NOT NULL DEFAULT 0,
+    _tracks_abstract TEXT NOT NULL DEFAULT ''
+);
+"""
+
+CREATE_INDEX_SQL = """
+CREATE INDEX idx_album_release_id ON album(release_id);
+CREATE INDEX idx_album_catalognumber ON album(catalognumber);
+CREATE INDEX idx_album_date ON album(date);
+CREATE INDEX idx_album_date_min ON album(_date_min);
+CREATE INDEX idx_album_date_max ON album(_date_max);
+CREATE INDEX idx_album_tracks_count ON album(_tracks_count);
+CREATE INDEX idx_album_catalognumber_trgm ON album USING gin (catalognumber gin_trgm_ops);
+CREATE INDEX idx_album_album_trgm ON album USING gin (album gin_trgm_ops);
+CREATE INDEX idx_album_tracks_abstract_trgm ON album USING gin (_tracks_abstract gin_trgm_ops);
+"""
+
+
+def init_musicbrainz_database(pgdata: str) -> None:
+    init_pgdata(pgdata)
+    pg_ctl_start(pgdata)
+    db = MusicBrainzDatabase()
+    db.cur.execute(CREATE_EXTENSION_SQL)
+    db.cur.execute(CREATE_ALBUM_SQL)
+    db.cur.execute(CREATE_INDEX_SQL)
+    pg_ctl_stop(pgdata)
+    logger.info(f"Init musicbrainz database successfully.")
+
+
+class MusicBrainzDatabase:
+
+    COLUMNS = ["id", 
+               "release_id", "catalognumber", "date", "album", "tracks_json", "links", 
+               "_date_min", "_date_max", "_tracks_count", "_tracks_abstract"]
+
+    def __init__(self) -> None:
+        self.conn = Connection.connect(dbname="musicbrainz")
+        self.conn.autocommit = True
+        self.cur = self.conn.cursor(row_factory=tuple_row)
+
+    def insert_albums(self, release_ids: list[str], albums: list[Album]) -> None:
+        sql = f'INSERT INTO album ({", ".join(self.COLUMNS[1:])}) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);'
+        try:
+            values = [self._album_to_record(rid, a) for rid, a in zip(release_ids, albums)]
+            self.cur.executemany(sql, values)
+            self.conn.commit()
+            logger.info(f"Inserted {len(albums)} albums.")
+        except Exception:
+            self.conn.rollback()
+            logger.error("Failed to insert.", exc_info=1)
+            raise OngakuException()
+
+    def select_albums(
+            self,
+            filter_release_id: str = None,
+            filter_catalognumber: str = None,
+            filter_date: str = None,
+            filter_date_int: str = None,
+            filter_tracks_count: int = None,
+            order_catalognumber: str = None,
+            order_album: str = None,
+            order_tracks_abstract: str = None,
+            limit: int = 10,
+            allow_full_scan: bool = False) -> tuple[list[str], list[Album]]:
+        """
+        :return albums: Album 模型列表
+        """
+
+        if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count, 
+                    order_catalognumber, order_album, order_tracks_abstract]):
+            logger.info("No valid conditions.")
+            return []
+        
+        # 拦截 全表扫描
+        if not any([filter_release_id, filter_catalognumber, filter_date, filter_date_int, filter_tracks_count]):
+            if not allow_full_scan:
+                logger.info("No filter conditions, and not allow full scan. Return.")
+                return []
+            else:
+                logger.warning("No filter conditions, will scan full table.")
+
+        where_clauses = []
+        order_clauses = []
+        query_params = []
+
+        if filter_release_id:
+            where_clauses.append("release_id = %s")
+            query_params.append(filter_release_id)
+        
+        if filter_catalognumber:
+            where_clauses.append("catalognumber = %s")
+            query_params.append(filter_catalognumber)
+        
+        if filter_date:
+            where_clauses.append("date = %s")
+            query_params.append(filter_date)
+        
+        if filter_date_int:
+            where_clauses.append("((ABS(_date_min - %s) < 182 OR ABS(_date_max - %s) < 182) OR (_date_min = 0 AND _date_max = 0))")
+            query_params.extend([filter_date_int, filter_date_int])
+        
+        if filter_tracks_count:
+            where_clauses.append("_tracks_count = %s")
+            query_params.append(filter_tracks_count)
+
+        if order_catalognumber:
+            order_clauses.append("similarity(catalognumber, %s)")
+            query_params.append(order_catalognumber)
+
+        if order_album:
+            order_clauses.append("similarity(album, %s)")
+            query_params.append(order_album)
+
+        if order_tracks_abstract:
+            order_clauses.append("similarity(_tracks_abstract, %s)")
+            query_params.append(order_tracks_abstract)
+
+        sql_query = "SELECT * FROM album"
+
+        if where_clauses:
+            sql_query += " WHERE " + " AND ".join(where_clauses)
+
+        if order_clauses:
+            sql_query += f" ORDER BY ({' + '.join(order_clauses)}) DESC"
+        
+        sql_query += f" LIMIT {limit};"
+
+        formatted_query = sql_query.replace("%s", "{}").format(*[repr(p) for p in query_params])
+        logger.info(f"Executing Query: {formatted_query}")
+        
+        self.cur.execute(sql_query, query_params)
+        records = self.cur.fetchall()
+
+        albums = list(map(self._record_to_album, records))
+
+        logger.info(f"Got {len(albums)} albums.")
+        return albums
+
+    ######## 内部方法 ########
+
+    @staticmethod
+    def _album_to_record(release_id: str, album: Album) -> tuple[Any]:
+        return (
+            release_id,
+            album.catalognumber,
+            album.date,
+            album.album,
+            orjson.dumps(album.model_dump()["tracks"]).decode("utf-8"),
+            "{" + ", ".join(album.links) + "}",
+            *MusicBrainzDatabase._date_str_to_range(album.date),
+            len(album.tracks),
+            abstract_tracks_info(album)
+        )
+
+    @staticmethod
+    def _record_to_album(record: tuple[Any]) -> Album:
+        data = {
+            "catalognumber": record[2],
+            "date": record[3],
+            "album": record[4],
+            "tracks": orjson.loads(record[5]),
+            "links": list(record[6])
+        }
+        return Album(**data)
+    
+    @staticmethod
+    def _date_str_to_range(date_str: str) -> tuple[int, int]:
+        if not date_str:
+            return 0, 0
+
+        reference_date = datetime(1, 1, 1).date()
+
+        parts = date_str.split('-') + [None, None]
+        year, month, day = [int(x) if x and x.isdigit() else None for x in parts[:3]]
+
+        if year and month and day:
+            _min = _max = datetime(year, month, day).date() - reference_date
+            return _min.days, _max.days
+        
+        if year and month:
+            _min = datetime(year, month, 1).date() - reference_date
+            _max = datetime(year, month, 28).date() - reference_date
+            return _min.days, _max.days
+        
+        if year:
+            _min = datetime(year, 1, 1).date() - reference_date
+            _max = datetime(year, 12, 31).date() - reference_date
+            return _min.days, _max.days
+        
+        return 0, 0

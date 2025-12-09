@@ -1,7 +1,0 @@
-<dd>
-                                                                                                                            歌：
-                                                                                                                                                                                                            <a href="/artist/1387">Reira</a>&nbsp;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                編曲：
-                                                                                                                                                                                                            <a href="/artist/431">いのっち</a>&nbsp;
-                                                                                                                                                                                                                                                                                                                                                
-                                                    </dd>

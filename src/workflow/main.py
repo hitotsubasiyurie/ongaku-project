@@ -1,0 +1,29 @@
+import os
+import sys
+from pathlib import Path
+
+executable = Path(sys.argv[0])
+
+if executable.suffix == ".py":
+    sys.path[0] = str(executable.parent.parent.parent)
+    os.chdir(executable.parent.parent.parent)
+else:
+    os.chdir(executable.parent)
+
+from src.core.settings import global_settings
+from src.workflow.common import loop_for_actions
+from src.workflow.operations import OPERATIONS
+
+
+def main():
+
+    # 初始化 目录
+    for p in [global_settings.metadata_directory, global_settings.resource_directory]:
+        os.makedirs(p, exist_ok=True)
+    
+    loop_for_actions(OPERATIONS)
+
+
+if __name__ == "__main__":
+    main()
+

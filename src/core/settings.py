@@ -14,9 +14,9 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
     # 控制 自动保存
     _auto_save: bool = False
 
-    log_level: Literal[1, 2, 3, 4] = Field(
+    log_level: Literal[1, 2, 3, 4, 5] = Field(
         default=2, 
-        description='Options: 1 (debug), 2 (info), 3 (warning), 4 (error)'
+        description='Options: 1 (debug), 2 (info), 3 (warning), 4 (error), 5 (fatal)'
     )
 
     language: Literal["en", "zh_cn", "ja", "ko"] = Field(

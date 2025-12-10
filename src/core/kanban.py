@@ -1,17 +1,16 @@
 import os
-from pathlib import Path
-from typing import Callable
-from functools import cached_property
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
-from concurrent.futures import ThreadPoolExecutor
+from functools import cached_property
+from pathlib import Path
+from typing import Callable
 
 import rtoml
 
 from src.core.basemodels import Album
 from src.core.constants import IMG_EXTS
 from src.utils import legalize_filename, dump_toml
-
 
 ALBUM_FILENAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"
 TRACK_FILENAME = "{tracknumber}. {title}"

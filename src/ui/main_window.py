@@ -2,8 +2,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
-from src.core.settings import global_settings
 from src.core.kanban import KanBan
+from src.core.settings import global_settings
 from src.ui.common import with_busy_cursor
 from src.ui.page0.page0_widget import Page0Widget
 from src.ui.page1.page1_widget import Page1Widget

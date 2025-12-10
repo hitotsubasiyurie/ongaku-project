@@ -3,14 +3,13 @@ from pathlib import Path
 
 import rtoml
 
+from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import lprint
 from src.core.settings import global_settings
-from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.lang import MESSAGE
-from src.workflow.common import album_to_unique_str, albums_assignment, abstract_tracks_info
 from src.utils import dump_toml
+from src.workflow.common import album_to_unique_str, albums_assignment, abstract_tracks_info
 from src.workflow.common import easy_linput
-
 
 OPERATION_NAME = MESSAGE.WF_20251204_195020
 

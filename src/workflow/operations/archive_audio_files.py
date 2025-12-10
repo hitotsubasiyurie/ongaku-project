@@ -1,19 +1,18 @@
-import shutil
 import itertools
+import shutil
 from pathlib import Path
 
 import rtoml
 
-from src.core.logger import lprint
-from src.core.settings import global_settings
-from src.core.kanban import load_albums_from_toml, album_filename, track_filenames
 from src.core.basemodels import Album
 from src.core.constants import AUDIO_EXTS
+from src.core.kanban import load_albums_from_toml, album_filename, track_filenames
+from src.core.logger import lprint
+from src.core.settings import global_settings
 from src.lang import MESSAGE
-from src.workflow.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str, 
-    track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 from src.utils import dump_toml
-
+from src.workflow.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str,
+                                 track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 
 OPERATION_NAME = MESSAGE.WF_20251204_190036
 

@@ -1,10 +1,8 @@
-from PySide6.QtCore import Qt, QModelIndex, QTimer, Signal
-from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit, QAbstractItemView
+from PySide6.QtCore import Qt, QModelIndex, Signal
+from PySide6.QtGui import QShortcut
+from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.kanban import KanBan
-from src.ui.toast_notifier import toast_notify
-from src.ui.common import with_busy_cursor
 from src.ui.page0.theme_table_view import ThemeTableView
 
 

@@ -4,9 +4,8 @@ from typing import Any
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData
 from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
-    QAbstractItemView, QStyle)
+                               QAbstractItemView, QStyle)
 
-from src.core.logger import logger
 from src.core.kanban import ResourceState, ThemeKanBan
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel

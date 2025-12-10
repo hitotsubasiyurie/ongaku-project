@@ -5,7 +5,6 @@ import rtoml
 import tomli_w
 from pydantic import BaseModel, Field
 
-
 SETTINGS_FILE = Path("settings.toml")
 
 

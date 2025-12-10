@@ -1,23 +1,22 @@
-import re
-import json
-import shutil
 import itertools
+import json
+import re
+import shutil
 from collections import defaultdict
 from pathlib import Path
 
 from mutagen.flac import FLAC
-from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC
+from mutagen.mp3 import MP3
 
+from src.core.basemodels import Album, Track
+from src.core.kanban import KanBan, track_filenames
 from src.core.logger import lprint, logger
 from src.core.settings import global_settings
-from src.core.kanban import KanBan, track_filenames
-from src.core.basemodels import Album, Track
-from src.lang import MESSAGE
-from src.workflow.common import easy_linput
-from src.utils import write_audio_tags, read_audio_tags
 from src.external import show_audio_stream_info, compress_image
-
+from src.lang import MESSAGE
+from src.utils import write_audio_tags, read_audio_tags
+from src.workflow.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_194420
 

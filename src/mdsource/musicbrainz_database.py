@@ -1,14 +1,14 @@
 import subprocess
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 import orjson
 from psycopg.connection import Connection
 from psycopg.rows import tuple_row
 
-from src.core.logger import logger
-from src.core.exception import OngakuException
 from src.core.basemodels import Album
+from src.core.exception import OngakuException
+from src.core.logger import logger
 from src.workflow.common import abstract_tracks_info
 
 

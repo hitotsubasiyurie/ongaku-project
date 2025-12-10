@@ -1,7 +1,7 @@
 from collections import Counter
 
-from src.core.logger import logger
 from src.core.basemodels import Album, Disc
+from src.core.logger import logger
 
 
 def assemble_albums_from_discs(catnos: list[str], date: str, album_title: str, discs: list[Disc], link: str) -> list[Album]:

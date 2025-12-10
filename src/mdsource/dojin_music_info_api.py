@@ -1,17 +1,14 @@
-import itertools
-import json
+import pickle
 import pickle
 import re
 import uuid
 from pathlib import Path
-from collections import Counter
 
 import requests
 from lxml import etree
 
-from src.core.exception import OngakuException
-from src.core.logger import logger, logger_watched
-from src.core.basemodels import Album, Disc, Track
+from src.core.basemodels import Album, Track
+from src.core.logger import logger
 from src.utils import retry, RateLimiter
 
 

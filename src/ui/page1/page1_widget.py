@@ -1,7 +1,7 @@
+import itertools
 import os
 import shutil
 import subprocess
-import itertools
 import webbrowser
 from pathlib import Path
 from typing import Callable
@@ -11,17 +11,17 @@ from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 
 from src.core.basemodels import Album
-from src.core.settings import global_settings
 from src.core.constants import AUDIO_EXTS, IMG_EXTS
-from src.workflow.common import tracks_assignment, analyze_track
 from src.core.kanban import ThemeKanBan, track_filenames
-from src.ui.toast_notifier import toast_notify
+from src.core.settings import global_settings
 from src.ui.common import with_busy_cursor
 from src.ui.page1.album_table_view import AlbumTableView
-from src.ui.page1.text_edit_message_box import TextEditMessageBox
-from src.ui.page1.link_combo_box import LinkComboBox
-from src.ui.page1.track_table_view import TrackTableView
 from src.ui.page1.cover_label import CoverLabel
+from src.ui.page1.link_combo_box import LinkComboBox
+from src.ui.page1.text_edit_message_box import TextEditMessageBox
+from src.ui.page1.track_table_view import TrackTableView
+from src.ui.toast_notifier import toast_notify
+from src.workflow.common import tracks_assignment, analyze_track
 
 
 class Page1Widget(QWidget):

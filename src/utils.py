@@ -2,17 +2,17 @@
 与项目无关的，外部工具函数
 """
 
+import mimetypes
 import time
 import uuid
-import mimetypes
 from functools import wraps
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Mapping, Any
 
 from mutagen.flac import FLAC, Picture
-from mutagen.mp3 import EasyMP3
 from mutagen.id3 import ID3, APIC, PictureType
+from mutagen.mp3 import EasyMP3
 
 
 def retry(retries: int = 3, delay: int | float = 5) -> Callable:

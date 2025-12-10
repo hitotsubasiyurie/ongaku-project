@@ -1,13 +1,13 @@
-import os
-import time
 import gzip
-import shutil
 import logging
-from functools import wraps
+import os
+import shutil
+import time
 from datetime import datetime
+from functools import wraps
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TextIO, Callable
-from logging.handlers import RotatingFileHandler
 
 from src.core.settings import global_settings
 

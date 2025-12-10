@@ -1,15 +1,14 @@
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from tqdm import tqdm
 
+from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
 from src.core.settings import global_settings
 from src.lang import MESSAGE
-from src.workflow.common import easy_linput
 from src.mdsource.dojin_music_info_api import DoujinMusicInfoAPI
-from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
-
+from src.workflow.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_194820
 

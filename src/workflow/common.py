@@ -1,20 +1,18 @@
-import re
 import itertools
+import re
 from pathlib import Path
 from typing import Any, Type, Callable, TypeVar
 
 import orjson
 from numpy import asarray
-from tqdm import tqdm
 from rapidfuzz import fuzz
 from scipy.optimize import linear_sum_assignment
+from tqdm import tqdm
 
+from src.core.basemodels import Album, Track
 from src.core.constants import AUDIO_EXTS
 from src.core.logger import linput, lprint, logger
-from src.core.settings import  global_settings
 from src.utils import read_audio_tags
-from src.core.basemodels import Album, Track
-
 
 _T = TypeVar("T")
 

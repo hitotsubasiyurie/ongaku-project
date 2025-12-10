@@ -9,10 +9,9 @@ from tqdm import tqdm
 from src.core.basemodels import Album
 from src.core.logger import logger, lprint
 from src.lang import MESSAGE
-from src.workflow.common import easy_linput
 from src.mdsource.musicbrainz_api import MusicBrainzAPI
 from src.mdsource.musicbrainz_database import MusicBrainzDatabase
-
+from src.workflow.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_194120
 

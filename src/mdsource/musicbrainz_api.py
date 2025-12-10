@@ -3,15 +3,13 @@ import pickle
 import re
 import uuid
 from pathlib import Path
-from typing import Literal
 
 import requests
 
-from src.core.logger import logger, logger_watched
 from src.core.basemodels import Album, Disc, Track
-from src.utils import retry, RateLimiter
+from src.core.logger import logger, logger_watched
 from src.mdsource.common import assemble_albums_from_discs
-
+from src.utils import retry, RateLimiter
 
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')
 

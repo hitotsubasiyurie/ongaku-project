@@ -1,8 +1,8 @@
 from functools import wraps
 from typing import Callable
 
-from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
 
 
 def with_busy_cursor(func: Callable) -> Callable:

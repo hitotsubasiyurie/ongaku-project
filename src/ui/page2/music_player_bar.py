@@ -1,8 +1,8 @@
-from PySide6.QtWidgets import (QWidget, QSlider, QLabel, QPushButton, QHBoxLayout, QVBoxLayout, 
-    QStyle, )
+from PySide6.QtCore import Qt, QTime, QUrl, Signal
 from PySide6.QtGui import QMouseEvent, QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PySide6.QtCore import Qt, QTime, QUrl, Signal
+from PySide6.QtWidgets import (QWidget, QSlider, QLabel, QPushButton, QHBoxLayout, QVBoxLayout,
+                               QStyle, )
 
 from src.core.settings import global_settings
 

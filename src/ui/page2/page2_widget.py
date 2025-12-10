@@ -5,10 +5,10 @@ from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.kanban import ThemeKanBan
-from src.ui.toast_notifier import toast_notify
 from src.ui.common import with_busy_cursor
-from src.ui.page2.play_table_view import PlayTableView
 from src.ui.page2.music_player_bar import MusicPlayerBar
+from src.ui.page2.play_table_view import PlayTableView
+from src.ui.toast_notifier import toast_notify
 
 
 class Page2Widget(QWidget):

@@ -1,12 +1,11 @@
-import shutil
 import itertools
+import shutil
 from pathlib import Path
 
 from src.core.constants import AUDIO_EXTS
 from src.core.logger import lprint
 from src.lang import MESSAGE
 from src.workflow.common import easy_linput
-
 
 OPERATION_NAME = MESSAGE.WF_20251204_194010
 

@@ -1,9 +1,8 @@
-from typing import Literal
 from datetime import datetime
+from typing import Literal
 
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
-
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
 
 INFO_LABEL_QSS = """
     /* 边框 1像素 实线 灰色半透明 */

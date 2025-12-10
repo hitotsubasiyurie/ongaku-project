@@ -1,17 +1,16 @@
-import re
 import operator
-from typing import Any
+import re
 from pathlib import Path
-
+from typing import Any
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal
 from PySide6.QtGui import QPainter, QAction, QPalette, QIcon
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
-    QAbstractItemView)
+                               QAbstractItemView)
 
-from src.core.kanban import KanBan, ThemeKanBan
-from src.ui.custom import CustomTableItemModel
+from src.core.kanban import KanBan
 from src.ui.color_theme import current_theme
+from src.ui.custom import CustomTableItemModel
 
 
 class ThemeTableItemModel(CustomTableItemModel):

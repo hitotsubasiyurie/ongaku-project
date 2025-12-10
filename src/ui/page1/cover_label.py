@@ -1,16 +1,15 @@
-import os
 import itertools
-from PIL import Image
+import os
 
+from PIL import Image
 from PySide6.QtCore import Qt, QEvent, QObject, Signal, QByteArray, QBuffer
-from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShortcut, QKeySequence, 
-    QGuiApplication, QFont)
+from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShortcut, QKeySequence,
+                           QGuiApplication, QFont)
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from src.core.kanban import AlbumKanBan
-from src.ui.toast_notifier import toast_notify
 from src.ui.common import with_busy_cursor
-
+from src.ui.toast_notifier import toast_notify
 
 OPACITY_CYCLE = itertools.cycle([0.2, 1, 0])
 

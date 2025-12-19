@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 
 from src.core.basemodels import Album
 from src.core.constants import AUDIO_EXTS, IMG_EXTS
-from src.core.kanban import ThemeKanBan, track_filenames
+from src.core.kanban import ThemeKanBan, track_stemnames
 from src.core.settings import global_settings
 from src.ui.common import with_busy_cursor
 from src.ui.page1.album_table_view import AlbumTableView
@@ -124,7 +124,7 @@ class Page1Widget(QWidget):
     def _putaway_track_file(self, src: Path, dst_dir: Path, album: Album, trackidx: int) -> bool:
         dst_dir.mkdir(parents=True, exist_ok=True)
         ext = src.suffix.lower()
-        dst = dst_dir / (track_filenames(album)[trackidx]+ext)
+        dst = dst_dir / (track_stemnames(album)[trackidx]+ext)
         shutil.move(src, dst)
         return True
 
@@ -134,7 +134,7 @@ class Page1Widget(QWidget):
         src_tracks = list(map(analyze_track, src_files))
         row_ind, col_ind, aver_similarity, _ = tracks_assignment(src_tracks, album.tracks)
 
-        dst_names = track_filenames(album)
+        dst_names = track_stemnames(album)
         _map: dict[Path, Path] = {src_files[r]: (dst_dir / (dst_names[c] + src_files[r].suffix.lower())) 
                                   for r, c in zip(row_ind, col_ind)}
 
@@ -206,7 +206,7 @@ Average Similarity:\t{aver_similarity:.02f}
         if not self.track_table_view.item_model.album_kanban:
             return
         ps = self.track_table_view.get_selected_ps()
-        filenames = track_filenames(self.track_table_view.item_model.album_kanban.album)
+        filenames = track_stemnames(self.track_table_view.item_model.album_kanban.album)
         text = "\n".join(filenames[p] for p in ps)
         subprocess.run("clip", text=True, input=text)
 

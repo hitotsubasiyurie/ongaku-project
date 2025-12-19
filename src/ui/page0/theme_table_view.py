@@ -1,7 +1,7 @@
 import operator
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal
 from PySide6.QtGui import QPainter, QAction, QPalette, QIcon
@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QAbstractItemView)
 
 from src.core.kanban import KanBan
+from src.core.settings import global_settings
 from src.ui.color_theme import current_theme
 from src.ui.custom import CustomTableItemModel
 
@@ -20,7 +21,7 @@ class ThemeTableItemModel(CustomTableItemModel):
 
         self.headers: list[str] = ["Path", "Name", "Start Date", "End Date", "Collect", "Mark"]
 
-        self.kanban: KanBan = None
+        self.kanban: Optional[KanBan] = None
         # 当前选择的主题看板 指针
         self.current_theme_kanban_p: int = None
 
@@ -73,7 +74,7 @@ class ThemeTableItemModel(CustomTableItemModel):
         # 列表头 播放中 仅展示装饰图标
         if orientation == Qt.Orientation.Vertical and self.layout_ps and self.layout_ps[section] == self.current_theme_kanban_p:
             if role == Qt.ItemDataRole.DecorationRole:
-                return QIcon(f"./assets/playing.png")
+                return QIcon(f"./assets/{global_settings.ui_color_theme}/locate.png")
             else:
                 return
         
@@ -94,6 +95,9 @@ class ThemeTableItemModel(CustomTableItemModel):
     ######## 内部方法 ########
 
     def _apply_sort(self) -> None:
+        if not self.layout_ps:
+            return
+        
         column, order = self.sort_args
         # path 列排序
         self.layout_ps.sort(key=lambda p: (self._get_sort_data(0, p), self._get_sort_data(column, p)), 
@@ -226,3 +230,4 @@ class ThemeTableView(QTableView):
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
         self.setup_context_menu()
+

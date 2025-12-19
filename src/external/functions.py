@@ -51,18 +51,16 @@ def compress_image(img_path: str) -> None:
     run_subprocess(cmd)
 
 
-def rar_archive(dstrar: str, srcdir: str, password: str = "") -> None:
+def rar_archive(dstrar: str, srcdir: str) -> None:
     """
     压缩文件夹。
 
     :param dstrar: 目标压缩包路径
     :param srcdir: 源文件夹路径
-    :param password: 密码
     
     -@      禁用文件列表
     -ams    保留压缩文件元数据
     -cfg-   忽略默认配置文件和环境变量
-    -ep     添加文件但不包含路径信息。扁平。
     -m0     仅压缩
     -qo+    添加快速打开信息
     -r      包含子文件
@@ -79,20 +77,20 @@ def rar_archive(dstrar: str, srcdir: str, password: str = "") -> None:
     logger.info(f"Archive to rar. {srcdir} -> {dstrar}")
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-ep", "-m0", "-r", "-rr5", "-qo+", "-scf", "-s-", "-ts", "-tk"] + 
-           [f"-p{password}"]*bool(password) + 
+    cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-m0", "-r", "-rr5", "-qo+", "-scf", "-s-", "-ts", "-tk"] + 
            [dstrar, "*"])
     run_subprocess(cmd, cwd=srcdir)
 
 
-def rar_add(dstrar: str, srcfiles: list[str], password: str = "") -> None:
+def rar_add(dstrar: str, srcfiles: list[str]) -> None:
     """
     添加文件到压缩包。
     将会覆盖压缩包里已存在的同名文件。
 
     :param dstrar: 目标压缩包路径
     :param srcpath: 源文件路径列表
-    :param password: 密码
+
+    -ep     添加文件但不包含路径信息。扁平。
     """
     if not all(map(os.path.isfile, srcfiles)):
         raise FileNotFoundError(f"path is not a file. {srcfiles}")
@@ -102,7 +100,6 @@ def rar_add(dstrar: str, srcfiles: list[str], password: str = "") -> None:
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
     cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-ep", "-m0", "-rr5", "-qo+", "-scf", "-s-", "-ts", "-tk"] + 
-           [f"-p{password}"]*bool(password) + 
            [dstrar] + srcfiles)
     run_subprocess(cmd)
 
@@ -144,21 +141,22 @@ def rar_list(dstrar: str) -> list[str]:
     return files
 
 
-def rar_read(dstrar: str, filename: str, password: str = "") -> bytes:
+def rar_read(dstrar: str, filename: str) -> bytes:
     """
     读取压缩包内的文件。
+    文件名为空或不存在时将会抛异常。
 
     :param dstrar: 目标压缩包路径
     :param filename: 文件名
-    :param password: 密码
     """
+    if not filename:
+        raise ValueError(f"Empty filename.")
+    
     dstrar = os.path.abspath(dstrar)
     logger.info(f"Read rar file. {dstrar} {filename}")
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "p"] + 
-           [f"-p{password}"]*bool(password) + 
-           [dstrar, filename])
+    cmd = ([rar_path, "p", dstrar, filename])
     process = run_subprocess(cmd)
     return process.stdout
 
@@ -170,11 +168,13 @@ _SIZE_PAT = re.compile(r"^\s+大小:\s+(\d+)$", re.MULTILINE)
 def rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
     """
     统计压缩包内的文件属性。
+    文件名为空或者不存在时对应的 stat 为 None 。
 
     :param dstrar: 目标压缩包路径
-    :param filenames: 文件名列表
+    :param filenames: 文件名列表。
+
+    :return stats: 仅填充 stat_result.st_size 。
     """
-    # 暂时只填充 stat.size ，其他属性可以忽略，填充空值
     dstrar = os.path.abspath(dstrar)
     logger.info(f"Stat rar file. {dstrar} {filenames}")
 
@@ -193,7 +193,5 @@ def rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
     stats = [_dict.get(n) for n in filenames]
     logger.debug(f"stats: {stats}")
     return stats
-
-
 
 

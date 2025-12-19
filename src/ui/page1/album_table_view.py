@@ -1,8 +1,8 @@
 import re
-from typing import Any
+from typing import Any, Optional
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData
-from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush
+from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPainterPath, QBrush, QFont
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, QStyle)
 
@@ -21,7 +21,7 @@ class AlbumTableItemModel(CustomTableItemModel):
 
         self.headers = ["S", "Album", "Catno", "Date"]
 
-        self.theme_kanban: ThemeKanBan = None
+        self.theme_kanban: Optional[ThemeKanBan] = None
 
     def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         # 声明重置模型
@@ -59,6 +59,16 @@ class AlbumTableItemModel(CustomTableItemModel):
             # 所有 track 都有 Mark 信息
             if all(t.mark for t in self.theme_kanban.album_kanbans[p].album.tracks):
                 return self.MARKED_BACKGROUND_QBRUSHES
+
+        # 字体
+        if role == Qt.ItemDataRole.FontRole:
+            font = QFont()
+            # 无 links 字体 小一号 斜体
+            if not self.theme_kanban.album_kanbans[p].album.links:
+                font.setItalic(True)
+                font.setPointSize(font.pointSize() - 1)
+                return font
+            return font
 
         # DisplayRole, EditRole
         if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
@@ -120,7 +130,7 @@ class AlbumTableItemModel(CustomTableItemModel):
         return True
 
     # drop 支持
-    
+
     def supportedDropActions(self) -> Qt.DropAction:
         return Qt.DropAction.CopyAction | Qt.DropAction.MoveAction
     
@@ -135,8 +145,11 @@ class AlbumTableItemModel(CustomTableItemModel):
 
     def _apply_sort(self) -> None:
         column, order = self.sort_args
-        self.layout_ps.sort(key=lambda p: self._get_sort_data(column, p), 
-                            reverse=(order == Qt.SortOrder.DescendingOrder))
+        l1 = [p for p in self.layout_ps if self.theme_kanban.album_kanbans[p].album.links]
+        l2 = [p for p in self.layout_ps if not self.theme_kanban.album_kanbans[p].album.links]
+        l1.sort(key=lambda p: self._get_sort_data(column, p), reverse=(order == Qt.SortOrder.DescendingOrder))
+        l2.sort(key=lambda p: self._get_sort_data(column, p), reverse=(order == Qt.SortOrder.DescendingOrder))
+        self.layout_ps = l1 + l2
 
     def _apply_filters(self) -> None:
         self.layout_ps = []
@@ -157,8 +170,7 @@ class AlbumTableItemModel(CustomTableItemModel):
 
     def _get_data(self, col: int, p: int) -> str:
         if col == 0:
-            return (bool(self.theme_kanban.album_kanbans[p].album.links),
-                    self.theme_kanban.album_kanbans[p].album_res_state, 
+            return (self.theme_kanban.album_kanbans[p].album_res_state, 
                     self.theme_kanban.album_kanbans[p].metadata_state)
         elif col == 1:
             return self.theme_kanban.album_kanbans[p].album.album
@@ -194,7 +206,7 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
             painter.fillRect(option.rect, QBrush(bg))
         
         painter.save()
-        has_link, rs, ms = index.data(Qt.ItemDataRole.DisplayRole)
+        rs, ms = index.data(Qt.ItemDataRole.DisplayRole)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(self.RESOURCE_STATE_COLORS[rs])
         # 抗锯齿
@@ -203,10 +215,7 @@ class AlbumStateItemDelegate(QStyledItemDelegate):
         rect: QRect = option.rect
         center = rect.center()
 
-        if has_link:
-            radius = min(rect.width(), rect.height()) / 2 - 0.5
-        else:
-            radius = min(rect.width(), rect.height()) / 3
+        radius = min(rect.width(), rect.height()) / 2 - 0.5
         
         diameter = radius * 2
         left, top = center.x() - radius, center.y() - radius
@@ -309,7 +318,7 @@ class AlbumTableView(QTableView):
         ps = [self.item_model.layout_ps[r] for r in rows]
         return ps
 
-    #################### 重写方法 ####################
+    ######## 重写方法 ########
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         # 拖入内容时 激活窗口

@@ -4,7 +4,9 @@ from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
 from src.core.kanban import KanBan
 from src.core.settings import global_settings
-from src.ui.common import with_busy_cursor
+from src.lang import MESSAGE
+from src.ui.common import BUTTON_QSS, with_busy_cursor
+from src.ui.toast_notifier import toast_notify
 from src.ui.page0.page0_widget import Page0Widget
 from src.ui.page1.page1_widget import Page1Widget
 from src.ui.page2.page2_widget import Page2Widget
@@ -41,19 +43,7 @@ class MainWindow(QWidget):
         self.page_next_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_next_btn.setIconSize(self.page_next_btn.size())
 
-        btn_qss = f"""
-QPushButton {{
-    /* 透明背景 */
-    background-color: rgba(100, 100, 100, 0);
-    /* 50% 圆角 */
-    border-radius: {fh*0.75}px;
-}}
-
-QPushButton:hover {{
-    /* 悬浮 */
-    background-color: rgba(100, 100, 100, 200);
-}}
-"""
+        btn_qss = BUTTON_QSS.format(fh*0.75)
         [b.setStyleSheet(btn_qss) for b in [self.page_prev_btn, self.page_next_btn]]
 
     def setup_event(self) -> None:
@@ -82,8 +72,9 @@ QPushButton:hover {{
         self.page0.set_kanban(kanban)
         self.page1.set_theme_kanban(None)
         self.page2.set_theme_kanban(None)
+        toast_notify(MESSAGE.UI_20251201_110005.format(kanban.album_collection_progress[0], kanban.track_mark_progress[0]))
 
-    #################### 重写方法 ####################
+    ######## 重写方法 ########
 
     def resizeEvent(self, event):
         self._set_btns_geometry()

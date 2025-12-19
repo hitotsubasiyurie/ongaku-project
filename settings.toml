@@ -13,6 +13,9 @@ metadata_directory = "D:\\ongaku-metadata"
 # Directory for storing album audio files, e.g. "D:\\ongaku-resource"
 resource_directory = "D:\\ongaku-resource"
 
+# Directory for storing album archives, e.g. "D:\\ongaku-archive"
+archive_directory = "D:\\ongaku-archive"
+
 # Visual theme for the interface. Options: "dark", "light"
 ui_color_theme = "light"
 

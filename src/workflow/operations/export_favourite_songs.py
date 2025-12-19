@@ -10,7 +10,7 @@ from mutagen.id3 import ID3, APIC
 from mutagen.mp3 import MP3
 
 from src.core.basemodels import Album, Track
-from src.core.kanban import KanBan, track_filenames
+from src.core.kanban import KanBan, track_stemnames
 from src.core.logger import lprint, logger
 from src.core.settings import global_settings
 from src.external import show_audio_stream_info, compress_image
@@ -131,8 +131,8 @@ def main() -> None:
                 current += 1
 
                 # 资源不存在
-                if not album_kanban.track_files[idx]:
-                    src_file = Path(album_kanban.album_dir, track_filenames(album)[idx])
+                if not album_kanban.track_filenames[idx]:
+                    src_file = Path(album_kanban.album_dir, track_stemnames(album)[idx])
                     if not easy_linput(MESSAGE.WF_20251204_194427.format(current, total, src_file), default="N", return_type=str)  == "Y":
                         return
                 
@@ -141,7 +141,7 @@ def main() -> None:
                     if not easy_linput(MESSAGE.WF_20251204_194428.format(current, total, album_kanban.album_dir), default="N", return_type=str)  == "Y":
                         return
 
-                src_file = Path(album_kanban.track_files[idx])
+                src_file = Path(album_kanban.track_filenames[idx])
 
                 # 去掉轨道号前缀 "2. 風への誓い.mp3" -> "風への誓い.mp3"
                 dst_name = src_file.name.split(" ", maxsplit=1)[1]

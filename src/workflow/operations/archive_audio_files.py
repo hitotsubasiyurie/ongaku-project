@@ -6,7 +6,7 @@ import rtoml
 
 from src.core.basemodels import Album
 from src.core.constants import AUDIO_EXTS
-from src.core.kanban import load_albums_from_toml, album_filename, track_filenames
+from src.core.kanban import load_albums_from_toml, album_stemname, track_stemnames
 from src.core.logger import lprint
 from src.core.settings import global_settings
 from src.lang import MESSAGE
@@ -54,11 +54,11 @@ def generate_archive_detail(theme_directory: Path, dst_album: Album, src_dir: Pa
     d[ALBUM_SIMILARITY] = format(album_similarity, '.2f')
     d[TRACK_SIMILARITY] = format(t_aver_similarity, '.2f')
     d[SRC_DIRECTORY] = str(src_dir)
-    d[DST_DIRECTORY] = str(Path(theme_directory, album_filename(dst_album)))
+    d[DST_DIRECTORY] = str(Path(theme_directory, album_stemname(dst_album)))
     d[RESOURCE_ALBUM] = album_to_unique_str(src_album)
     d[MATCHING_ALBUM] = album_to_unique_str(dst_album)
     d["track"] = []
-    dst_track_names = track_filenames(dst_album)
+    dst_track_names = track_stemnames(dst_album)
     for t_row, t_col in zip(t_row_ind, t_col_ind):
         dd = {}
         dd[SRC_AUDIOFILE] = src_audios[t_row].name

@@ -1,5 +1,5 @@
 import itertools
-import os
+from io import BytesIO
 
 from PIL import Image
 from PySide6.QtCore import Qt, QEvent, QObject, Signal, QByteArray, QBuffer
@@ -34,6 +34,7 @@ class CoverLabel(QLabel):
         self.opacity_effect = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity_effect)
 
+        # 控件在最上层
         self.raise_()
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
         self.change_opacity()
@@ -49,17 +50,19 @@ class CoverLabel(QLabel):
         self.album_kanban = album_kanban
 
         # 无封面时
-        if not album_kanban or not (cover:= album_kanban.cover):
+        if not album_kanban or not album_kanban.cover_filename:
             self.pix, self.scaled_pix, self.image_info = None, None, None
 
         # 有封面时
         else:
-            self.pix = QPixmap(cover)
+            self.pix = QPixmap()
             self.scaled_pix = None
+            cover_bytes = album_kanban.read_file(album_kanban.cover_filename)
+            self.pix.loadFromData(cover_bytes)
 
-            with Image.open(cover) as img:
-                info = {"filename": os.path.basename(cover), "format": img.format, "mode": img.mode, "resolution": img.size, 
-                        "file_size": "{:.2f} MiB".format(os.path.getsize(cover) / 1024 / 1024)}
+            with Image.open(BytesIO(cover_bytes)) as img:
+                info = {"filename": album_kanban.cover_filename, "format": img.format, "mode": img.mode, "resolution": img.size, 
+                        "file_size": "{:.2f} MiB".format(len(cover_bytes) / 1024 / 1024)}
 
             _len = max(map(len, info.keys()))
             self.image_info = "\n".join(f"{k.ljust(_len)}: {v}" for k, v in info.items())
@@ -83,7 +86,7 @@ class CoverLabel(QLabel):
         self.update()
         toast_notify(f"Cover opacity: {self.opacity}")
 
-    #################### 重写方法 ####################
+    ######## 重写方法 ########
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         # 父控件大小变化时，更新布局

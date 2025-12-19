@@ -49,7 +49,7 @@ if __name__ == "__main__":
     app.processEvents()
 
     QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
+    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory, global_settings.archive_directory)
     main_windows.set_kanban(kanban)
     QApplication.restoreOverrideCursor()
 

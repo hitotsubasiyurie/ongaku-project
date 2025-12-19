@@ -41,6 +41,12 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
         min_length=1
     )
 
+    archive_directory: str = Field(
+        default="D:\\ongaku-archive", 
+        description=r'Directory for storing album archives, e.g. "D:\\ongaku-archive"',
+        min_length=1
+    )
+
     ui_color_theme: Literal["dark", "light"] = Field(
         default="light", 
         description='Visual theme for the interface. Options: "dark", "light"'

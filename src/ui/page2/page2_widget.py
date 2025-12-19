@@ -136,7 +136,7 @@ class Page2Widget(QWidget):
     def _play(self, row: int) -> None:
         p = self.play_table_view.item_model.layout_ps[row]
         i, j = self.play_table_view.item_model.kanban_ij[p]
-        file = self.theme_kanban.album_kanbans[i].track_files[j]
+        file = self.theme_kanban.album_kanbans[i].track_filenames[j]
         self.play_table_view.hightlight_row(row)
         # 播放
         self.music_player_bar.set_media(file)
@@ -165,7 +165,7 @@ class Page2Widget(QWidget):
             i, j = self.play_table_view.item_model.kanban_ij[p]
 
             if (not self.theme_kanban.album_kanbans[i].album.tracks[j].mark
-                and self.theme_kanban.album_kanbans[i].track_files[j]):
+                and self.theme_kanban.album_kanbans[i].track_filenames[j]):
                 self.play_table_view.hightlight_row(row)
                 break
 

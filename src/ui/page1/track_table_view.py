@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Optional
 
 from PySide6.QtCore import QRect, QModelIndex, Qt, QObject, Signal, QMimeData, QSize
 from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMetrics, QBrush, QAction
@@ -22,7 +22,7 @@ class TrackTableItemModel(CustomTableItemModel):
 
         self.headers = ["S", "TITLE"]
 
-        self.album_kanban: AlbumKanBan = None
+        self.album_kanban: Optional[AlbumKanBan] = None
 
     def reset_album_kanban(self, album_kanban: AlbumKanBan = None) -> None:
         # 声明重置模型
@@ -132,8 +132,7 @@ class TrackTableItemModel(CustomTableItemModel):
         ms = 0b111110
 
         if col == 0:
-            return (True,
-                    self.album_kanban.track_res_states[p], 
+            return (self.album_kanban.track_res_states[p], 
                     ms | bool(self.album_kanban.album.tracks[p].artist))
         elif col == 1:
             return (self.album_kanban.album.tracks[p].title, 
@@ -259,7 +258,7 @@ class TrackTableView(QTableView):
         ps = [self.item_model.layout_ps[r] for r in rows]
         return ps
 
-    #################### 重写方法 ####################
+    ######## 重写方法 ########
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         # 激活窗口

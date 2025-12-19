@@ -1,11 +1,12 @@
 import re
-from typing import Any
+from typing import Any, Optional
 
 from PySide6.QtCore import QModelIndex, Qt, QObject, Signal
 from PySide6.QtGui import QAction, QBrush, QResizeEvent, QIcon
 from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
 from src.core.kanban import ThemeKanBan, ResourceState
+from src.core.settings import global_settings
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
 
@@ -26,7 +27,7 @@ class PlayTableItemModel(CustomTableItemModel):
 
         self.headers = ["Size", "Title", "Artist", "Album", "Date", "Mark"]
 
-        self.theme_kanban: ThemeKanBan = None
+        self.theme_kanban: Optional[ThemeKanBan] = None
 
         # 看板索引
         self.kanban_ij: list[tuple[int, int]] = []
@@ -106,7 +107,7 @@ class PlayTableItemModel(CustomTableItemModel):
         # 列表头 播放中 仅展示装饰图标
         if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_ij[self.layout_ps[section]] == self.playing_ij:
             if role == Qt.ItemDataRole.DecorationRole:
-                return QIcon(f"./assets/playing.png")
+                return QIcon(f"./assets/{global_settings.ui_color_theme}/locate.png")
             else:
                 return
         
@@ -285,7 +286,7 @@ class PlayTableView(QTableView):
         self.scrollTo(ix, QTableView.ScrollHint.PositionAtCenter)
         self.setFocus()
 
-    #################### 重写方法 ####################
+    ######## 重写方法 ########
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         # 还原默认列宽

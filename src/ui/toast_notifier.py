@@ -79,7 +79,7 @@ class ToastNotifier(QWidget):
         self.adjustSize()
         self._set_geometry()
 
-    #################### 重写方法 ####################
+    ######## 重写方法 ########
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         # 布局存在元素时才需要适应位置

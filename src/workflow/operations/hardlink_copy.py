@@ -11,7 +11,9 @@ from src.workflow.common import easy_linput
 OPERATION_NAME = MESSAGE.WF_20251204_195220
 
 
-######## 主函数 ########
+## TODO: shutil.copytree(copy_func=os.link)
+
+# 主函数
 
 def main():
     lprint(MESSAGE.WF_20251204_195221)

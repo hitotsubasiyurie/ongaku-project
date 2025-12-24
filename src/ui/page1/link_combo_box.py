@@ -33,13 +33,13 @@ class LinkComboBox(QComboBox):
         self.addItems(links)
         self.lineEdit().setText(f"{len(self.links)} links")
 
-    ######## 重写方法 ########
+    # 重写方法
 
     def wheelEvent(self, e: QWheelEvent) -> None:
         # 禁用鼠标滚轮选择
         return None
 
-    ######## 内部方法 ########
+    # 内部方法
 
     def _open_link(self, index: int) -> None:
         webbrowser.open(self.links[index])

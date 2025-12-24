@@ -73,7 +73,7 @@ class DoujinMusicInfoAPI:
                      tracks=self._get_tracks(html), links=[url])
 
     
-    ######## 内部方法 ########
+    # 内部方法
 
     @staticmethod
     def _get_tracks(html: etree._Element) -> list[Track]:

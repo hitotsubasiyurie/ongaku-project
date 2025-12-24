@@ -1,16 +1,61 @@
 import os
+import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
 from functools import cached_property
 from pathlib import Path
+from threading import Lock
 
 import rtoml
 
 from src.core.basemodels import Album
 from src.core.constants import IMG_EXTS, ARCHIVE_EXT
+from src.core.settings import global_settings
 from src.utils import legalize_filename, dump_toml
-from src.external import rar_archive, rar_add, rar_list, rar_read, rar_rename, rar_stats
+from src.external import rar_list, rar_read, rar_stats
+
+
+################################################################################
+### 缓存 rar_list 方法
+################################################################################
+
+
+_rar_list_cache_lock = Lock()
+_rar_list_cache_file = Path(global_settings.temp_directory, "rar_list_cache.json")
+try:
+    _rar_list_cache = json.loads(_rar_list_cache_file.read_text(encoding="utf-8"))
+except Exception:
+    _rar_list_cache = {}
+
+
+def _cached_rar_list(dstrar: str) -> list[str]:
+    """
+    带缓存的列出压缩包内的文件。
+    """
+    mtime = str(os.stat(dstrar).st_mtime)
+
+    if val:= _rar_list_cache.get(dstrar, {}).get(mtime, []):
+        return val
+    
+    filenames = rar_list(dstrar)
+
+    with _rar_list_cache_lock: _rar_list_cache[dstrar] = {mtime: filenames}
+
+    return filenames
+
+
+def _save_rar_list_cache() -> None:
+    """
+    保存缓存文件。
+    """
+    with _rar_list_cache_lock: 
+        _rar_list_cache_file.write_text(json.dumps(_rar_list_cache, ensure_ascii=False, indent=4), encoding="utf-8")
+
+
+################################################################################
+### 看板
+################################################################################
 
 
 ALBUM_STEMNAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"
@@ -98,14 +143,17 @@ class AlbumKanBan:
     """
     专辑看板。
 
-    :param album: 专辑模型
-    :param album_dir: 将会搜索的专辑目录路径。专辑目录必须是扁平的
-    :param album_archive: 将会搜索的专辑归档路径。专辑归档必须是扁平的
+    :param album: 
+    :param album_dir: 
+    :param album_archive: 
     """
 
     album: Album
+    """专辑模型"""
     album_dir: str
+    """将会搜索的专辑目录路径。扁平地存放每一个音轨文件"""
     album_archive: str
+    """将会搜索的专辑归档路径。扁平地存放每一个音轨文件"""
 
     cover_filename: str = field(init=False)
     """封面文件名。封面不存在时为空字符串。"""
@@ -188,7 +236,7 @@ class AlbumKanBan:
         if os.path.isdir(self.album_dir):
             names = os.listdir(self.album_dir)
         elif os.path.isfile(self.album_archive):
-            names = rar_list(self.album_archive)
+            names = _cached_rar_list(self.album_archive)
         
         names = list(map(Path, names))
 
@@ -225,22 +273,25 @@ class ThemeKanBan:
     """
     主题看板。
 
-    :param theme_metadata_file: 主题元数据文件路径
-    :param theme_res_dir: 主题资源目录路径。资源目录必须是扁平的
-    :param theme_arch_dir: 主题归档目录路径。归档目录必须是扁平的
+    :param theme_metadata_file: 
+    :param theme_resource_dir: 
+    :param theme_archive_dir: 
     """
 
     theme_metadata_file: str
-    theme_res_dir: str
-    theme_arch_dir: str
+    """主题元数据文件路径"""
+    theme_resource_dir: str
+    """主题资源目录路径。扁平地存放每一个专辑资源目录"""
+    theme_archive_dir: str
+    """主题归档目录路径。扁平地存放每一个专辑归档文件"""
 
     album_kanbans: tuple[AlbumKanBan, ...] = field(init=False)
     """专辑看板列表"""
 
     def __post_init__(self) -> None:
         self.theme_metadata_file = os.path.abspath(self.theme_metadata_file)
-        self.theme_res_dir = os.path.abspath(self.theme_res_dir)
-        self.theme_arch_dir = os.path.abspath(self.theme_arch_dir)
+        self.theme_resource_dir = os.path.abspath(self.theme_resource_dir)
+        self.theme_archive_dir = os.path.abspath(self.theme_archive_dir)
         self.scan()
 
     @cached_property
@@ -282,8 +333,8 @@ class ThemeKanBan:
         扫描文件系统。
         """
         albums = load_albums_from_toml(self.theme_metadata_file)
-        album_dirs = [os.path.join(self.theme_res_dir, album_stemname(a)) for a in albums]
-        album_archives = [os.path.join(self.theme_arch_dir, album_stemname(a) + ARCHIVE_EXT) for a in albums]
+        album_dirs = [os.path.join(self.theme_resource_dir, album_stemname(a)) for a in albums]
+        album_archives = [os.path.join(self.theme_archive_dir, album_stemname(a) + ARCHIVE_EXT) for a in albums]
         self.album_kanbans = tuple(AlbumKanBan(*args) for args in zip(albums, album_dirs, album_archives))
 
         # 失效缓存
@@ -306,22 +357,25 @@ class ThemeKanBan:
         dump_albums_to_toml(albums, self.theme_metadata_file)
 
     def __hash__(self) -> int:
-        return hash((self.theme_metadata_file, self.theme_res_dir, self.theme_arch_dir, self.album_kanbans))
+        return hash((self.theme_metadata_file, self.theme_resource_dir, self.theme_archive_dir, self.album_kanbans))
 
 
 @dataclass
 class KanBan:
     """
-    总看板。
+    项目看板。
 
-    :param metadata_dir: 元数据目录路径
-    :param resource_dir: 资源目录路径
-    :param archive_dir: 归档目录路径
+    :param metadata_dir: 
+    :param resource_dir: 
+    :param archive_dir: 
     """
 
     metadata_dir: str
+    """元数据目录路径"""
     resource_dir: str
+    """资源目录路径"""
     archive_dir: str
+    """归档目录路径"""
 
     theme_kanbans: tuple[ThemeKanBan, ...] = field(init=False)
     """主题看板列表"""
@@ -360,6 +414,9 @@ class KanBan:
 
         with ThreadPoolExecutor() as executor:
             self.theme_kanbans = tuple(executor.map(ThemeKanBan, theme_mdfs, theme_res_dirs, theme_arch_dirs))
+
+        # 保存 rar_list 缓存
+        _save_rar_list_cache()
 
     def get_theme_kanban(self, name: str) -> ThemeKanBan | None:
         if not name:

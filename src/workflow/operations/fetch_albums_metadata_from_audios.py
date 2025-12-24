@@ -12,7 +12,7 @@ from src.workflow.common import easy_linput
 OPERATION_NAME = MESSAGE.WF_20251204_194620
 
 
-######## 主函数 ########
+# 主函数
 
 def main() -> None:
     lprint(MESSAGE.WF_20251204_194621)

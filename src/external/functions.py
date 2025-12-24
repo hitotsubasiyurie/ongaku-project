@@ -1,8 +1,10 @@
 import json
 import os
 import re
+import sys
 import itertools
 import subprocess
+import tempfile
 
 from src.core.logger import logger
 
@@ -15,8 +17,18 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
     2. 检查进程返回值是否为 0 。
     """
     logger.debug(f"Begin to run cmd. {cmd}")
+
+    # Windows 下不弹出窗口
+    if sys.platform == "win32":
+        info = subprocess.STARTUPINFO()
+        info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        info.wShowWindow = subprocess.SW_HIDE
+    else:
+        info = None
+
     process = subprocess.run(cmd, stdout=stdout, stderr=stderr, 
-                             text=text, **kwargs)
+                             text=text, startupinfo=info, **kwargs)
+    
     if process.returncode == 0:
         logger.info(f"Succeed to run cmd. {cmd}")
         return process
@@ -51,6 +63,17 @@ def compress_image(img_path: str) -> None:
     run_subprocess(cmd)
 
 
+def make_junction(srcdir: str, dstdir: str) -> None:
+    """
+    创建 Windows 目录联接。
+    /c      执行完立刻退出
+    /J      目录联接
+    """
+    logger.info(f"Make junction. {srcdir} -> {dstdir}")
+    cmd = ["cmd", "/c", "mklink", "/J", dstdir, srcdir]
+    run_subprocess(cmd)
+
+
 def rar_archive(dstrar: str, srcdir: str) -> None:
     """
     压缩文件夹。
@@ -67,7 +90,6 @@ def rar_archive(dstrar: str, srcdir: str) -> None:
     -rr5    添加 5% 数据恢复记录。加密时才有恢复记录。
     -scf    UTF-8 字符集
     -s-     禁用固实压缩
-    -tk     保留原始压缩时间
     -ts     保存文件时间
     """
     if not os.path.isdir(srcdir):
@@ -77,9 +99,19 @@ def rar_archive(dstrar: str, srcdir: str) -> None:
     logger.info(f"Archive to rar. {srcdir} -> {dstrar}")
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-m0", "-r", "-rr5", "-qo+", "-scf", "-s-", "-ts", "-tk"] + 
+    cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-m0", "-r", "-rr5", "-qo+", "-scf", "-s-", "-ts"] + 
            [dstrar, "*"])
-    run_subprocess(cmd, cwd=srcdir)
+    
+    # subprocess.Popen cwd 参数输入长路径（大于 256 字符），会抛出 NotADirectoryError
+    # rar.exe 无法输入长路径
+    
+    if len(srcdir) < 257:
+        run_subprocess(cmd, cwd=d)
+    else:
+        with tempfile.TemporaryDirectory(prefix="rar_archive_") as tmpdir:
+            d = os.path.join(tmpdir, "1")
+            make_junction(srcdir, d)
+            run_subprocess(cmd, cwd=d)
 
 
 def rar_add(dstrar: str, srcfiles: list[str]) -> None:
@@ -99,7 +131,7 @@ def rar_add(dstrar: str, srcfiles: list[str]) -> None:
     logger.info(f"Add to rar. {srcfiles} -> {dstrar}")
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-ep", "-m0", "-rr5", "-qo+", "-scf", "-s-", "-ts", "-tk"] + 
+    cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-ep", "-m0", "-rr5", "-qo+", "-scf", "-s-", "-ts"] + 
            [dstrar] + srcfiles)
     run_subprocess(cmd)
 
@@ -128,7 +160,7 @@ def rar_list(dstrar: str) -> list[str]:
     列出压缩包内的文件。
 
     :param dstrar: 目标压缩包路径
-    :param filename: 文件名
+    :return filenames: 文件名列表。
     """
     dstrar = os.path.abspath(dstrar)
     logger.info(f"List rar files. {dstrar}")

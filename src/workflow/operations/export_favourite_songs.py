@@ -21,7 +21,7 @@ from src.workflow.common import easy_linput
 OPERATION_NAME = MESSAGE.WF_20251204_194420
 
 
-######## 工具函数 ########
+# 工具函数
 
 def fuzzy_compare_audios(audio1: str | Path, audio2: str | Path) -> True:
     """
@@ -98,14 +98,14 @@ def remove_non_conflicting_suffix(anypath: Path) -> Path:
     return anypath.with_name(f"{base_name}{anypath.suffix}")
 
 
-######## 主函数 ########
+# 主函数
 
 def main() -> None:
     lprint(MESSAGE.WF_20251204_194421)
 
     export_dir = easy_linput(MESSAGE.WF_20251204_194422, return_type=Path)
     
-    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory)
+    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory, global_settings.archive_directory)
 
     total = sum(1 for tk in kanban.theme_kanbans for ak in tk.album_kanbans for t in ak.album.tracks if t.mark == "1")
     current = 0

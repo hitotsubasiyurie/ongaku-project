@@ -79,7 +79,7 @@ class ToastNotifier(QWidget):
         self.adjustSize()
         self._set_geometry()
 
-    ######## 重写方法 ########
+    # 重写方法
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         # 布局存在元素时才需要适应位置
@@ -88,7 +88,7 @@ class ToastNotifier(QWidget):
                 self._set_geometry()
         return super().eventFilter(obj, event)
 
-    ######## 内部方法 ########
+    # 内部方法
 
     def _remove_message(self, label: QLabel):
         self.layout().removeWidget(label)

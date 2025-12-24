@@ -136,7 +136,7 @@ class VGMdbAPI:
 
         return assemble_albums_from_discs(catnos, date, album_title, discs, url)
 
-    ######## 内部方法 ########
+    # 内部方法
 
     @staticmethod
     def _get_album_info(info_table: etree._Element) -> dict:

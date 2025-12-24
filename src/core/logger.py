@@ -83,7 +83,7 @@ class OngakuLogger:
 
         self._set_handler()
 
-    ######## 内部方法 ########
+    # 内部方法
 
     def _set_handler(self) -> None:
         # 清空 handlers

@@ -111,7 +111,7 @@ class Page2Widget(QWidget):
         [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]]
         self.play_table_view.item_model.reset_theme_kanban(theme_kanban)
 
-    ######## 内部方法 ########
+    # 内部方法
 
     def _set_track_mark(self, rows: list[int] = [], mark: str = "", force: bool = False) -> None:
         if rows:
@@ -150,7 +150,7 @@ class Page2Widget(QWidget):
         if not file:
             self._on_playback_finished()
 
-    ######## 事件动作 ########
+    # 事件动作
 
     def _search_no_mark_ix(self, direction: Literal[-1, 1]) -> None:
         if not self.theme_kanban:

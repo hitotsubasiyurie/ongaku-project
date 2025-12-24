@@ -40,4 +40,7 @@ OPERATIONS[OPERATION_NAME] = main
 from src.workflow.operations.export_favourite_songs import OPERATION_NAME, main
 OPERATIONS[OPERATION_NAME] = main
 
+from src.workflow.operations.archive_resource import OPERATION_NAME, main
+OPERATIONS[OPERATION_NAME] = main
+
 

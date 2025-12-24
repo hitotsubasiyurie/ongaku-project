@@ -188,7 +188,7 @@ class MusicBrainzDatabase:
         logger.info(f"Got {len(albums)} albums.")
         return albums
 
-    ######## 内部方法 ########
+    # 内部方法
 
     @staticmethod
     def _album_to_record(release_id: str, album: Album) -> tuple[Any]:

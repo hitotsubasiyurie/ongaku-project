@@ -51,7 +51,7 @@ class Page0Widget(QWidget):
         self.kanban = kanban
         self.theme_table_view.item_model.reset_kanban(kanban)
 
-    ######## 内部方法 ########
+    # 内部方法
 
     def _on_theme_table_double_clicked(self, index: QModelIndex) -> None:
         # 双击 Path 列 选择主题

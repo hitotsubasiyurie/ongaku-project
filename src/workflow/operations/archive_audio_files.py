@@ -17,7 +17,7 @@ from src.workflow.common import (easy_linput, analyze_album, analyze_track, albu
 OPERATION_NAME = MESSAGE.WF_20251204_190036
 
 
-######## 业务函数 ########
+# 业务函数
 
 IS_APPLY = "IS_APPLY"
 ALBUM_SIMILARITY = "ALBUM_SIMILARITY"
@@ -109,7 +109,7 @@ def apply_archive_detail(detail: dict, is_replace_same: bool) -> None:
             shutil.move(src, dst)
 
 
-######## 主函数 ########
+# 主函数
 
 def main() -> None:
     lprint(MESSAGE.WF_20251204_190037)

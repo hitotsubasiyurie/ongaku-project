@@ -166,7 +166,7 @@ class AlbumTableItemModel(CustomTableItemModel):
         # 应用排序
         self._apply_sort()
 
-    ######## 内部方法 ########
+    # 内部方法
 
     def _get_data(self, col: int, p: int) -> str:
         if col == 0:
@@ -318,7 +318,7 @@ class AlbumTableView(QTableView):
         ps = [self.item_model.layout_ps[r] for r in rows]
         return ps
 
-    ######## 重写方法 ########
+    # 重写方法
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         # 拖入内容时 激活窗口

@@ -8,8 +8,10 @@ from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShor
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from src.core.kanban import AlbumKanBan
+from src.lang import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.toast_notifier import toast_notify
+
 
 OPACITY_CYCLE = itertools.cycle([0.2, 1, 0])
 
@@ -84,7 +86,7 @@ class CoverLabel(QLabel):
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
 
         self.update()
-        toast_notify(f"Cover opacity: {self.opacity}")
+        toast_notify(MESSAGE.UI_20251224_210500.format(self.opacity))
 
     # 重写方法
 

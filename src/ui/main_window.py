@@ -5,7 +5,8 @@ from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 from src.core.kanban import KanBan
 from src.core.settings import global_settings
 from src.lang import MESSAGE
-from src.ui.common import BUTTON_QSS, with_busy_cursor
+from src.ui.common import with_busy_cursor
+from src.ui.color_theme import BUTTON_QSS
 from src.ui.toast_notifier import toast_notify
 from src.ui.page0.page0_widget import Page0Widget
 from src.ui.page1.page1_widget import Page1Widget

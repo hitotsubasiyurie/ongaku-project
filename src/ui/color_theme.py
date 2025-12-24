@@ -4,6 +4,21 @@ from PySide6.QtWidgets import QApplication
 from src.core.settings import global_settings
 
 
+BUTTON_QSS = """
+QPushButton {{
+    /* 透明背景 */
+    background-color: rgba(100, 100, 100, 0);
+    /* 50% 圆角 */
+    border-radius: {}px;
+}}
+
+QPushButton:hover {{
+    /* 悬浮 */
+    background-color: rgba(100, 100, 100, 200);
+}}
+"""
+
+
 class DarkTheme:
 
     NAME = "dark"

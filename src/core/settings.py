@@ -20,7 +20,7 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
 
     language: Literal["en", "zh_cn", "ja", "ko"] = Field(
         default="en", 
-        description='Interface language. Options: "en" (English), "zh" (Chinese), "ja" (Japanese), "ko" (Korean)'
+        description='Interface language. Options: "en" (English), "zh_cn" (Chinese), "ja" (Japanese), "ko" (Korean)'
     )
 
     temp_directory: str = Field(

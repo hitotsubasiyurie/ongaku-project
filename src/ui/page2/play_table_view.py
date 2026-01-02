@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
 from src.core.kanban import ThemeKanBan, ResourceState
 from src.core.settings import global_settings
+from src.lang import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
 
@@ -25,14 +26,15 @@ class PlayTableItemModel(CustomTableItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers = ["Size", "Title", "Artist", "Album", "Date", "Mark"]
+        self.headers: list[str] = [MESSAGE.UI_20260101_112211, MESSAGE.UI_20260101_112210, MESSAGE.UI_20260101_112212, 
+                                   MESSAGE.UI_20260101_112207, MESSAGE.UI_20260101_112209, MESSAGE.UI_20260101_112206]
 
         self.theme_kanban: Optional[ThemeKanBan] = None
 
         # 看板索引
         self.kanban_ij: list[tuple[int, int]] = []
         # 播放中索引
-        self.playing_ij: tuple[int, int] = None
+        self.playing_ij: Optional[tuple[int, int]] = None
 
     def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         # 声明重置模型
@@ -56,12 +58,10 @@ class PlayTableItemModel(CustomTableItemModel):
         self.endResetModel()
 
     def locate_playing_row(self) -> int | None:
-        playing_row = None
-        for row, p in enumerate(self.layout_ps):
-            if self.kanban_ij[p] == self.playing_ij:
-                playing_row = row
-                break
-        return playing_row
+        row = next((r for r, p in enumerate(self.layout_ps) if self.kanban_ij[p] == self.playing_ij), None)
+        return row
+
+    # 重写方法
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
         row, col = index.row(), index.column()
@@ -210,15 +210,15 @@ class PlayTableView(QTableView):
     clear_selected = Signal()
 
     def setup_context_menu(self) -> None:
-        # 初始化 右键菜单
+        """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction("♡ Listened", self)
+        action = QAction(MESSAGE.UI_20260101_112232, self)
         action.triggered.connect(self.unfavourite_selected.emit)
         self.addAction(action)
-        action = QAction("❤ Favourite", self)
+        action = QAction(MESSAGE.UI_20260101_112233, self)
         action.triggered.connect(self.favourite_selected.emit)
         self.addAction(action)
-        action = QAction("Clear Mark", self)
+        action = QAction(MESSAGE.UI_20260101_112234, self)
         action.triggered.connect(self.clear_selected.emit)
         self.addAction(action)
 
@@ -257,8 +257,6 @@ class PlayTableView(QTableView):
 
         # 设置 列
         header = self.horizontalHeader()
-        # 最小列宽
-        header.setMinimumSectionSize(fh*2)
         # ResizeMode
         column_modes = [QHeaderView.ResizeMode.Fixed, 
                         QHeaderView.ResizeMode.Interactive, QHeaderView.ResizeMode.Interactive, QHeaderView.ResizeMode.Interactive, 

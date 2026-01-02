@@ -1,3 +1,5 @@
+from typing import Optional
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
@@ -16,11 +18,11 @@ from src.ui.page2.page2_widget import Page2Widget
 class MainWindow(QWidget):
 
     def setup_ui(self) -> None:
+        """初始化 UI"""
         self.setWindowTitle("KanBan")
         # 字体高度
         fh = self.fontMetrics().height()
 
-        # 初始化 UI
         layout = QVBoxLayout()
         self.setLayout(layout)
         layout.setSpacing(1)
@@ -37,10 +39,12 @@ class MainWindow(QWidget):
         self.stack.addWidget(self.page2)
 
         self.page_prev_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page_prev.png"), "", parent=self)
+        self.page_prev_btn.setToolTip(MESSAGE.UI_20260101_112220)
         self.page_prev_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_prev_btn.setIconSize(self.page_prev_btn.size())
 
         self.page_next_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page_next.png"), "", parent=self)
+        self.page_next_btn.setToolTip(MESSAGE.UI_20260101_112221)
         self.page_next_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_next_btn.setIconSize(self.page_next_btn.size())
 
@@ -48,13 +52,13 @@ class MainWindow(QWidget):
         [b.setStyleSheet(btn_qss) for b in [self.page_prev_btn, self.page_next_btn]]
 
     def setup_event(self) -> None:
-        # 初始化 事件
+        """初始化 事件"""
         self.page_prev_btn.clicked.connect(lambda: self._change_page((self.stack.currentIndex()-1)%3))
         self.page_next_btn.clicked.connect(lambda: self._change_page((self.stack.currentIndex()+1)%3))
-        self.page0.theme_kanban_selected.connect(self._on_theme_kanban_selected)
+        self.page0.theme_kanban_played.connect(self._on_theme_kanban_played)
 
     def setup_shortcut(self) -> None:
-        # 初始化 快捷键
+        """初始化 快捷键"""
         shortcut = QShortcut(Qt.Key.Key_Tab, self, activated=lambda: self._change_page((self.stack.currentIndex()+1)%3))
         shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
         shortcut = QShortcut(Qt.Key.Key_F5, self, activated=self._refresh_kanban)
@@ -62,7 +66,7 @@ class MainWindow(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.kanban: KanBan = None
+        self.kanban: Optional[KanBan] = None
 
         self.setup_ui()
         self.setup_event()
@@ -108,8 +112,8 @@ class MainWindow(QWidget):
         self._set_btns_geometry()
 
     @with_busy_cursor
-    def _on_theme_kanban_selected(self) -> None:
-        tk = self.kanban.theme_kanbans[self.page0.current_theme_kanban_p]
+    def _on_theme_kanban_played(self) -> None:
+        tk = self.kanban.theme_kanbans[self.page0.playing_p]
         self.page1.set_theme_kanban(tk)
         self.page2.set_theme_kanban(tk)
         self.setWindowTitle(f"KanBan - {tk.theme_name}")

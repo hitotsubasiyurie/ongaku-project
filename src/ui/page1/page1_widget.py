@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import webbrowser
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShortcut
@@ -14,6 +14,7 @@ from src.core.basemodels import Album
 from src.core.constants import AUDIO_EXTS, IMG_EXTS
 from src.core.kanban import ThemeKanBan, track_stemnames
 from src.core.settings import global_settings
+from src.lang import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.page1.album_table_view import AlbumTableView
 from src.ui.page1.cover_label import CoverLabel
@@ -27,52 +28,55 @@ from src.workflow.common import tracks_assignment, analyze_track
 class Page1Widget(QWidget):
 
     def setup_ui(self) -> None:
-        # 初始化 UI
+        """初始化 UI"""
         grid_layout = QGridLayout()
         self.setLayout(grid_layout)
         grid_layout.setSpacing(1)
         grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.album_field = QLineEdit()
-        self.album_field.setPlaceholderText("search album...")
+        self.album_field.setPlaceholderText(MESSAGE.UI_20251231_180000)
         grid_layout.addWidget(self.album_field, 0, 0, 1, 1)
 
         self.catno_field = QLineEdit()
-        self.catno_field.setPlaceholderText("search catno...")
+        self.catno_field.setPlaceholderText(MESSAGE.UI_20251231_180001)
         grid_layout.addWidget(self.catno_field, 0, 1, 1, 1)
 
         self.date_field = QLineEdit()
-        self.date_field.setPlaceholderText("search date...")
+        self.date_field.setPlaceholderText(MESSAGE.UI_20251231_180003)
         grid_layout.addWidget(self.date_field, 0, 2, 1, 1)
 
+        self.track_field = QLineEdit()
+        self.track_field.setPlaceholderText(MESSAGE.UI_20251231_180004)
+        grid_layout.addWidget(self.track_field, 0, 3, 1, 1)
+
         self.link_box = LinkComboBox()
-        grid_layout.addWidget(self.link_box, 0, 3, 1, 1)
+        grid_layout.addWidget(self.link_box, 0, 4, 1, 1)
 
         self.album_table_view = AlbumTableView()
         grid_layout.addWidget(self.album_table_view, 1, 0, 1, 3)
 
         self.track_table_view = TrackTableView()
-        grid_layout.addWidget(self.track_table_view, 1, 3, 1, 2)
+        grid_layout.addWidget(self.track_table_view, 1, 3, 1, 3)
 
-        col_stretch = [5, 1, 1, 2, 3]
+        col_stretch = [5, 1, 1, 2, 2, 1]
         [s and grid_layout.setColumnStretch(i, s) for i, s in enumerate(col_stretch)]
 
         self.cover_label = CoverLabel(self)
 
     def setup_event(self) -> None:
-        # 初始化 事件
+        """初始化 事件"""
         # 搜索框
         self.album_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(1, t))
         self.catno_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(2, t))
         self.date_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(3, t))
-        self.album_table_view.item_model.layoutChanged.connect(lambda: self.album_table_view.selectRow(0))
+        # album_table_view 选中
         self.album_table_view.selectionModel().selectionChanged.connect(self._on_album_view_selected)
         # view 拖入路径
         self.album_table_view.paths_dropped.connect(self._on_paths_dropped)
         self.track_table_view.paths_dropped.connect(self._on_paths_dropped)
-        # album_table_view 右键菜单动作
+        # view 右键菜单动作
         self.track_table_view.action_copy_filename_clicked.connect(self._action_copy_filename)
-        # album_table_view 右键菜单动作
         self.album_table_view.action_edit_clicked.connect(self._action_edit)
         self.album_table_view.action_delete_clicked.connect(self._action_delete)
         self.album_table_view.action_locate_clicked.connect(self._action_locate)
@@ -80,10 +84,13 @@ class Page1Widget(QWidget):
         # view 编辑数据
         self.track_table_view.item_model.dataChanged.connect(self._save_timer.start)
         self.album_table_view.item_model.dataChanged.connect(self._save_timer.start)
+        # cover_label 输入封面
         self.cover_label.image_pasted.connect(self._on_image_pasted)
+        # link_box 输入链接
+        self.link_box.link_added.connect(self._save_timer.start)
 
     def setup_shortcut(self) -> None:
-        # 初始化 快捷键
+        """初始化 快捷键"""
         QShortcut(Qt.Key.Key_Escape, self, activated=
             lambda: [x.clear() for x in [self.album_field, self.catno_field, self.date_field]])
         QShortcut(Qt.Key.Key_QuoteLeft, self, activated=self.cover_label.change_opacity)
@@ -91,13 +98,13 @@ class Page1Widget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.theme_kanban: ThemeKanBan = None
+        self.theme_kanban: Optional[ThemeKanBan] = None
 
         # 保存元数据文件 防抖定时器 10 秒
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(10000)
-        self._save_timer.timeout.connect(lambda: [toast_notify("saved metadata file !"), 
+        self._save_timer.timeout.connect(lambda: [toast_notify(MESSAGE.UI_20251231_180010), 
                                                   with_busy_cursor(self.theme_kanban.save_metadata_file)()])
 
         self.setup_ui()
@@ -163,7 +170,9 @@ Average Similarity:\t{aver_similarity:.02f}
         on_no_clicked and check_msg.button(QMessageBox.StandardButton.No).clicked.connect(on_no_clicked)
         # 阻塞
         accept = check_msg.exec() == QMessageBox.StandardButton.Yes
-        return accept 
+        return accept
+
+    # 事件动作
 
     @with_busy_cursor
     def _on_image_pasted(self, data: bytes) -> None:
@@ -182,25 +191,20 @@ Average Similarity:\t{aver_similarity:.02f}
         self.album_table_view.viewport().update()
         self.cover_label.set_album_kanban(self.cover_label.album_kanban)
 
-    ## 事件动作
-
     def _on_album_view_selected(self, *args, **kwargs) -> None:
         ps = self.album_table_view.get_selected_ps()
         if not ps:
             return
         
-        # 展示 所有已选 albums 的 links
-        links = list(set(itertools.chain.from_iterable(self.theme_kanban.album_kanbans[p].album.links for p in ps)))
-        self.link_box.set_links(links)
-
         # 多选行时不更新
         if len(ps) > 1:
             return
 
-        # 展示 album 的 track, cover
+        # 更新组件
         album_kanban = self.theme_kanban.album_kanbans[ps[0]]
         self.track_table_view.item_model.reset_album_kanban(album_kanban)
         self.cover_label.set_album_kanban(album_kanban)
+        self.link_box.set_album_kanban(album_kanban)
 
     def _action_copy_filename(self) -> None:
         if not self.track_table_view.item_model.album_kanban:

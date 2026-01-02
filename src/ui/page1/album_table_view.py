@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QAbstractItemView, QStyle)
 
 from src.core.kanban import ResourceState, ThemeKanBan
+from src.lang import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
 
@@ -19,8 +20,8 @@ class AlbumTableItemModel(CustomTableItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers = ["S", "Album", "Catno", "Date"]
-
+        self.headers: list[str] = ["S", MESSAGE.UI_20260101_112207, MESSAGE.UI_20260101_112208, MESSAGE.UI_20260101_112209]
+        
         self.theme_kanban: Optional[ThemeKanBan] = None
 
     def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
@@ -243,19 +244,25 @@ class AlbumTableView(QTableView):
     action_locate_clicked = Signal()
     action_search_cover_clicked = Signal()
 
+    def setup_event(self) -> None:
+        """初始化 事件"""
+        # 布局变化时 选择第一行
+        self.item_model.layoutChanged.connect(lambda: self.selectRow(0))
+
+
     def setup_context_menu(self) -> None:
-        # 初始化 右键菜单
+        """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction("Open Metadata File", self)
+        action = QAction(MESSAGE.UI_20260101_112226, self)
         action.triggered.connect(self.action_edit_clicked.emit)
         self.addAction(action)
-        action = QAction("Delete Albums", self)
+        action = QAction(MESSAGE.UI_20260101_112227, self)
         action.triggered.connect(self.action_delete_clicked.emit)
         self.addAction(action)
-        action = QAction("Locate Resource", self)
+        action = QAction(MESSAGE.UI_20260101_112228, self)
         action.triggered.connect(self.action_locate_clicked.emit)
         self.addAction(action)
-        action = QAction("Search Cover", self)
+        action = QAction(MESSAGE.UI_20260101_112229, self)
         action.triggered.connect(self.action_search_cover_clicked.emit)
         self.addAction(action)
 

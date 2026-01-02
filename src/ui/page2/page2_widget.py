@@ -1,10 +1,11 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from PySide6.QtCore import Qt, QModelIndex, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.kanban import ThemeKanBan
+from src.lang import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.page2.music_player_bar import MusicPlayerBar
 from src.ui.page2.play_table_view import PlayTableView
@@ -14,30 +15,30 @@ from src.ui.toast_notifier import toast_notify
 class Page2Widget(QWidget):
 
     def setup_ui(self) -> None:
-        # 初始化 UI
+        """初始化 UI"""
         grid_layout = QGridLayout()
         self.setLayout(grid_layout)
         grid_layout.setSpacing(5)
         grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.title_field = QLineEdit()
-        self.title_field.setPlaceholderText("search title...")
+        self.title_field.setPlaceholderText(MESSAGE.UI_20251231_180005)
         grid_layout.addWidget(self.title_field, 0, 1, 1, 1)
 
         self.artist_field = QLineEdit()
-        self.artist_field.setPlaceholderText("search artist...")
+        self.artist_field.setPlaceholderText(MESSAGE.UI_20251231_180006)
         grid_layout.addWidget(self.artist_field, 0, 2, 1, 1)
 
         self.album_field = QLineEdit()
-        self.album_field.setPlaceholderText("search album...")
+        self.album_field.setPlaceholderText(MESSAGE.UI_20251231_180007)
         grid_layout.addWidget(self.album_field, 0, 3, 1, 1)
 
         self.date_field = QLineEdit()
-        self.date_field.setPlaceholderText("search date...")
+        self.date_field.setPlaceholderText(MESSAGE.UI_20251231_180003)
         grid_layout.addWidget(self.date_field, 0, 4, 1, 1)
 
         self.mark_field = QLineEdit()
-        self.mark_field.setPlaceholderText("search mark...")
+        self.mark_field.setPlaceholderText(MESSAGE.UI_20251231_180008)
         grid_layout.addWidget(self.mark_field, 0, 5, 1, 1)
 
         self.play_table_view = PlayTableView()
@@ -53,7 +54,7 @@ class Page2Widget(QWidget):
         [s and grid_layout.setColumnStretch(i, s) for i, s in enumerate(col_stretch)]
 
     def setup_event(self) -> None:
-        # 初始化 事件
+        """初始化 事件"""
         # 搜索框
         self.title_field.textChanged.connect(lambda t: self.play_table_view.item_model.set_filter(1, t))
         self.artist_field.textChanged.connect(lambda t: self.play_table_view.item_model.set_filter(2, t))
@@ -74,7 +75,7 @@ class Page2Widget(QWidget):
         self.music_player_bar.next_btn.clicked.connect(lambda: self._search_no_mark_ix(1))
 
     def setup_shortcut(self) -> None:
-        # 初始化 快捷键
+        """初始化 快捷键"""
         QShortcut(Qt.Key.Key_Space, self, activated=self.music_player_bar.toggle_play)
         QShortcut(Qt.Key.Key_Left, self, activated=lambda: self.music_player_bar.skip(-3000))
         QShortcut(Qt.Key.Key_Right, self, activated=lambda: self.music_player_bar.skip(3000))
@@ -92,13 +93,13 @@ class Page2Widget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.theme_kanban: ThemeKanBan = None
+        self.theme_kanban: Optional[ThemeKanBan] = None
 
         # 保存元数据文件 防抖定时器 5 秒
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(5000)
-        self._save_timer.timeout.connect(lambda: [toast_notify("saved metadata file !"), 
+        self._save_timer.timeout.connect(lambda: [toast_notify(MESSAGE.UI_20251231_180010), 
                                                   with_busy_cursor(self.theme_kanban.save_metadata_file)()])
 
         self.setup_ui()

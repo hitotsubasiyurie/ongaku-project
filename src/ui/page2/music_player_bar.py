@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QWidget, QSlider, QLabel, QPushButton, QHBoxLayou
                                QStyle, )
 
 from src.core.settings import global_settings
+from src.lang import MESSAGE
 from src.ui.color_theme import BUTTON_QSS
 
 
@@ -24,7 +25,7 @@ class MusicPlayerBar(QWidget):
     playback_finished = Signal()
 
     def setup_ui(self) -> None:
-        # 初始化 UI
+        """初始化 UI"""
         # 字体高度
         fh = self.fontMetrics().height()
 
@@ -36,16 +37,19 @@ class MusicPlayerBar(QWidget):
         self.time_label.setFixedSize(fh * 6, fh * 1.5)
 
         self.next_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/play_next.png"), "")
+        self.next_btn.setToolTip(MESSAGE.UI_20260101_112222)
         self.next_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.next_btn.setIconSize(self.next_btn.size())
 
         self.prev_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/play_prev.png"), "")
+        self.prev_btn.setToolTip(MESSAGE.UI_20260101_112224)
         self.prev_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.prev_btn.setIconSize(self.prev_btn.size())
 
         self.play_btn_icons = [QIcon(f"./assets/{global_settings.ui_color_theme}/play.png"), 
                                QIcon(f"./assets/{global_settings.ui_color_theme}/pause.png")]
         self.play_btn = QPushButton()
+        self.play_btn.setToolTip(MESSAGE.UI_20260101_112225)
         self.play_btn.setIcon(self.play_btn_icons[0])
         self.play_btn.setFixedSize(fh * 1.5, fh * 1.5)
         self.play_btn.setIconSize(self.play_btn.size())

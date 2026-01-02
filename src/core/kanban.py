@@ -21,7 +21,6 @@ from src.external import rar_list, rar_read, rar_stats
 ################################################################################
 
 
-_rar_list_cache_lock = Lock()
 _rar_list_cache_file = Path(global_settings.temp_directory, "rar_list_cache.json")
 try:
     _rar_list_cache = json.loads(_rar_list_cache_file.read_text(encoding="utf-8"))
@@ -39,8 +38,8 @@ def _cached_rar_list(dstrar: str) -> list[str]:
         return val
     
     filenames = rar_list(dstrar)
-
-    with _rar_list_cache_lock: _rar_list_cache[dstrar] = {mtime: filenames}
+    # dstrar 不会重复，多线程时不需要加锁 
+    _rar_list_cache[dstrar] = {mtime: filenames}
 
     return filenames
 
@@ -49,8 +48,7 @@ def _save_rar_list_cache() -> None:
     """
     保存缓存文件。
     """
-    with _rar_list_cache_lock: 
-        _rar_list_cache_file.write_text(json.dumps(_rar_list_cache, ensure_ascii=False, indent=4), encoding="utf-8")
+    _rar_list_cache_file.write_text(json.dumps(_rar_list_cache, ensure_ascii=False, indent=4), encoding="utf-8")
 
 
 ################################################################################

@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QHeaderView, QAbstractItemView, QStyle)
 
 from src.core.kanban import AlbumKanBan
+from src.lang import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
 from src.ui.page1.album_table_view import AlbumStateItemDelegate
@@ -20,7 +21,7 @@ class TrackTableItemModel(CustomTableItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers = ["S", "TITLE"]
+        self.headers: list[str] = ["S", MESSAGE.UI_20260101_112210]
 
         self.album_kanban: Optional[AlbumKanBan] = None
 
@@ -205,9 +206,9 @@ class TrackTableView(QTableView):
     action_copy_filename_clicked = Signal()
 
     def setup_context_menu(self) -> None:
-        # 初始化 右键菜单
+        """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction("Copy Filename", self)
+        action = QAction(MESSAGE.UI_20260101_112231, self)
         action.triggered.connect(self.action_copy_filename_clicked.emit)
         self.addAction(action)
 
@@ -250,6 +251,8 @@ class TrackTableView(QTableView):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionsClickable(False)
+
+        self.setup_context_menu()
 
     def get_selected_ps(self) -> list[int]:
         # selectedIndexes 以索引为单位，一行多个

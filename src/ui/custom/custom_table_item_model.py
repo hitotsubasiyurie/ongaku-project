@@ -51,7 +51,7 @@ class CustomTableItemModel(QAbstractItemModel):
         """
         待实现
         """
-        pass
+        return super().data(index, role)
 
     # 表头
 
@@ -80,6 +80,7 @@ class CustomTableItemModel(QAbstractItemModel):
         """
         待实现
         """
+        # 编辑无效
         pass
 
     # 排序

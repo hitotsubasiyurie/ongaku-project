@@ -1,5 +1,6 @@
 import itertools
 from io import BytesIO
+from typing import Optional
 
 from PIL import Image
 from PySide6.QtCore import Qt, QEvent, QObject, Signal, QByteArray, QBuffer
@@ -23,16 +24,16 @@ class CoverLabel(QLabel):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.album_kanban: AlbumKanBan = None
+        self.album_kanban: Optional[AlbumKanBan] = None
         # 封面
-        self.pix: QPixmap = None
+        self.pix: Optional[QPixmap] = None
         # 缩放的封面
-        self.scaled_pix: QPixmap = None
+        self.scaled_pix: Optional[QPixmap] = None
         # 封面信息
-        self.image_info: str = None
+        self.image_info: Optional[str] = None
 
         # 透明效果
-        self.opacity: float = None
+        self.opacity: Optional[float] = None
         self.opacity_effect = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity_effect)
 
@@ -47,27 +48,13 @@ class CoverLabel(QLabel):
         # 快捷键
         QShortcut(QKeySequence("Ctrl+V"), self, activated=self._on_image_pasted)
 
-    @with_busy_cursor
     def set_album_kanban(self, album_kanban: AlbumKanBan | None) -> None:
         self.album_kanban = album_kanban
+        self.pix, self.scaled_pix, self.image_info = None, None, None
 
-        # 无封面时
-        if not album_kanban or not album_kanban.cover_filename:
-            self.pix, self.scaled_pix, self.image_info = None, None, None
-
-        # 有封面时
-        else:
-            self.pix = QPixmap()
-            self.scaled_pix = None
-            cover_bytes = album_kanban.read_file(album_kanban.cover_filename)
-            self.pix.loadFromData(cover_bytes)
-
-            with Image.open(BytesIO(cover_bytes)) as img:
-                info = {"filename": album_kanban.cover_filename, "format": img.format, "mode": img.mode, "resolution": img.size, 
-                        "file_size": "{:.2f} MiB".format(len(cover_bytes) / 1024 / 1024)}
-
-            _len = max(map(len, info.keys()))
-            self.image_info = "\n".join(f"{k.ljust(_len)}: {v}" for k, v in info.items())
+        # 不/半透明时 加载封面
+        if album_kanban and album_kanban.cover_filename and self.opacity:
+            self._load_cover()
 
         self._set_geometry()
 
@@ -78,12 +65,16 @@ class CoverLabel(QLabel):
 
         self.opacity_effect.setOpacity(self.opacity)
 
+        # 不透明时 拦截鼠标事件，半/透明时 鼠标事件透传
         if self.opacity == 1:
-            # 拦截鼠标事件
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
         else:
-            # 鼠标事件透传
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+
+        # 切换 不/半透明时 加载封面
+        if self.album_kanban and self.album_kanban.cover_filename and self.opacity and self.pix is None:
+            self._load_cover()
+            self._set_geometry()
 
         self.update()
         toast_notify(MESSAGE.UI_20251224_210500.format(self.opacity))
@@ -107,7 +98,7 @@ class CoverLabel(QLabel):
         text_rect = self.rect().adjusted(margin, margin, -margin, -margin)
         painter = QPainter(self)
 
-        # 有封面 展示详情 时
+        # 有封面 不透明 时
         if self.pix and self.opacity == 1:
             painter.drawPixmap(0, 0, self.scaled_pix)
 
@@ -125,7 +116,7 @@ class CoverLabel(QLabel):
             painter.setFont(font)
             painter.drawText(text_rect, text_flags, self.image_info)
 
-        # 无封面 展示详情 时
+        # 无封面 不透明 时
         elif not self.pix and self.opacity == 1:
             painter.fillRect(self.rect(), QColor(200, 200, 200))
             brush = QBrush(QColor(100, 100, 100), Qt.BrushStyle.FDiagPattern)
@@ -139,7 +130,7 @@ class CoverLabel(QLabel):
                              Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, 
                              "Ctrl + V to paste image")
 
-        # 有封面 不展示详情 时
+        # 有封面 半透明 时
         elif self.pix and self.opacity == 0.2:
             painter.drawPixmap(0, 0, self.scaled_pix)
 
@@ -149,6 +140,22 @@ class CoverLabel(QLabel):
             pass
 
     # 内部方法
+
+    @with_busy_cursor
+    def _load_cover(self) -> None:
+        self.pix = QPixmap()
+        self.scaled_pix = None
+        cover_bytes = self.album_kanban.read_file(self.album_kanban.cover_filename)
+        self.pix.loadFromData(cover_bytes)
+
+        # Image.open 是惰性操作
+        with Image.open(BytesIO(cover_bytes)) as img:
+            info = {"filename": self.album_kanban.cover_filename, "format": img.format, 
+                    "mode": img.mode, "resolution": img.size, 
+                    "file_size": "{:.2f} MiB".format(len(cover_bytes) / 1024 / 1024)}
+
+        _len = max(map(len, info.keys()))
+        self.image_info = "\n".join(f"{k.ljust(_len)}: {v}" for k, v in info.items())
 
     def _set_geometry(self) -> None:
         parent: QWidget = self.parent()
@@ -169,9 +176,11 @@ class CoverLabel(QLabel):
         y = parent.height() - self.height()
         self.move(x, y)
 
+    # 事件动作
+
     @with_busy_cursor
     def _on_image_pasted(self) -> None:
-        # 不展示详情时 跳过
+        # 半/透明时 跳过
         if not self.opacity == 1:
             return
         

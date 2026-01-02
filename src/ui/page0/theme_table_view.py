@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
 
 from src.core.kanban import KanBan
 from src.core.settings import global_settings
+from src.lang import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom import CustomTableItemModel
 
@@ -19,11 +20,12 @@ class ThemeTableItemModel(CustomTableItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers: list[str] = ["Path", "Name", "Start Date", "End Date", "Collect", "Mark"]
+        self.headers: list[str] = [MESSAGE.UI_20260101_112201, MESSAGE.UI_20260101_112202, MESSAGE.UI_20260101_112203, 
+                                   MESSAGE.UI_20260101_112204, MESSAGE.UI_20260101_112205, MESSAGE.UI_20260101_112206]
 
         self.kanban: Optional[KanBan] = None
-        # 当前选择的主题看板 指针
-        self.current_theme_kanban_p: int = None
+        # 播放中索引
+        self.playing_p: Optional[int] = None
 
     def reset_kanban(self, kanban: KanBan = None) -> None:
         # 声明重置模型
@@ -31,6 +33,7 @@ class ThemeTableItemModel(CustomTableItemModel):
 
         # 重置数据
         self.kanban = kanban
+        self.playing_p = None
 
         # 默认 以 End Date 列 排序
         self.sort_args = (3, Qt.SortOrder.DescendingOrder)
@@ -41,6 +44,12 @@ class ThemeTableItemModel(CustomTableItemModel):
         self._apply_filters()
 
         self.endResetModel()
+
+    def locate_playing_row(self) -> int | None:
+        row = next((r for r, p in enumerate(self.layout_ps) if self.playing_p == p), None)
+        return row
+
+    # 重写方法
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole = None) -> Any:
         row, col = index.row(), index.column()
@@ -72,7 +81,7 @@ class ThemeTableItemModel(CustomTableItemModel):
                    role: Qt.ItemDataRole = Qt.ItemDataRole.DisplayRole) -> Any:
 
         # 列表头 播放中 仅展示装饰图标
-        if orientation == Qt.Orientation.Vertical and self.layout_ps and self.layout_ps[section] == self.current_theme_kanban_p:
+        if orientation == Qt.Orientation.Vertical and self.layout_ps and self.layout_ps[section] == self.playing_p:
             if role == Qt.ItemDataRole.DecorationRole:
                 return QIcon(f"./assets/{global_settings.ui_color_theme}/locate.png")
             else:
@@ -173,10 +182,11 @@ class ThemeTableView(QTableView):
     action_edit_clicked = Signal()
 
     def setup_context_menu(self) -> None:
-        # 初始化 右键菜单
+        """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction("Open Metadata File", self)
+        action = QAction(MESSAGE.UI_20260101_112226, self)
         action.triggered.connect(self.action_edit_clicked.emit)
+        self.addAction(action)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -221,8 +231,9 @@ class ThemeTableView(QTableView):
         
         # 设置列
         header = self.horizontalHeader()
-        # 最小列宽
-        header.setMinimumSectionSize(fh*2)
+        # 最小最大列宽
+        header.setMinimumSectionSize(fh*4)
+        header.setMaximumSectionSize(fh*8)
         # ResizeMode
         column_modes = [QHeaderView.ResizeMode.ResizeToContents, 
                         QHeaderView.ResizeMode.Stretch, QHeaderView.ResizeMode.ResizeToContents, QHeaderView.ResizeMode.ResizeToContents, 
@@ -230,4 +241,31 @@ class ThemeTableView(QTableView):
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
         self.setup_context_menu()
+
+    def get_selected_ps(self) -> list[int]:
+        # selectedIndexes 以索引为单位，一行多个
+        rows = list(sorted(set(i.row() for i in self.selectedIndexes())))
+        # 原始数据行指针
+        ps = [self.item_model.layout_ps[r] for r in rows]
+        return ps
+
+    def hightlight_row(self, row: int | None) -> None:
+        """
+        高亮聚焦行。
+        """
+        if row is None:
+            return
+        
+        self.clearSelection()
+        
+        if not (0 <= row < self.item_model.rowCount()):
+            return
+        
+        # table 选中行
+        self.selectRow(row)
+        ix = self.item_model.createIndex(row, 1)
+        self.setCurrentIndex(ix)
+        self.scrollTo(ix, QTableView.ScrollHint.PositionAtCenter)
+        self.setFocus()
+
 

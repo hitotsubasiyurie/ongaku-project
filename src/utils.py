@@ -107,9 +107,13 @@ def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
         )
     
     import tomli_w._writer
+    old = tomli_w._writer.format_inline_array
     tomli_w._writer.format_inline_array = custom_format_inline_array
+    try:
+        text = tomli_w.dumps(obj)
+    finally:
+        tomli_w._writer.format_inline_array = old
 
-    text = tomli_w.dumps(obj)
     file and Path(file).write_text(text, encoding="utf-8")
     return text
 

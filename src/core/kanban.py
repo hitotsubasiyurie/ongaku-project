@@ -1,11 +1,12 @@
 import os
 import json
+import pickle
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
 from functools import cached_property
 from pathlib import Path
-from threading import Lock
+from typing import Generator
 
 import rtoml
 
@@ -17,38 +18,53 @@ from src.external import rar_list, rar_read, rar_stats
 
 
 ################################################################################
-### 缓存 rar_list 方法
+### 缓存 rar 方法
 ################################################################################
 
 
-_rar_list_cache_file = Path(global_settings.temp_directory, "rar_list_cache.json")
+_rar_cache_file = Path(global_settings.temp_directory, "rar_cache")
 try:
-    _rar_list_cache = json.loads(_rar_list_cache_file.read_text(encoding="utf-8"))
+    _rar_cache = pickle.loads(_rar_cache_file.read_bytes())
 except Exception:
-    _rar_list_cache = {}
+    _rar_cache = {"rar_list": {}, "rar_stats": {}}
+
+
+def build_rar_cache(dirpath: str) -> Generator[tuple[int, int], None, None]:
+    """
+    :param dirpath: 对该目录下的 .rar 文件创建方法缓存
+    :yield: 当前已处理文件数，总文件数
+    """
+    rar_files = list(map(os.path.abspath, Path(global_settings.archive_directory).rglob("*.rar")))
+    if not rar_files:
+        yield 0, 0
+        return
+    
+    for i, f in enumerate(rar_files):
+        mtime = str(os.stat(f).st_mtime)
+        filenames = _cached_rar_list(f)
+        _rar_cache["rar_list"][f] = {mtime: filenames}
+        _rar_cache["rar_stats"][f] = {mtime: _cached_rar_stats(f, filenames)}
+        yield i+1, len(rar_files)
+    
+    _rar_cache_file.write_bytes(pickle.dumps(_rar_cache))
 
 
 def _cached_rar_list(dstrar: str) -> list[str]:
-    """
-    带缓存的列出压缩包内的文件。
-    """
     mtime = str(os.stat(dstrar).st_mtime)
 
-    if val:= _rar_list_cache.get(dstrar, {}).get(mtime, []):
+    if val:= _rar_cache["rar_list"].get(dstrar, {}).get(mtime, []):
         return val
     
-    filenames = rar_list(dstrar)
-    # dstrar 不会重复，多线程时不需要加锁 
-    _rar_list_cache[dstrar] = {mtime: filenames}
-
-    return filenames
+    return rar_list(dstrar)
 
 
-def _save_rar_list_cache() -> None:
-    """
-    保存缓存文件。
-    """
-    _rar_list_cache_file.write_text(json.dumps(_rar_list_cache, ensure_ascii=False, indent=4), encoding="utf-8")
+def _cached_rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
+    mtime = str(os.stat(dstrar).st_mtime)
+
+    if val:= _rar_cache["rar_stats"].get(dstrar, {}).get(mtime, []):
+        return val
+
+    return rar_stats(dstrar, filenames)
 
 
 ################################################################################
@@ -219,7 +235,7 @@ class AlbumKanBan:
         if os.path.isdir(self.album_dir):
             return tuple(Path(self.album_dir, n).stat() if n else None for n in self.track_filenames)
         elif os.path.isfile(self.album_archive):
-            return rar_stats(self.album_archive, self.track_filenames)
+            return _cached_rar_stats(self.album_archive, self.track_filenames)
 
     def scan(self) -> None:
         """
@@ -412,9 +428,6 @@ class KanBan:
 
         with ThreadPoolExecutor() as executor:
             self.theme_kanbans = tuple(executor.map(ThemeKanBan, theme_mdfs, theme_res_dirs, theme_arch_dirs))
-
-        # 保存 rar_list 缓存
-        _save_rar_list_cache()
 
     def get_theme_kanban(self, name: str) -> ThemeKanBan | None:
         if not name:

@@ -45,6 +45,8 @@ def build_rar_cache(dirpath: str) -> Generator[tuple[int, int], None, None]:
         _rar_cache["rar_list"][f] = {mtime: filenames}
         _rar_cache["rar_stats"][f] = {mtime: _cached_rar_stats(f, filenames)}
         yield i+1, len(rar_files)
+
+        not (i%100) and _rar_cache_file.write_bytes(pickle.dumps(_rar_cache))
     
     _rar_cache_file.write_bytes(pickle.dumps(_rar_cache))
 

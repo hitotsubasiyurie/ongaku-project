@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
 from functools import cached_property
 from pathlib import Path
-from typing import Generator
+from typing import Callable
+from threading import Lock
 
 import rtoml
 
@@ -27,46 +28,41 @@ try:
     _rar_cache = pickle.loads(_rar_cache_file.read_bytes())
 except Exception:
     _rar_cache = {"rar_list": {}, "rar_stats": {}}
-
-
-def build_rar_cache(dirpath: str) -> Generator[tuple[int, int], None, None]:
-    """
-    :param dirpath: 对该目录下的 .rar 文件创建方法缓存
-    :yield: 当前已处理文件数，总文件数
-    """
-    rar_files = list(map(os.path.abspath, Path(global_settings.archive_directory).rglob("*.rar")))
-    if not rar_files:
-        yield 0, 0
-        return
-    
-    for i, f in enumerate(rar_files):
-        mtime = str(os.stat(f).st_mtime)
-        filenames = _cached_rar_list(f)
-        _rar_cache["rar_list"][f] = {mtime: filenames}
-        _rar_cache["rar_stats"][f] = {mtime: _cached_rar_stats(f, filenames)}
-        yield i+1, len(rar_files)
-
-        not (i%100) and _rar_cache_file.write_bytes(pickle.dumps(_rar_cache))
-    
-    _rar_cache_file.write_bytes(pickle.dumps(_rar_cache))
+_rar_cache_lock = Lock()
 
 
 def _cached_rar_list(dstrar: str) -> list[str]:
-    mtime = str(os.stat(dstrar).st_mtime)
+    mtime = os.stat(dstrar).st_mtime
 
-    if val:= _rar_cache["rar_list"].get(dstrar, {}).get(mtime, []):
+    with _rar_cache_lock:
+        val = _rar_cache["rar_list"].get(dstrar, {}).get(mtime, [])
+    
+    if val:
         return val
     
-    return rar_list(dstrar)
+    val = rar_list(dstrar)
+
+    with _rar_cache_lock:
+        _rar_cache["rar_list"][dstrar] = {mtime: val}
+    
+    return val
 
 
 def _cached_rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
-    mtime = str(os.stat(dstrar).st_mtime)
+    mtime = os.stat(dstrar).st_mtime
 
-    if val:= _rar_cache["rar_stats"].get(dstrar, {}).get(mtime, []):
+    with _rar_cache_lock:
+        val = _rar_cache["rar_stats"].get(dstrar, {}).get(mtime, [])
+    
+    if val:
         return val
+    
+    val = rar_stats(dstrar, filenames)
 
-    return rar_stats(dstrar, filenames)
+    with _rar_cache_lock:
+        _rar_cache["rar_stats"][dstrar] = {mtime: val}
+    
+    return val
 
 
 ################################################################################
@@ -428,6 +424,7 @@ class KanBan:
         theme_res_dirs = [os.path.join(self.resource_dir, f.relative_to(self.metadata_dir).with_suffix("")) for f in theme_mdfs]
         theme_arch_dirs = [os.path.join(self.archive_dir, f.relative_to(self.metadata_dir).with_suffix("")) for f in theme_mdfs]
 
+        # 默认 max_workers = cpu_count + 4
         with ThreadPoolExecutor() as executor:
             self.theme_kanbans = tuple(executor.map(ThemeKanBan, theme_mdfs, theme_res_dirs, theme_arch_dirs))
 

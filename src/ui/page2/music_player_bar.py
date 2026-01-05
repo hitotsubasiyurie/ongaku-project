@@ -76,7 +76,7 @@ class MusicPlayerBar(QWidget):
         layout.insertStretch(0)
         layout.insertStretch(-1)
 
-        btn_qss = BUTTON_QSS.format(fh*0.75)
+        btn_qss = BUTTON_QSS.format(int(fh*0.75))
         [b.setStyleSheet(btn_qss) for b in [self.prev_btn, self.play_btn, self.next_btn]]
 
     def setup_event(self) -> None:

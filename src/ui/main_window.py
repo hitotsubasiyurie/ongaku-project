@@ -48,7 +48,7 @@ class MainWindow(QWidget):
         self.page_next_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_next_btn.setIconSize(self.page_next_btn.size())
 
-        btn_qss = BUTTON_QSS.format(fh*0.75)
+        btn_qss = BUTTON_QSS.format(int(fh*0.75))
         [b.setStyleSheet(btn_qss) for b in [self.page_prev_btn, self.page_next_btn]]
 
     def setup_event(self) -> None:

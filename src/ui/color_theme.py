@@ -8,7 +8,7 @@ BUTTON_QSS = """
 QPushButton {{
     /* 透明背景 */
     background-color: rgba(100, 100, 100, 0);
-    /* 50% 圆角 */
+    /* 50% 圆角 整数 */
     border-radius: {}px;
 }}
 

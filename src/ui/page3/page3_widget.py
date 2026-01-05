@@ -7,12 +7,12 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 from src.core.kanban import ThemeKanBan
 from src.lang import MESSAGE
 from src.ui.common import with_busy_cursor
-from src.ui.page2.music_player_bar import MusicPlayerBar
-from src.ui.page2.play_table_view import PlayTableView
+from src.ui.page3.music_player_bar import MusicPlayerBar
+from src.ui.page3.play_table_view import PlayTableView
 from src.ui.toast_notifier import toast_notify
 
 
-class Page2Widget(QWidget):
+class Page3Widget(QWidget):
 
     def setup_ui(self) -> None:
         """初始化 UI"""

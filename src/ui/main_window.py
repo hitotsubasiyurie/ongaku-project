@@ -10,9 +10,9 @@ from src.lang import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.color_theme import BUTTON_QSS
 from src.ui.toast_notifier import toast_notify
-from src.ui.page0.page0_widget import Page0Widget
 from src.ui.page1.page1_widget import Page1Widget
 from src.ui.page2.page2_widget import Page2Widget
+from src.ui.page3.page3_widget import Page3Widget
 
 
 class MainWindow(QWidget):
@@ -31,11 +31,11 @@ class MainWindow(QWidget):
         self.stack = QStackedWidget()
         layout.addWidget(self.stack)
 
-        self.page0 = Page0Widget()
+        self.page0 = Page1Widget()
         self.stack.addWidget(self.page0)
-        self.page1 = Page1Widget()
+        self.page1 = Page2Widget()
         self.stack.addWidget(self.page1)
-        self.page2 = Page2Widget()
+        self.page2 = Page3Widget()
         self.stack.addWidget(self.page2)
 
         self.page_prev_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page_prev.png"), "", parent=self)

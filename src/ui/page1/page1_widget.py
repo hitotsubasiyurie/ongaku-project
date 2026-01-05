@@ -6,10 +6,10 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.kanban import KanBan
 from src.lang import MESSAGE
-from src.ui.page0.theme_table_view import ThemeTableView
+from src.ui.page1.theme_table_view import ThemeTableView
 
 
-class Page0Widget(QWidget):
+class Page1Widget(QWidget):
 
     theme_kanban_played = Signal()
 

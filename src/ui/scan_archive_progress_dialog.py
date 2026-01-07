@@ -1,5 +1,4 @@
 import os
-import pickle
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
@@ -8,7 +7,7 @@ from PySide6.QtCore import Signal
 
 from src.lang import MESSAGE
 from src.core.settings import global_settings
-from src.core.kanban import _rar_cache, _rar_cache_file, _cached_rar_list, _cached_rar_stats
+from src.core.kanban import _cached_rar_list, _cached_rar_stats
 
 
 class ScanArchiveProgressDialog(QProgressDialog):
@@ -43,7 +42,6 @@ class ScanArchiveProgressDialog(QProgressDialog):
         completed = self.exec() == self.DialogCode.Accepted
 
         executor.shutdown(wait=True, cancel_futures=(not completed))
-        _rar_cache_file.write_bytes(pickle.dumps(_rar_cache))
         return completed
 
     def _work(self, f: str) -> None:

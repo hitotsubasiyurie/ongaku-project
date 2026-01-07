@@ -428,6 +428,9 @@ class KanBan:
         with ThreadPoolExecutor() as executor:
             self.theme_kanbans = tuple(executor.map(ThemeKanBan, theme_mdfs, theme_res_dirs, theme_arch_dirs))
 
+        # 保存 rar 缓存
+        _rar_cache_file.write_bytes(pickle.dumps(_rar_cache))
+
     def get_theme_kanban(self, name: str) -> ThemeKanBan | None:
         if not name:
             return None

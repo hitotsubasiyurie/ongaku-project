@@ -1,6 +1,6 @@
 from typing import Optional
 
-from PySide6.QtCore import Qt, QModelIndex, Signal
+from PySide6.QtCore import Qt, QModelIndex, Signal, QTimer
 from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
@@ -58,6 +58,7 @@ class Page1Widget(QWidget):
     def set_kanban(self, kanban: KanBan = None) -> None:
         self.kanban = kanban
         self.theme_table_view.item_model.reset_kanban(kanban)
+        self.theme_table_view.hightlight_row(0)
 
     # 内部方法
 

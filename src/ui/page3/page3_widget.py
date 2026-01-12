@@ -111,6 +111,7 @@ class Page3Widget(QWidget):
         # 清空搜索框
         [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]]
         self.play_table_view.item_model.reset_theme_kanban(theme_kanban)
+        self.play_table_view.hightlight_row(0)
 
     # 内部方法
 

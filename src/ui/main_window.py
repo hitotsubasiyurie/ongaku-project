@@ -31,12 +31,12 @@ class MainWindow(QWidget):
         self.stack = QStackedWidget()
         layout.addWidget(self.stack)
 
-        self.page0 = Page1Widget()
-        self.stack.addWidget(self.page0)
-        self.page1 = Page2Widget()
+        self.page1 = Page1Widget()
         self.stack.addWidget(self.page1)
-        self.page2 = Page3Widget()
+        self.page2 = Page2Widget()
         self.stack.addWidget(self.page2)
+        self.page3 = Page3Widget()
+        self.stack.addWidget(self.page3)
 
         self.page_prev_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page_prev.png"), "", parent=self)
         self.page_prev_btn.setToolTip(MESSAGE.UI_20260101_112220)
@@ -55,7 +55,7 @@ class MainWindow(QWidget):
         """初始化 事件"""
         self.page_prev_btn.clicked.connect(lambda: self._change_page((self.stack.currentIndex()-1)%3))
         self.page_next_btn.clicked.connect(lambda: self._change_page((self.stack.currentIndex()+1)%3))
-        self.page0.theme_kanban_played.connect(self._on_theme_kanban_played)
+        self.page1.theme_kanban_played.connect(self._on_theme_kanban_played)
 
     def setup_shortcut(self) -> None:
         """初始化 快捷键"""
@@ -74,10 +74,11 @@ class MainWindow(QWidget):
 
     def set_kanban(self, kanban: KanBan) -> None:
         self.kanban = kanban
-        self.page0.set_kanban(kanban)
-        self.page1.set_theme_kanban(None)
+        self.page1.set_kanban(kanban)
         self.page2.set_theme_kanban(None)
+        self.page3.set_theme_kanban(None)
         toast_notify(MESSAGE.UI_20251201_110005.format(kanban.album_collection_progress[0], kanban.track_mark_progress[0]))
+        self._change_page(0)
 
     # 重写方法
 
@@ -110,10 +111,13 @@ class MainWindow(QWidget):
         self.kanban.invalidate_cache()
         self.stack.setCurrentIndex(index)
         self._set_btns_geometry()
+        # 切换页面 聚焦 view
+        views = [self.page1.theme_table_view, self.page2.album_table_view, self.page3.play_table_view]
+        views[index].setFocus()
 
     @with_busy_cursor
     def _on_theme_kanban_played(self) -> None:
-        tk = self.kanban.theme_kanbans[self.page0.playing_p]
-        self.page1.set_theme_kanban(tk)
+        tk = self.kanban.theme_kanbans[self.page1.playing_p]
         self.page2.set_theme_kanban(tk)
+        self.page3.set_theme_kanban(tk)
         self.setWindowTitle(f"KanBan - {tk.theme_name}")

@@ -118,6 +118,7 @@ class Page2Widget(QWidget):
         self.cover_label.set_album_kanban(None)
         self.album_table_view.item_model.reset_theme_kanban(theme_kanban)
         self.track_table_view.item_model.reset_album_kanban(None)
+        self.album_table_view.hightlight_row(0)
 
     # 内部方法
 

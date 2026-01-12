@@ -249,7 +249,6 @@ class AlbumTableView(QTableView):
         # 布局变化时 选择第一行
         self.item_model.layoutChanged.connect(lambda: self.selectRow(0))
 
-
     def setup_context_menu(self) -> None:
         """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -324,6 +323,25 @@ class AlbumTableView(QTableView):
         # 原始数据行指针
         ps = [self.item_model.layout_ps[r] for r in rows]
         return ps
+
+    def hightlight_row(self, row: int | None) -> None:
+        """
+        高亮聚焦行。
+        """
+        if row is None:
+            return
+        
+        self.clearSelection()
+        
+        if not (0 <= row < self.item_model.rowCount()):
+            return
+        
+        # table 选中行
+        self.selectRow(row)
+        ix = self.item_model.createIndex(row, 1)
+        self.setCurrentIndex(ix)
+        self.scrollTo(ix, QTableView.ScrollHint.PositionAtCenter)
+        self.setFocus()
 
     # 重写方法
 

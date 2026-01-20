@@ -26,18 +26,31 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
     else:
         info = None
 
-    process = subprocess.run(cmd, stdout=stdout, stderr=stderr, 
-                             text=text, startupinfo=info, **kwargs)
-    
-    if process.returncode == 0:
-        logger.info(f"Succeed to run cmd. {cmd}")
-        return process
+    # subprocess.Popen cwd 参数输入长路径（大于 256 字符），会抛出 NotADirectoryError
+    # 临时目录联接
+    tmpdir = None
+    if isinstance((cwd:= kwargs.get("cwd")), str):
+        if len(cwd) >= 257:
+            tmpdir = tempfile.TemporaryDirectory(prefix="run_subprocess_")
+            d = os.path.join(tmpdir.name, "_")
+            make_junction(cwd, d)
+            kwargs["cwd"] = d
+            logger.info("cwd too long, replace it with a temp directory.")
 
-    if text:
-        logger.debug(f"stdout: {process.stdout}")
-        logger.debug(f"stderr: {process.stderr}")
-    logger.error(f"Failed to run cmd. {cmd}")
-    raise subprocess.CalledProcessError(process.returncode, cmd, process.stdout, process.stderr)
+    try:
+        process = subprocess.run(cmd, stdout=stdout, stderr=stderr, check=True, 
+                                 text=text, startupinfo=info, **kwargs)
+    except subprocess.CalledProcessError as e:
+        if text:
+            logger.debug(f"stdout: {e.stdout}")
+            logger.debug(f"stderr: {e.stderr}")
+        logger.error(f"Failed to run cmd. {cmd}")
+        raise
+    finally:
+        tmpdir and tmpdir.cleanup()
+
+    logger.info(f"Succeed to run cmd. {cmd}")
+    return process
 
 
 def decode_audio_to_pcm(audio_path: str) -> bytes:
@@ -69,6 +82,7 @@ def make_junction(srcdir: str, dstdir: str) -> None:
     /c      执行完立刻退出
     /J      目录联接
     """
+    os.makedirs(dstdir, exist_ok=True)
     logger.info(f"Make junction. {srcdir} -> {dstdir}")
     cmd = ["cmd", "/c", "mklink", "/J", dstdir, srcdir]
     run_subprocess(cmd)
@@ -101,17 +115,7 @@ def rar_archive(dstrar: str, srcdir: str) -> None:
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
     cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-m0", "-r", "-rr5", "-qo+", "-scf", "-s-", "-ts"] + 
            [dstrar, "*"])
-    
-    # subprocess.Popen cwd 参数输入长路径（大于 256 字符），会抛出 NotADirectoryError
-    # rar.exe 无法输入长路径
-    
-    if len(srcdir) < 257:
-        run_subprocess(cmd, cwd=d)
-    else:
-        with tempfile.TemporaryDirectory(prefix="rar_archive_") as tmpdir:
-            d = os.path.join(tmpdir, "1")
-            make_junction(srcdir, d)
-            run_subprocess(cmd, cwd=d)
+    run_subprocess(cmd, cwd=srcdir)
 
 
 def rar_add(dstrar: str, srcfiles: list[str]) -> None:

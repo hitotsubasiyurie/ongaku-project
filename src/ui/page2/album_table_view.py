@@ -158,12 +158,19 @@ class AlbumTableItemModel(CustomTableItemModel):
             return
         
         for p in range(len(self.theme_kanban.album_kanbans)):
-            # 全字包含 或 正则匹配
-            is_match = all((t.lower() in self._get_data(c, p).lower() 
-                            or re.search(t, self._get_data(c, p), re.IGNORECASE)) for c, t in self.filters.items())
-            if not self.filters or is_match:
+            is_match = True
+            for c, obj in self.filters.items():
+                if isinstance(obj, re.Pattern):
+                    t, pat = obj.pattern, obj
+                else:
+                    t, pat = obj, None
+                data = self._get_data(c, p)
+                # 全字包含 或 正则匹配
+                if not (t.lower() in data.lower() or (pat and pat.search(data, re.IGNORECASE))):
+                    is_match = False
+            if is_match:
                 self.layout_ps.append(p)
-        
+
         # 应用排序
         self._apply_sort()
 
@@ -179,6 +186,9 @@ class AlbumTableItemModel(CustomTableItemModel):
             return self.theme_kanban.album_kanbans[p].album.catalognumber
         elif col == 3:
             return self.theme_kanban.album_kanbans[p].album.date
+        # 轨道标题数据
+        elif col == 100:
+            return "|".join(t.title for t in self.theme_kanban.album_kanbans[p].album.tracks)
 
     def _get_sort_data(self, col: int, p: int) -> str:
         if col == 0:
@@ -247,7 +257,7 @@ class AlbumTableView(QTableView):
     def setup_event(self) -> None:
         """初始化 事件"""
         # 布局变化时 选择第一行
-        self.item_model.layoutChanged.connect(lambda: self.selectRow(0))
+        self.item_model.layoutChanged.connect(lambda: self.hightlight_row(0))
 
     def setup_context_menu(self) -> None:
         """初始化 右键菜单"""
@@ -271,8 +281,6 @@ class AlbumTableView(QTableView):
         # 设置模型
         self.item_model = AlbumTableItemModel(self)
         self.setModel(self.item_model)
-        # 重置、排序、筛选 后 滚动至开头
-        self.item_model.layoutChanged.connect(self.scrollToTop)
 
         self.setItemDelegateForColumn(0, AlbumStateItemDelegate(self))
 
@@ -315,6 +323,7 @@ class AlbumTableView(QTableView):
         column_modes = [QHeaderView.ResizeMode.Fixed if w else QHeaderView.ResizeMode.Stretch for w in column_widths]
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
+        self.setup_event()
         self.setup_context_menu()
 
     def get_selected_ps(self) -> list[int]:

@@ -70,6 +70,7 @@ class Page2Widget(QWidget):
         self.album_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(1, t))
         self.catno_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(2, t))
         self.date_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(3, t))
+        self.track_field.textChanged.connect(lambda t: self.album_table_view.item_model.set_filter(100, t))
         # album_table_view 选中
         self.album_table_view.selectionModel().selectionChanged.connect(self._on_album_view_selected)
         # view 拖入路径

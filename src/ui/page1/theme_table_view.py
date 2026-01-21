@@ -114,11 +114,21 @@ class ThemeTableItemModel(CustomTableItemModel):
 
     def _apply_filters(self) -> None:
         self.layout_ps = []
+        if not self.kanban:
+            return
+
         for p in range(len(self.kanban.theme_kanbans)):
-            # 全字包含 或 正则匹配
-            is_match = all((t.lower() in self._get_data(c, p).lower() 
-                            or re.search(t, self._get_data(c, p), re.IGNORECASE)) for c, t in self.filters.items())
-            if not self.filters or is_match:
+            is_match = True
+            for c, obj in self.filters.items():
+                if isinstance(obj, re.Pattern):
+                    t, pat = obj.pattern, obj
+                else:
+                    t, pat = obj, None
+                data = self._get_data(c, p)
+                # 全字包含 或 正则匹配
+                if not (t.lower() in data.lower() or (pat and pat.search(data, re.IGNORECASE))):
+                    is_match = False
+            if is_match:
                 self.layout_ps.append(p)
         
         # 应用排序
@@ -181,6 +191,11 @@ class ThemeTableView(QTableView):
 
     action_edit_clicked = Signal()
 
+    def setup_event(self) -> None:
+        """初始化 事件"""
+        # 布局变化时 选择第一行
+        self.item_model.layoutChanged.connect(lambda: self.hightlight_row(0))
+
     def setup_context_menu(self) -> None:
         """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -194,8 +209,6 @@ class ThemeTableView(QTableView):
         # 设置模型
         self.item_model = ThemeTableItemModel(self)
         self.setModel(self.item_model)
-        # 重置、排序、筛选 后 滚动至开头
-        self.item_model.layoutChanged.connect(self.scrollToTop)
 
         self.setItemDelegateForColumn(1, ThemeTableItemDelegate(self))
 
@@ -240,6 +253,7 @@ class ThemeTableView(QTableView):
                         QHeaderView.ResizeMode.ResizeToContents, QHeaderView.ResizeMode.ResizeToContents]
         [header.setSectionResizeMode(i, m) for i, m in enumerate(column_modes)]
 
+        self.setup_event()
         self.setup_context_menu()
 
     def get_selected_ps(self) -> list[int]:

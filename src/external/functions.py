@@ -165,13 +165,15 @@ def rar_list(dstrar: str) -> list[str]:
 
     :param dstrar: 目标压缩包路径
     :return filenames: 文件名列表。
+
+    -scf     指定 UTF-8 字符集
     """
     dstrar = os.path.abspath(dstrar)
     logger.info(f"List rar files. {dstrar}")
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = [rar_path, "lb", dstrar]
-    process = run_subprocess(cmd, text=True)
+    cmd = [rar_path, "lb", "-scf", dstrar]
+    process = run_subprocess(cmd, text=True, encoding="utf-8")
     files = [l for l in process.stdout.split("\n") if l]
     logger.debug(f"files: {files}")
     return files
@@ -210,13 +212,15 @@ def rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
     :param filenames: 文件名列表。
 
     :return stats: 仅填充 stat_result.st_size 。
+
+    -scf     指定 UTF-8 字符集
     """
     dstrar = os.path.abspath(dstrar)
     logger.info(f"Stat rar file. {dstrar} {filenames}")
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = [rar_path, "lt", dstrar]
-    process = run_subprocess(cmd, text=True)
+    cmd = [rar_path, "lt", "-scf", dstrar]
+    process = run_subprocess(cmd, text=True, encoding="utf-8")
 
     _dict = {}
     for s in process.stdout.split("\n\n"):
@@ -229,5 +233,4 @@ def rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
     stats = [_dict.get(n) for n in filenames]
     logger.debug(f"stats: {stats}")
     return stats
-
 

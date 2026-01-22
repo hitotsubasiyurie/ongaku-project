@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.kanban import ThemeKanBan
 from src.lang import MESSAGE
+from src.external import convert_audio_bytes_to_wav
 from src.ui.common import with_busy_cursor
 from src.ui.page3.music_player_bar import MusicPlayerBar
 from src.ui.page3.play_table_view import PlayTableView
@@ -84,8 +85,8 @@ class Page3Widget(QWidget):
             QShortcut(key, self, activated=self._play_selected)
         QShortcut(QKeySequence("Alt+Up"), self, activated=lambda: self._search_no_mark_ix(-1))
         QShortcut(QKeySequence("Alt+Down"), self, activated=lambda: self._search_no_mark_ix(1))
-        QShortcut(QKeySequence("-"), self, activated=lambda: [self._set_track_mark([], "0", force=True), self.play_table_view.hightlight_row(self._select_next().row())])
-        QShortcut(QKeySequence("+"), self, activated=lambda: [self._set_track_mark([], "1", force=True), self.play_table_view.hightlight_row(self._select_next().row())])
+        QShortcut(QKeySequence("-"), self, activated=lambda: [self._set_track_mark([], "0", force=True), self.play_table_view.hightlight_row(self._index_below_selected().row())])
+        QShortcut(QKeySequence("+"), self, activated=lambda: [self._set_track_mark([], "1", force=True), self.play_table_view.hightlight_row(self._index_below_selected().row())])
         QShortcut(Qt.Key.Key_Escape, self, activated=
                   lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
         QShortcut(Qt.Key.Key_Period, self, activated=lambda: self.play_table_view.hightlight_row(self.play_table_view.item_model.locate_playing_row()))
@@ -126,7 +127,7 @@ class Page3Widget(QWidget):
                 continue
             self.play_table_view.item_model.setData(ix, mark, Qt.ItemDataRole.EditRole)
 
-    def _select_next(self) -> QModelIndex:
+    def _index_below_selected(self) -> QModelIndex:
         ixs = self.play_table_view.selectedIndexes()
         if not ixs:
             return
@@ -135,21 +136,23 @@ class Page3Widget(QWidget):
 
         return next_ix if next_ix.isValid() else ix
 
+    @with_busy_cursor
     def _play(self, row: int) -> None:
         p = self.play_table_view.item_model.layout_ps[row]
         i, j = self.play_table_view.item_model.kanban_ij[p]
-        file = self.theme_kanban.album_kanbans[i].track_filenames[j]
-        self.play_table_view.hightlight_row(row)
+        filename = self.theme_kanban.album_kanbans[i].track_filenames[j]
+        data = self.theme_kanban.album_kanbans[i].read_file(filename)
         # 播放
-        self.music_player_bar.set_media(file)
+        self.music_player_bar.set_media_data(convert_audio_bytes_to_wav(data))
+        self.play_table_view.hightlight_row(row)
         # 更新播放图标
         self.play_table_view.item_model.playing_ij = (i, j)
         self.play_table_view.verticalHeader().viewport().update()
         # 更新 track mark
         self._set_track_mark([row], "0", force=False)
 
-        # file 为空时
-        if not file:
+        # 文件不存在时
+        if not filename:
             self._on_playback_finished()
 
     # 事件动作
@@ -181,7 +184,7 @@ class Page3Widget(QWidget):
 
     def _on_playback_finished(self) -> None:
         # 清空播放器
-        self.music_player_bar.set_media("")
+        self.music_player_bar.set_media_data()
         # 高光下一行
         playing_row = self.play_table_view.item_model.locate_playing_row()
         playing_row is not None and self.play_table_view.hightlight_row(playing_row + 1)

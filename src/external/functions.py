@@ -54,10 +54,30 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
 
 
 def decode_audio_to_pcm(audio_path: str) -> bytes:
+    """
+    解码音频为裸 PCM 数据。
+
+    -f s16le    signed 16-bit little-endian PCM
+    """
     logger.info(f"Decode audio to pcm. {audio_path}")
     ffmpeg_path = os.path.abspath(os.path.join("bin", "ffmpeg.exe"))
     cmd = [ffmpeg_path, "-i", audio_path, "-f", "s16le", "-"]
     process = run_subprocess(cmd)
+    return process.stdout
+
+
+def convert_audio_bytes_to_wav(audio_data: bytes) -> bytes:
+    """
+    转码音频数据为 WAV 数据。
+    """
+    if not audio_data:
+        logger.info(f"Empty audio data.")
+        return b""
+    
+    logger.info(f"Convert audio data to wav data. {len(audio_data)} bytes")
+    ffmpeg_path = os.path.abspath(os.path.join("bin", "ffmpeg.exe"))
+    cmd = [ffmpeg_path, "-i", "pipe:0", "-f", "wav", "-"]
+    process = run_subprocess(cmd, input=audio_data)
     return process.stdout
 
 

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QTime, QUrl, Signal
+from PySide6.QtCore import Qt, QTime, QUrl, Signal, QByteArray, QBuffer, QIODevice
 from PySide6.QtGui import QMouseEvent, QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import (QWidget, QSlider, QLabel, QPushButton, QHBoxLayout, QVBoxLayout,
@@ -90,19 +90,36 @@ class MusicPlayerBar(QWidget):
         super().__init__(parent)
 
         # 播放器
+        self.media_data = QByteArray()
+        self.play_buffer = QBuffer()
+
         self.player = QMediaPlayer(self)
         self.output = QAudioOutput(self)
         self.player.setAudioOutput(self.output)
+        # 播放结束后暂停
         self.player.setLoops(QMediaPlayer.Loops.Once)
 
         self.setup_ui()
         self.setup_event()
 
-    def set_media(self, file: str = "") -> None:
-        url = QUrl.fromLocalFile(file)
-        self.player.setSource(url)
-        file and self.toggle_play()
-        not file and self.time_label.clear()
+    def set_media_data(self, wav_data: bytes = b"") -> None:
+        # 关闭旧 Buffer
+        self.player.stop()
+        self.play_buffer.close()
+
+        if not wav_data:
+            self.player.setSource(QUrl())
+            self.slider.setValue(0)
+            self.time_label.clear()
+            self.play_btn.setIcon(self.play_btn_icons[0])
+            return
+
+        self.media_data = QByteArray(wav_data)
+        self.play_buffer.setBuffer(self.media_data)
+        self.play_buffer.open(QIODevice.OpenModeFlag.ReadOnly)
+        self.player.setSourceDevice(self.play_buffer)
+
+        self.toggle_play()
 
     def toggle_play(self) -> None:
         if self.player.isPlaying():

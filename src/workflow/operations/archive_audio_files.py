@@ -20,19 +20,19 @@ OPERATION_NAME = MESSAGE.WF_20251204_190036
 # 业务函数
 
 IS_APPLY = "IS_APPLY"
-ALBUM_SIMILARITY = "ALBUM_SIMILARITY"
-TRACK_SIMILARITY = "TRACK_SIMILARITY"
+_ALBUM_SIMILARITY = "_ALBUM_SIMILARITY"
+_TRACK_SIMILARITY = "_TRACK_SIMILARITY"
 
 SRC_DIRECTORY = "SRC_DIRECTORY"
 DST_DIRECTORY = "DST_DIRECTORY"
 
-RESOURCE_ALBUM = "RESOURCE_ALBUM"
-MATCHING_ALBUM = "MATCHING_ALBUM"
+_RESOURCE_ALBUM = "_RESOURCE_ALBUM"
+_MATCHING_ALBUM = "_MATCHING_ALBUM"
 
 SRC_AUDIOFILE = "SRC_AUDIOFILE"
 DST_AUDIOFILE = "DST_AUDIOFILE"
-SRC_TRACK = "SRC_TRACK"
-DST_TRACK = "DST_TRACK"
+_SRC_TRACK = "_SRC_TRACK"
+_DST_TRACK = "_DST_TRACK"
 
 
 def generate_archive_detail(theme_directory: Path, dst_album: Album, src_dir: Path, 
@@ -51,20 +51,20 @@ def generate_archive_detail(theme_directory: Path, dst_album: Album, src_dir: Pa
 
     d = {}
     d[IS_APPLY] = False
-    d[ALBUM_SIMILARITY] = format(album_similarity, '.2f')
-    d[TRACK_SIMILARITY] = format(t_aver_similarity, '.2f')
+    d[_ALBUM_SIMILARITY] = format(album_similarity, '.2f')
+    d[_TRACK_SIMILARITY] = format(t_aver_similarity, '.2f')
     d[SRC_DIRECTORY] = str(src_dir)
     d[DST_DIRECTORY] = str(Path(theme_directory, album_stemname(dst_album)))
-    d[RESOURCE_ALBUM] = album_to_unique_str(src_album)
-    d[MATCHING_ALBUM] = album_to_unique_str(dst_album)
+    d[_RESOURCE_ALBUM] = album_to_unique_str(src_album)
+    d[_MATCHING_ALBUM] = album_to_unique_str(dst_album)
     d["track"] = []
     dst_track_names = track_stemnames(dst_album)
     for t_row, t_col in zip(t_row_ind, t_col_ind):
         dd = {}
         dd[SRC_AUDIOFILE] = src_audios[t_row].name
         dd[DST_AUDIOFILE] = dst_track_names[t_col] + src_audios[t_row].suffix.lower()
-        dd[SRC_TRACK] = track_to_unique_str(src_tracks[t_row])
-        dd[DST_TRACK] = track_to_unique_str(dst_album.tracks[t_col])
+        dd[_SRC_TRACK] = track_to_unique_str(src_tracks[t_row])
+        dd[_DST_TRACK] = track_to_unique_str(dst_album.tracks[t_col])
         d["track"].append(dd)
 
     return d
@@ -119,6 +119,7 @@ def main() -> None:
     dst_parent = easy_linput(MESSAGE.WF_20251204_190040, return_type=Path)
     filter_trackcount = easy_linput(MESSAGE.WF_20251204_190041, default="Y", return_type=str)  == "Y"
 
+    theme_directory = Path(dst_parent, metadata_file.stem)
     archive_details_file = Path(global_settings.temp_directory, "archive_details.toml")
 
     # 存在音频 的目录 认为是专辑目录
@@ -135,7 +136,7 @@ def main() -> None:
     a_row_ind, a_col_ind, _, a_sim_matrix = albums_assignment(src_albums, dst_albums, filter_trackcount=filter_trackcount)
 
     for a_row, a_col in zip(a_row_ind, a_col_ind):
-        detail = generate_archive_detail(Path(dst_parent, metadata_file.stem), dst_albums[a_col], 
+        detail = generate_archive_detail(theme_directory, dst_albums[a_col], 
                                          src_dirs[a_row], src_albums[a_row], a_sim_matrix[a_row][a_col])
         archive_details.append(detail)
 

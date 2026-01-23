@@ -8,7 +8,7 @@ import requests
 
 from src.core.basemodels import Album, Disc, Track
 from src.core.logger import logger, logger_watched
-from src.mdsource.common import assemble_albums_from_discs
+from src.scraper.common import assemble_albums_from_discs
 from src.utils import retry, RateLimiter
 
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')

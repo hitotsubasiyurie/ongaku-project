@@ -1,4 +1,5 @@
 import itertools
+import functools
 import shutil
 from pathlib import Path
 
@@ -13,6 +14,11 @@ from src.lang import MESSAGE
 from src.utils import dump_toml
 from src.workflow.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str,
                                  track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
+
+
+# 缓存
+analyze_album = functools.cache(analyze_album)
+
 
 OPERATION_NAME = MESSAGE.WF_20251204_190036
 
@@ -35,14 +41,11 @@ _SRC_TRACK = "_SRC_TRACK"
 _DST_TRACK = "_DST_TRACK"
 
 
-def generate_archive_detail(theme_directory: Path, dst_album: Album, src_dir: Path, 
-                             src_album: Album = None, album_similarity: float = None) -> dict:
+def generate_archive_detail(theme_directory: Path, src_dir: Path, dst_album: Album) -> dict:
     """生成归档细节"""
-    # 计算 可选参数
-    if not src_album:
-        src_album = analyze_album(src_dir)
-    if not album_similarity:
-        album_similarity = count_album_similarity(src_album, dst_album)
+
+    src_album = analyze_album(src_dir)
+    album_similarity = count_album_similarity(src_album, dst_album)
 
     src_audios = list(itertools.chain.from_iterable(src_dir.glob(f"*{ext}") for ext in AUDIO_EXTS))
     src_tracks = list(map(analyze_track, src_audios))
@@ -136,8 +139,7 @@ def main() -> None:
     a_row_ind, a_col_ind, _, a_sim_matrix = albums_assignment(src_albums, dst_albums, filter_trackcount=filter_trackcount)
 
     for a_row, a_col in zip(a_row_ind, a_col_ind):
-        detail = generate_archive_detail(theme_directory, dst_albums[a_col], 
-                                         src_dirs[a_row], src_albums[a_row], a_sim_matrix[a_row][a_col])
+        detail = generate_archive_detail(theme_directory, src_dirs[a_row], dst_albums[a_col])
         archive_details.append(detail)
 
     dump_toml({str(i+1): d for i, d in enumerate(archive_details)}, archive_details_file)

@@ -7,7 +7,7 @@ from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
 from src.core.settings import global_settings
 from src.lang import MESSAGE
-from src.mdsource.vgmdb_api import VGMdbAPI
+from src.scraper.vgmdb_api import VGMdbAPI
 from src.workflow.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_194920

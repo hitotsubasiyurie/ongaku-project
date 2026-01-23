@@ -9,31 +9,18 @@ from lxml import etree
 
 from src.core.basemodels import Album, Track
 from src.core.logger import logger
-from src.utils import retry, RateLimiter
+from src.scraper._scraper import Scraper
 
 
-class DoujinMusicInfoAPI:
+class DoujinMusicInfoScraper(Scraper):
 
-    # 限制频率 1.5 秒 1 次
-    _rate_limiter = RateLimiter(interval=1.5)
-    # 超时 8 秒
-    _REQUEST_TIMEOUT = 8
-    
     ROOT_URL = "https://www.dojin-music.info"
     CIRCLE_PAGE_URL = f"{ROOT_URL}/circle/{{}}"
     CD_PAGE_URL = f"{ROOT_URL}/cd/{{}}"
 
     _HEADERS = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
-        # 界面信息 优先日语
-        "cookie": "gfa_lang=ja;"
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
     }
-
-    def __init__(self, cache_dir: str = None) -> None:
-        """
-        :param cache_dir: 可选，缓存目录路径
-        """
-        self._cache_dir = cache_dir
 
     def get_cd_ids_from_circle(self, circle_id: str) -> None:
         """
@@ -72,7 +59,6 @@ class DoujinMusicInfoAPI:
         return Album(catalognumber="", date=date, album=album_title, 
                      tracks=self._get_tracks(html), links=[url])
 
-    
     # 内部方法
 
     @staticmethod
@@ -103,23 +89,6 @@ class DoujinMusicInfoAPI:
         :return: 标准格式，如 "2018-12-05"
         """
         return date.replace("/", "-")
-
-    def _cached_request_get(self, url: str) -> requests.Response:
-        """
-        带缓存的 request.get 。
-        """
-        cache = Path(self._cache_dir, str(uuid.uuid5(uuid.NAMESPACE_URL, name=url)))
-        if cache.exists():
-            logger.debug(f"In cache. {url}")
-            return pickle.loads(cache.read_bytes())
-        resp = self._request_get(url)
-        cache.write_bytes(pickle.dumps(resp))
-        return resp
-    
-    @retry(10, delay=5)
-    @_rate_limiter
-    def _request_get(self, url: str) -> requests.Response:
-        return requests.get(url, timeout=DoujinMusicInfoAPI._REQUEST_TIMEOUT, headers=DoujinMusicInfoAPI._HEADERS)
 
 
 

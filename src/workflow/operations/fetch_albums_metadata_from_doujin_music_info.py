@@ -7,7 +7,7 @@ from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
 from src.core.settings import global_settings
 from src.lang import MESSAGE
-from src.scraper.dojin_music_info_api import DoujinMusicInfoAPI
+from src.scraper.dojin_music_info_api import DoujinMusicInfoScraper
 from src.workflow.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_194820
@@ -32,7 +32,7 @@ def main():
     cache_dir = Path(global_settings.temp_directory, "cache")
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    api = DoujinMusicInfoAPI(cache_dir=cache_dir)
+    api = DoujinMusicInfoScraper(cache_dir=cache_dir)
 
     # 获取 cd ids
 
@@ -50,7 +50,7 @@ def main():
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
 
     # 过滤 已存在元数据 的 album ids
-    skip_a_ids = [link.split("/")[-1] for a in exist_albums for link in a.links if link.startswith(DoujinMusicInfoAPI.ROOT_URL)]
+    skip_a_ids = [link.split("/")[-1] for a in exist_albums for link in a.links if link.startswith(DoujinMusicInfoScraper.ROOT_URL)]
     cd_ids = list(set(cd_ids) - set(skip_a_ids))
 
     # 开始 获取 元数据

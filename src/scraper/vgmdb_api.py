@@ -11,16 +11,10 @@ from lxml import etree
 from src.core.basemodels import Album, Disc, Track
 from src.core.exception import OngakuException
 from src.core.logger import logger, logger_watched
-from src.scraper.common import assemble_albums_from_discs
-from src.utils import retry, RateLimiter
+from src.scraper._scraper import Scraper
 
 
-class VGMdbAPI:
-    
-    # 限制频率 1.5 秒 1 次
-    _rate_limiter = RateLimiter(interval=1.5)
-    # 超时 8 秒
-    _REQUEST_TIMEOUT = 8
+class VGMdbAPI(Scraper):
     
     ROOT_URL = "https://vgmdb.net"
     PRODUCT_PAGE_URL = f"{ROOT_URL}/product/{{}}"
@@ -129,12 +123,12 @@ class VGMdbAPI:
         # https://vgmdb.net/album/105234 tracklist 为空
         if not tl_id:
             logger.warning(f"No tracklist span. {url}")
-            return assemble_albums_from_discs(catnos, date, album_title, [], url)
+            return VGMdbAPI.split_multi_disc_album(catnos, date, album_title, [], url)
 
         tl_span: etree._Element = html.xpath(f"//span[@class='tl' and @id='{tl_id[0]}']")[0]
         discs = self._get_discs(tl_span)
 
-        return assemble_albums_from_discs(catnos, date, album_title, discs, url)
+        return VGMdbAPI.split_multi_disc_album(catnos, date, album_title, discs, url)
 
     # 内部方法
 
@@ -255,21 +249,4 @@ class VGMdbAPI:
             return match.group(1)
         logger.warning(f"Failed to parse date. {date}")
         return date
-
-    def _cached_request_get(self, url: str) -> requests.Response:
-        """
-        带缓存的 request.get 。
-        """
-        cache = Path(self._cache_dir, str(uuid.uuid5(uuid.NAMESPACE_URL, name=url)))
-        if cache.exists():
-            logger.debug(f"In cache. {url}")
-            return pickle.loads(cache.read_bytes())
-        resp = self._request_get(url)
-        cache.write_bytes(pickle.dumps(resp))
-        return resp
-    
-    @retry(10, delay=5)
-    @_rate_limiter
-    def _request_get(self, url: str) -> requests.Response:
-        return requests.get(url, timeout=VGMdbAPI._REQUEST_TIMEOUT, headers=VGMdbAPI._HEADERS)
 

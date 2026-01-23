@@ -4,27 +4,22 @@ import re
 import uuid
 from pathlib import Path
 
-import requests
-
 from src.core.basemodels import Album, Disc, Track
 from src.core.logger import logger, logger_watched
-from src.scraper.common import assemble_albums_from_discs
-from src.utils import retry, RateLimiter
+from src.scraper._scraper import Scraper
+
 
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')
 
 
-class MusicBrainzAPI:
-
-    # 限制频率 1.5 秒 1 次
-    _rate_limiter = RateLimiter(interval=1.5)
-    # 超时 8 秒
-    _REQUEST_TIMEOUT = 8
+class MusicBrainzAPI(Scraper):
 
     ROOT_URL = "https://musicbrainz.org/ws/2"
     RELEASE_PAGE_URL = "https://beta.musicbrainz.org/release/{}"
     
-    _HEADERS = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"}
+    _HEADERS = {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
+    }
 
     def __init__(self, cache_dir: str = None) -> None:
         """
@@ -179,7 +174,7 @@ class MusicBrainzAPI:
         discs = sorted(MusicBrainzAPI._build_disc_from_release(release), key=lambda d: d.discnumber)
 
         url = MusicBrainzAPI.RELEASE_PAGE_URL.format(release["id"])
-        return assemble_albums_from_discs(catnos, date, title, discs, url)
+        return MusicBrainzAPI.split_multi_disc_album(catnos, date, title, discs, url)
 
     @staticmethod
     def _build_disc_from_release(release: dict) -> list[Disc]:
@@ -201,21 +196,4 @@ class MusicBrainzAPI:
 
         logger.info(f"Got {len(disc_models)} discs from release. {[d.disc for d in disc_models]}")
         return disc_models
-
-    def _cached_request_get(self, url: str) -> requests.Response:
-        """
-        带缓存的 request.get 。
-        """
-        cache = Path(self._cache_dir, str(uuid.uuid5(uuid.NAMESPACE_URL, name=url)))
-        if cache.exists():
-            logger.debug(f"In cache. {url}")
-            return pickle.loads(cache.read_bytes())
-        resp = self._request_get(url)
-        cache.write_bytes(pickle.dumps(resp))
-        return resp
-    
-    @retry(10, delay=5)
-    @_rate_limiter
-    def _request_get(self, url: str) -> requests.Response:
-        return requests.get(url, timeout=MusicBrainzAPI._REQUEST_TIMEOUT, headers=MusicBrainzAPI._HEADERS)
 

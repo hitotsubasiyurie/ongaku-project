@@ -12,7 +12,7 @@ from src.scraper._scraper import Scraper
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')
 
 
-class MusicBrainzAPI(Scraper):
+class MusicBrainzScraper(Scraper):
 
     ROOT_URL = "https://musicbrainz.org/ws/2"
     RELEASE_PAGE_URL = "https://beta.musicbrainz.org/release/{}"
@@ -171,10 +171,10 @@ class MusicBrainzAPI(Scraper):
 
         title = release["title"]
 
-        discs = sorted(MusicBrainzAPI._build_disc_from_release(release), key=lambda d: d.discnumber)
+        discs = sorted(MusicBrainzScraper._build_disc_from_release(release), key=lambda d: d.discnumber)
 
-        url = MusicBrainzAPI.RELEASE_PAGE_URL.format(release["id"])
-        return MusicBrainzAPI.split_multi_disc_album(catnos, date, title, discs, url)
+        url = MusicBrainzScraper.RELEASE_PAGE_URL.format(release["id"])
+        return MusicBrainzScraper.split_multi_disc_album(catnos, date, title, discs, url)
 
     @staticmethod
     def _build_disc_from_release(release: dict) -> list[Disc]:

@@ -14,7 +14,7 @@ from src.core.logger import logger, logger_watched
 from src.scraper._scraper import Scraper
 
 
-class VGMdbAPI(Scraper):
+class VGMdbScraper(Scraper):
     
     ROOT_URL = "https://vgmdb.net"
     PRODUCT_PAGE_URL = f"{ROOT_URL}/product/{{}}"
@@ -123,12 +123,12 @@ class VGMdbAPI(Scraper):
         # https://vgmdb.net/album/105234 tracklist 为空
         if not tl_id:
             logger.warning(f"No tracklist span. {url}")
-            return VGMdbAPI.split_multi_disc_album(catnos, date, album_title, [], url)
+            return VGMdbScraper.split_multi_disc_album(catnos, date, album_title, [], url)
 
         tl_span: etree._Element = html.xpath(f"//span[@class='tl' and @id='{tl_id[0]}']")[0]
         discs = self._get_discs(tl_span)
 
-        return VGMdbAPI.split_multi_disc_album(catnos, date, album_title, discs, url)
+        return VGMdbScraper.split_multi_disc_album(catnos, date, album_title, discs, url)
 
     # 内部方法
 

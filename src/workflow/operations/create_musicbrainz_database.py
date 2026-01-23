@@ -9,7 +9,7 @@ from tqdm import tqdm
 from src.core.basemodels import Album
 from src.core.logger import logger, lprint
 from src.lang import MESSAGE
-from src.scraper.musicbrainz_api import MusicBrainzAPI
+from scraper.musicbrainz_scraper import MusicBrainzScraper
 from src.scraper.musicbrainz_database import MusicBrainzDatabase
 from src.workflow.common import easy_linput
 
@@ -33,7 +33,7 @@ def release_to_albums(recordings: dict, release: dict) -> list[Album]:
         for track in media.get("tracks", []):
             track["recording"].update(recordings.get(track["recording"]["id"], {}))
     
-    albums = MusicBrainzAPI._build_album_from_release(release)
+    albums = MusicBrainzScraper._build_album_from_release(release)
 
     return albums
 

@@ -7,7 +7,7 @@ from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
 from src.core.settings import global_settings
 from src.lang import MESSAGE
-from src.scraper.musicbrainz_api import MusicBrainzAPI
+from scraper.musicbrainz_scraper import MusicBrainzScraper
 from src.scraper.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
 from src.workflow.common import easy_linput
 
@@ -33,7 +33,7 @@ def main():
     cache_dir = Path(global_settings.temp_directory, "cache")
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    api = MusicBrainzAPI(cache_dir=cache_dir)
+    api = MusicBrainzScraper(cache_dir=cache_dir)
 
     # 获取 release ids
     r_ids = []
@@ -49,7 +49,7 @@ def main():
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
 
     # 过滤 已存在元数据 的 album ids
-    skip_r_ids = [link.split("/")[-1] for a in exist_albums for link in a.links if link.startswith(MusicBrainzAPI.RELEASE_PAGE_URL)]
+    skip_r_ids = [link.split("/")[-1] for a in exist_albums for link in a.links if link.startswith(MusicBrainzScraper.RELEASE_PAGE_URL)]
     r_ids = list(set(r_ids) - set(skip_r_ids))
 
     # 开始 获取 元数据

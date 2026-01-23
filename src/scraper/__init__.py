@@ -1,3 +1,3 @@
-from src.scraper.musicbrainz_api import MusicBrainzAPI
+from scraper.musicbrainz_scraper import MusicBrainzScraper
 from src.scraper.musicbrainz_database import MusicBrainzDatabase
-from src.scraper.vgmdb_api import VGMdbAPI
+from scraper.vgmdb_scraper import VGMdbScraper

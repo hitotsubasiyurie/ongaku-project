@@ -7,7 +7,7 @@ from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
 from src.core.settings import global_settings
 from src.lang import MESSAGE
-from src.scraper.vgmdb_api import VGMdbAPI
+from scraper.vgmdb_scraper import VGMdbScraper
 from src.workflow.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_194920
@@ -30,7 +30,7 @@ def main():
     cache_dir = Path(global_settings.temp_directory, "cache")
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    api = VGMdbAPI(cache_dir=cache_dir)
+    api = VGMdbScraper(cache_dir=cache_dir)
 
     # 获取 album ids
 
@@ -50,7 +50,7 @@ def main():
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
 
     # 过滤 已存在元数据 的 album ids
-    skip_a_ids = [link.split("/")[-1] for a in exist_albums for link in a.links if link.startswith(VGMdbAPI.ROOT_URL)]
+    skip_a_ids = [link.split("/")[-1] for a in exist_albums for link in a.links if link.startswith(VGMdbScraper.ROOT_URL)]
     a_ids = list(set(a_ids) - set(skip_a_ids))
 
     # 开始 获取 元数据

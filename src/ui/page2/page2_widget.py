@@ -93,7 +93,7 @@ class Page2Widget(QWidget):
     def setup_shortcut(self) -> None:
         """初始化 快捷键"""
         QShortcut(Qt.Key.Key_Escape, self, activated=
-            lambda: [x.clear() for x in [self.album_field, self.catno_field, self.date_field]])
+            lambda: [x.clear() for x in [self.album_field, self.catno_field, self.date_field, self.track_field]])
         QShortcut(Qt.Key.Key_QuoteLeft, self, activated=self.cover_label.change_opacity)
 
     def __init__(self, parent: QWidget = None) -> None:
@@ -115,7 +115,7 @@ class Page2Widget(QWidget):
     def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
         self.theme_kanban = theme_kanban
         # 清空搜索框
-        [x.clear() for x in [self.album_field, self.catno_field, self.date_field]]
+        [x.clear() for x in [self.album_field, self.catno_field, self.date_field, self.track_field]]
         self.cover_label.set_album_kanban(None)
         self.album_table_view.item_model.reset_theme_kanban(theme_kanban)
         self.track_table_view.item_model.reset_album_kanban(None)

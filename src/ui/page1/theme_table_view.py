@@ -280,6 +280,5 @@ class ThemeTableView(QTableView):
         ix = self.item_model.createIndex(row, 1)
         self.setCurrentIndex(ix)
         self.scrollTo(ix, QTableView.ScrollHint.PositionAtCenter)
-        self.setFocus()
 
 

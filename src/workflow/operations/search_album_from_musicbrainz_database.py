@@ -11,8 +11,8 @@ from src.scraper.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, 
 from src.workflow.common import abstract_tracks_info
 from src.workflow.common import easy_linput
 
-OPERATION_NAME = MESSAGE.WF_20251204_195520
 
+OPERATION_NAME = MESSAGE.WF_20251204_195520
 
 # 主函数
 
@@ -31,10 +31,10 @@ def main():
     order_mask = easy_linput(MESSAGE.WF_20251204_195526, default="111", return_type=str)
     limit = easy_linput(MESSAGE.WF_20251204_195527, default=10, return_type=int)
 
-    result_file = metadata_file.parent / f"Fetch-{datetime.now().strftime("%Y%m%d-%H%M%S")}.toml"
+    result_file = metadata_file.parent / f"musicbrainz_database-{datetime.now().strftime("%Y%m%d-%H%M%S")}.toml"
 
-    lprint(MESSAGE.WF_20251204_195528)
     pg_ctl_start(pgdata)
+    lprint(MESSAGE.WF_20251204_195528)
 
     database = MusicBrainzDatabase()
 
@@ -71,8 +71,8 @@ def main():
 
     lprint(MESSAGE.WF_20251204_195529.format(len(result_albums), result_file))
 
-    lprint(MESSAGE.WF_20251204_195530)
     pg_ctl_stop(pgdata)
+    lprint(MESSAGE.WF_20251204_195530)
 
 
 

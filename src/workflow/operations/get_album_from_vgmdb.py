@@ -7,8 +7,9 @@ from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
 from src.core.settings import global_settings
 from src.lang import MESSAGE
-from scraper.vgmdb_scraper import VGMdbScraper
+from src.scraper import VGMdbScraper
 from src.workflow.common import easy_linput
+
 
 OPERATION_NAME = MESSAGE.WF_20251204_194920
 
@@ -16,7 +17,8 @@ OPERATION_NAME = MESSAGE.WF_20251204_194920
 def main():
     lprint(MESSAGE.WF_20251204_194921)
 
-    input_path = easy_linput(MESSAGE.WF_20251204_194922, return_type=Path)
+    input_path = easy_linput(MESSAGE.WF_20251204_194922.format(global_settings.temp_directory), 
+                             default=Path(global_settings.temp_directory), return_type=Path)
     input_urls = easy_linput(MESSAGE.WF_20251204_194923, return_type=str)
 
     # 创建目录
@@ -25,12 +27,9 @@ def main():
         metadata_file = input_path
     else:
         input_path.mkdir(parents=True, exist_ok=True)
-        metadata_file = input_path / f"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"
+        metadata_file = input_path / f"vgmdb-{datetime.now().strftime("%Y%m%d-%H%M%S")}.toml"
 
-    cache_dir = Path(global_settings.temp_directory, "cache")
-    cache_dir.mkdir(parents=True, exist_ok=True)
-
-    api = VGMdbScraper(cache_dir=cache_dir)
+    scraper = VGMdbScraper()
 
     # 获取 album ids
 
@@ -40,9 +39,12 @@ def main():
             a_ids.append(url.split("/album/")[1].split("/")[0])
         elif "/product/" in url:
             product_id = url.split("/")[-1]
-            a_ids.extend(api.get_album_ids_from_product(product_id))
+            a_ids.extend(scraper.get_album_ids_from_product(product_id))
+        elif "/artist/" in url:
+            artist_id = url.split("/")[-1]
+            a_ids.extend(scraper.get_album_ids_from_artist(artist_id))
         elif "/search?" in url:
-            a_ids.extend(api.get_album_ids_from_search_page(url))
+            a_ids.extend(scraper.get_album_ids_from_search_page(url))
         else:
             lprint(MESSAGE.WF_20251204_194924)
             return
@@ -59,7 +61,7 @@ def main():
     pbar = tqdm(total=len(a_ids), mininterval=0)
     for a_id in a_ids:
         try:
-            new_albums.extend(api.get_albums(a_id))
+            new_albums.extend(scraper.get_albums(a_id))
         except Exception as e:
             logger.error("", exc_info=1)
             raise e
@@ -71,3 +73,6 @@ def main():
     dump_albums_to_toml(exist_albums + new_albums, metadata_file)
     
     lprint(MESSAGE.WF_20251204_194925.format(len(new_albums), metadata_file))
+
+
+

@@ -254,3 +254,75 @@ def rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
     logger.debug(f"stats: {stats}")
     return stats
 
+
+def init_pgdata(pgdata: str) -> None:
+    """
+    初始化 PostgreSQL 数据目录。
+
+    :param pgdata: 数据目录
+
+    --auth=trust        local trust
+    --encoding=UTF8     数据库编码
+    --no-locale         相当于 --locale=C ，与具体语言和地域无关的默认区域设置
+    --nosync            不等待文件安全写入磁盘
+    --username=postgres 超级用户名
+    """
+    pgdata = os.path.abspath(pgdata)
+    logger.info(f"Init pgdata. {pgdata}")
+
+    initdb_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "initdb.exe"))
+    cmd = [initdb_exe, "--auth=trust", "--encoding=UTF8", "--no-locale", "--nosync", 
+           "--username=postgres", "-D", pgdata]
+    run_subprocess(cmd, text=True)
+
+
+def pg_ctl_start(pgdata: str) -> None:
+    """
+    启动 PostgreSQL 数据库。
+
+    :param pgdata: 数据目录
+
+    --silent        只打印错误
+    """
+    pgdata = os.path.abspath(pgdata)
+    logger.info(f"Start postgres. {pgdata}")
+
+    pg_ctl_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_ctl.exe"))
+    cmd = [pg_ctl_exe, "--silent", "-D", pgdata, "start"]
+    run_subprocess(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+
+
+def pg_ctl_stop(pgdata: str) -> None:
+    """
+    停止 PostgreSQL 数据库。
+
+    :param pgdata: 数据目录
+
+    --silent        只打印错误
+    """
+    pgdata = os.path.abspath(pgdata)
+    logger.info(f"Stop postgres. {pgdata}")
+
+    pg_ctl_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_ctl.exe"))
+    cmd = [pg_ctl_exe, "--silent", "-D", pgdata, "stop"]
+    run_subprocess(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+
+
+def pg_dump_database(dbname: str, dmpfile: str) -> None:
+    """
+    备份 PostgreSQL 数据库。
+
+    :param dbname: 数据库名
+    :param dmpfile: 转储文件路径
+
+    -Upostgres  用户名
+    -Fc         自定义格式的归档文件
+    """
+    dmpfile = os.path.abspath(dmpfile)
+    logger.info(f"pg_dump database. {dbname} {dmpfile}")
+
+    pg_dump_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_dump.exe"))
+    cmd = [pg_dump_exe, "-Upostgres", "-Fc", "-f", dmpfile, dbname]
+    run_subprocess(cmd, text=True)
+
+

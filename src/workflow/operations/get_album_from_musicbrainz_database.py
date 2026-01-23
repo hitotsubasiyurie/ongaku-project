@@ -31,7 +31,7 @@ def main():
     order_mask = easy_linput(MESSAGE.WF_20251204_195526, default="111", return_type=str)
     limit = easy_linput(MESSAGE.WF_20251204_195527, default=10, return_type=int)
 
-    result_file = metadata_file.parent / f"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"
+    result_file = metadata_file.parent / f"Fetch-{datetime.now().strftime("%Y%m%d-%H%M%S")}.toml"
 
     lprint(MESSAGE.WF_20251204_195528)
     pg_ctl_start(pgdata)

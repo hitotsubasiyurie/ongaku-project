@@ -1,41 +1,18 @@
-import subprocess
 from datetime import datetime
 from typing import Any
 
 import orjson
-from psycopg.connection import Connection
+import psycopg
 from psycopg.rows import tuple_row
 
 from src.core.basemodels import Album
 from src.core.exception import OngakuException
 from src.core.logger import logger
+from src.external import init_pgdata, pg_ctl_start, pg_ctl_stop
 from src.workflow.common import abstract_tracks_info
 
 
-def init_pgdata(pgdata: str) -> None:
-    cmd = fr".\bin\pgsql\bin\initdb.exe --auth=trust --encoding=UTF8 --no-locale --nosync \
-        --username=postgres -D {pgdata}"
-    process = subprocess.run(cmd)
-    logger.info(f"Initdb pgdata successfully. {cmd}")
-    logger.debug(process.stdout)
-    logger.debug(process.stderr)
-
-
-def pg_ctl_start(pgdata: str) -> None:
-    cmd = fr".\bin\pgsql\bin\pg_ctl.exe start --silent -D {pgdata}"
-    process = subprocess.run(cmd)
-    logger.info(f"pg_ctl start successfully. {cmd}")
-    logger.debug(process.stdout)
-    logger.debug(process.stderr)
-
-
-def pg_ctl_stop(pgdata: str) -> None:
-    cmd = fr".\bin\pgsql\bin\pg_ctl.exe stop --silent -D {pgdata}"
-    process = subprocess.run(cmd)
-    logger.info(f"pg_ctl stop successfully. {cmd}")
-    logger.debug(process.stdout)
-    logger.debug(process.stderr)
-
+CREATE_DATABASE_SQL = "CREATE DATABASE musicbrainz;"
 
 CREATE_EXTENSION_SQL = "CREATE EXTENSION pg_trgm;"
 
@@ -71,6 +48,9 @@ CREATE INDEX idx_album_tracks_abstract_trgm ON album USING gin (_tracks_abstract
 def init_musicbrainz_database(pgdata: str) -> None:
     init_pgdata(pgdata)
     pg_ctl_start(pgdata)
+    db = MusicBrainzDatabase(dbname="postgres")
+    db.cur.execute(CREATE_DATABASE_SQL)
+    db.conn.close()
     db = MusicBrainzDatabase()
     db.cur.execute(CREATE_EXTENSION_SQL)
     db.cur.execute(CREATE_ALBUM_SQL)
@@ -85,8 +65,8 @@ class MusicBrainzDatabase:
                "release_id", "catalognumber", "date", "album", "tracks_json", "links", 
                "_date_min", "_date_max", "_tracks_count", "_tracks_abstract"]
 
-    def __init__(self) -> None:
-        self.conn = Connection.connect(dbname="musicbrainz")
+    def __init__(self, dbname="musicbrainz") -> None:
+        self.conn = psycopg.connect(user="postgres", dbname=dbname)
         self.conn.autocommit = True
         self.cur = self.conn.cursor(row_factory=tuple_row)
 

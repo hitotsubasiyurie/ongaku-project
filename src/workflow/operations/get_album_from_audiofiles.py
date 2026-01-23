@@ -26,7 +26,7 @@ def main() -> None:
         metadata_file = input_path
     else:
         input_path.mkdir(parents=True, exist_ok=True)
-        metadata_file = input_path / f"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"
+        metadata_file = input_path / f"Fetch-{datetime.now().strftime("%Y%m%d-%H%M%S")}.toml"
 
 
     # 扁平、存在音频 的目录 认为是专辑目录

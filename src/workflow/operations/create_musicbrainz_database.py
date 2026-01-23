@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Generator
@@ -8,20 +9,28 @@ from tqdm import tqdm
 
 from src.core.basemodels import Album
 from src.core.logger import logger, lprint
+from src.core.settings import global_settings
 from src.lang import MESSAGE
-from scraper.musicbrainz_scraper import MusicBrainzScraper
-from src.scraper.musicbrainz_database import MusicBrainzDatabase
+from src.external import pg_ctl_start, pg_ctl_stop, pg_dump_database
+from src.scraper.musicbrainz_scraper import MusicBrainzScraper
+from src.scraper.musicbrainz_database import init_musicbrainz_database, MusicBrainzDatabase
 from src.workflow.common import easy_linput
+
 
 OPERATION_NAME = MESSAGE.WF_20251204_194120
 
 
-def read_musicbrainz_tar_dump(tar_exe: str, tar_file: str) -> Generator[str, None, None]:
+def read_musicbrainz_tar_dump(tar_file: str) -> Generator[str, None, None]:
+    """
+    --force-local   归档文件是本地路径
+    -x              解压
+    -O              解压到标准输出
+    -f              指定路径
+    """
+    tar_exe = os.path.abspath(os.path.join("bin", "tar", "tar.exe"))
     tar_file = str(tar_file)
     x = os.path.basename(tar_file).split(".")[0]
-    posix_path = "/" + tar_file.replace(":", "").replace("\\", "/")
-    cmd = [tar_exe, "-xOf", posix_path, f"mbdump/{x}"]
-
+    cmd = [tar_exe, "--force-local", "-xOf", tar_file, f"mbdump/{x}"]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
 
     for line in process.stdout:
@@ -42,7 +51,6 @@ def main():
     lprint(MESSAGE.WF_20251204_194121)
 
     parent_directory: Path = easy_linput(MESSAGE.WF_20251204_194122, return_type=Path)
-    tar_exe = easy_linput(MESSAGE.WF_20251204_194123, return_type=str)
 
     recording_tar, release_tar = parent_directory / "recording.tar.xz", parent_directory / "release.tar.xz"
 
@@ -53,13 +61,25 @@ def main():
     checkpoint_file = parent_directory / "checkpoint"
     checkpoint = int(checkpoint_file.read_text()) if checkpoint_file.exists() else -1
 
-    recordings = {r["id"]: r for r in map(orjson.loads, read_musicbrainz_tar_dump(tar_exe, recording_tar))}
+    recordings = {r["id"]: r for r in map(orjson.loads, read_musicbrainz_tar_dump(recording_tar))}
 
-    db = MusicBrainzDatabase()
+    pgdata = os.path.join(global_settings.temp_directory, "musicbrainz_pgdata")
+    if os.path.isdir(pgdata):
+        if easy_linput(MESSAGE.WF_20251204_194123, default="N") == "Y":
+            shutil.rmtree(pgdata)
+
+    # 初始化数据目录
+    init_musicbrainz_database(pgdata)
+    lprint(MESSAGE.WF_20251204_194124)
+
+    pg_ctl_start(pgdata)
+    lprint(MESSAGE.WF_20251204_194125)
+
+    database = MusicBrainzDatabase()
 
     pbar = tqdm(total=5*100*10000)
     rid_batch, album_batch = [], []
-    for n, line in enumerate(read_musicbrainz_tar_dump(tar_exe, release_tar)):
+    for n, line in enumerate(read_musicbrainz_tar_dump(release_tar)):
 
         # 跳过断点
         if n <= checkpoint:
@@ -80,11 +100,21 @@ def main():
         
         # 批量入库
         if len(rid_batch) > 1000:
-            db.insert_albums(rid_batch, album_batch)
+            database.insert_albums(rid_batch, album_batch)
             pbar.n = n
             pbar.refresh()
             rid_batch, album_batch = [], []
             # 更新 检查点
             checkpoint_file.write_text(str(n))
 
+    pbar.close()
+
+    # 备份数据库
+    lprint(MESSAGE.WF_20251204_194128)
+    dmpfile = os.path.join(global_settings.temp_directory, "musicbrainz.dmp")
+    pg_dump_database("musicbrainz", dmpfile)
+    lprint(MESSAGE.WF_20251204_194127.format(dmpfile))
+
+    pg_ctl_stop(pgdata)
+    lprint(MESSAGE.WF_20251204_194126)
 

@@ -7,8 +7,9 @@ from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
 from src.core.settings import global_settings
 from src.lang import MESSAGE
-from scraper.dojin_music_info_scraper import DoujinMusicInfoScraper
+from src.scraper import DoujinMusicInfoScraper
 from src.workflow.common import easy_linput
+
 
 OPERATION_NAME = MESSAGE.WF_20251204_194820
 
@@ -18,7 +19,8 @@ OPERATION_NAME = MESSAGE.WF_20251204_194820
 def main():
     lprint(MESSAGE.WF_20251204_194821)
 
-    input_path = easy_linput(MESSAGE.WF_20251204_194822, return_type=Path)
+    input_path = easy_linput(MESSAGE.WF_20251204_194822.format(global_settings.temp_directory), 
+                             default=Path(global_settings.temp_directory), return_type=Path)
     input_urls = easy_linput(MESSAGE.WF_20251204_194823, return_type=str)
 
     # 创建目录
@@ -27,12 +29,9 @@ def main():
         metadata_file = input_path
     else:
         input_path.mkdir(parents=True, exist_ok=True)
-        metadata_file = input_path / f"Fetch-{datetime.now().strftime("%Y%m%d_%H%M%S")}.toml"
+        metadata_file = input_path / f"dojin-music-info-{datetime.now().strftime("%Y%m%d-%H%M%S")}.toml"
 
-    cache_dir = Path(global_settings.temp_directory, "cache")
-    cache_dir.mkdir(parents=True, exist_ok=True)
-
-    api = DoujinMusicInfoScraper(cache_dir=cache_dir)
+    scraper = DoujinMusicInfoScraper()
 
     # 获取 cd ids
 
@@ -42,7 +41,7 @@ def main():
             cd_ids.append(url.split("/cd/")[1].split("/")[0])
         elif "/circle/" in url:
             circle_id = url.split("/")[-1]
-            cd_ids.extend(api.get_cd_ids_from_circle(circle_id))
+            cd_ids.extend(scraper.get_cd_ids_from_circle(circle_id))
         else:
             lprint(MESSAGE.WF_20251204_194824)
             return
@@ -59,7 +58,7 @@ def main():
     pbar = tqdm(total=len(cd_ids), mininterval=0)
     for a_id in cd_ids:
         try:
-            new_albums.append(api.get_album_from_cd(a_id))
+            new_albums.append(scraper.get_album_from_cd(a_id))
         except Exception as e:
             logger.error("", exc_info=1)
             raise e

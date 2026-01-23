@@ -21,12 +21,6 @@ class MusicBrainzScraper(Scraper):
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
     }
 
-    def __init__(self, cache_dir: str = None) -> None:
-        """
-        :param cache_dir: 可选，缓存目录路径
-        """
-        self._cache_dir = cache_dir
-
     def query_albums(self, catno: str = None, date: str = None, release: str = None, tracks_number: int = None,
                       limit: int = 5) -> list[Album]:
         """

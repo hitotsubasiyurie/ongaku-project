@@ -1,11 +1,7 @@
 import itertools
 import json
-import pickle
 import re
-import uuid
-from pathlib import Path
 
-import requests
 from lxml import etree
 
 from src.core.basemodels import Album, Disc, Track
@@ -18,6 +14,7 @@ class VGMdbScraper(Scraper):
     
     ROOT_URL = "https://vgmdb.net"
     PRODUCT_PAGE_URL = f"{ROOT_URL}/product/{{}}"
+    ARTIST_PAGE_URL = f"{ROOT_URL}/artist/{{}}"
     ALBUM_PAGE_URL = f"{ROOT_URL}/album/{{}}"
 
     _HEADERS = {
@@ -26,15 +23,10 @@ class VGMdbScraper(Scraper):
         "cookie": "gfa_lang=ja;"
     }
 
-    def __init__(self, cache_dir: str = None) -> None:
-        """
-        :param cache_dir: 可选，缓存目录路径
-        """
-        self._cache_dir = cache_dir
-
     def get_product_ids_from_franchise(self, franchise_id: str) -> list[str]:
         """
-        从 franchise 页面获取 product ids 。\n
+        从 franchise 页面获取 product ids 。
+
         :raises OngakuException:
         """
         url = self.PRODUCT_PAGE_URL.format(franchise_id)
@@ -52,7 +44,8 @@ class VGMdbScraper(Scraper):
 
     def get_product_titles(self, product_id: str) -> list[str]:
         """
-        获取 product 的标题，所有语言。\n
+        获取 product 所有语言的标题。
+
         :raises OngakuException:
         """
         url = self.PRODUCT_PAGE_URL.format(product_id)
@@ -66,7 +59,8 @@ class VGMdbScraper(Scraper):
 
     def get_album_ids_from_search_page(self, url: str) -> list[str]:
         """
-        从搜索页面获取 album ids 。\n
+        从搜索页面获取 album ids 。
+
         :raises OngakuException:
         """
         logger.info(f"Will get page. {url}")
@@ -81,7 +75,8 @@ class VGMdbScraper(Scraper):
 
     def get_album_ids_from_product(self, product_id: str) -> list[str]:
         """
-        从 product 页面获取 album ids 。\n
+        从 product 页面获取 album ids 。
+
         :raises OngakuException:
         """
         url = self.PRODUCT_PAGE_URL.format(product_id)
@@ -95,10 +90,28 @@ class VGMdbScraper(Scraper):
         logger.info(f"Got {len(album_ids)} album ids from product {product_id}.")
         return album_ids
 
+    def get_album_ids_from_artist(self, artist_id: str) -> list[str]:
+        """
+        从 artist 页面获取 album ids 。
+
+        :raises OngakuException:
+        """
+        url = self.ARTIST_PAGE_URL.format(artist_id)
+        logger.info(f"Will get artist. {url}")
+        resp = self._cached_request_get(url)
+
+        html: etree._Element = etree.HTML(resp.text)
+        album_urls: list[str] = html.xpath("//div[@id='discotable']/table/tbody/tr/td/a/@href")
+        album_ids = [u.split("album/")[1].strip("/") for u in album_urls]
+
+        logger.info(f"Got {len(album_ids)} album ids from artist {artist_id}.")
+        return album_ids
+
     @logger_watched(3)
     def get_albums(self, album_id: str) -> list[Album]:
         """
-        从 album 页面获取 Album 模型列表。\n
+        从 album 页面获取 Album 模型列表。
+
         :raises OngakuException:
         """
         url = self.ALBUM_PAGE_URL.format(album_id)
@@ -135,7 +148,7 @@ class VGMdbScraper(Scraper):
     @staticmethod
     def _get_album_info(info_table: etree._Element) -> dict:
         """
-        从 info_table 元素获取专辑信息。\n
+        从 info_table 元素获取专辑信息。
         """
         table = [list(tr.iterchildren("td")) for tr in info_table.iterchildren("tr")]
         infos = {tds[0].xpath("string(.)").strip(): tds[1].xpath("string(.)").strip() for tds in table if tds}
@@ -148,7 +161,7 @@ class VGMdbScraper(Scraper):
 
     def _get_discs(self, tl_span: etree._Element) -> list[Disc]:
         """
-        从 tl_span 元素获取 Disc 模型列表。\n
+        从 tl_span 元素获取 Disc 模型列表。
         :raises OngakuException:
         """
         logger.info(f"Will get discs.")
@@ -175,7 +188,7 @@ class VGMdbScraper(Scraper):
     @staticmethod
     def _get_tracks(table: etree._Element) -> list[Track]:
         """
-        从 table 元素获取 Track 模型列表。\n
+        从 table 元素获取 Track 模型列表。
         :raises OngakuException:
         """
         # https://vgmdb.net/album/135468
@@ -199,7 +212,8 @@ class VGMdbScraper(Scraper):
         """
         将省略的 catno 扩展成 catno 列表。
         1. catno 为空时返回空列表。
-        2. catno 无法解析时返回 [catno] 。\n
+        2. catno 无法解析时返回 [catno] 。
+
         :param catno: 形如 SVWC-70509, SVWC-70509~12
         """
         if not catno or catno.upper() in ["N/A", "N／A"]:

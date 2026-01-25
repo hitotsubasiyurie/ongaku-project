@@ -181,7 +181,7 @@ Average Similarity:\t{aver_similarity:.02f}
         if not self.cover_label.album_kanban:
             return
 
-        cover = self.cover_label.album_kanban.cover
+        cover = self.cover_label.album_kanban.cover_filename
         if cover:
             if not self._ask_for_confirm("Check Again", "Replace cover?"):
                 return

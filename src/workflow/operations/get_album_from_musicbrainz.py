@@ -48,7 +48,7 @@ def main():
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
 
     # 过滤 已存在元数据 的 album ids
-    skip_r_ids = [link.split("/")[-1] for a in exist_albums for link in a.links if link.startswith(MusicBrainzScraper.RELEASE_PAGE_URL)]
+    skip_r_ids = [link.split("/")[-1] for a in exist_albums for link in a.links if link.startswith(MusicBrainzScraper.PAGE_ROOT_URL)]
     r_ids = list(set(r_ids) - set(skip_r_ids))
 
     # 开始 获取 元数据

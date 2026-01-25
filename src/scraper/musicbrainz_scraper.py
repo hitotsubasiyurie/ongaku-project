@@ -15,6 +15,7 @@ _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')
 class MusicBrainzScraper(Scraper):
 
     ROOT_URL = "https://musicbrainz.org/ws/2"
+    PAGE_ROOT_URL = "https://beta.musicbrainz.org"
     RELEASE_PAGE_URL = "https://beta.musicbrainz.org/release/{}"
     
     _HEADERS = {

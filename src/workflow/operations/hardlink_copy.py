@@ -1,6 +1,8 @@
 import shutil
 import time
+import filecmp
 from pathlib import Path
+from datetime import datetime
 
 from tqdm import tqdm
 
@@ -8,56 +10,104 @@ from src.core.logger import lprint
 from src.lang import MESSAGE
 from src.workflow.common import easy_linput
 
+
 OPERATION_NAME = MESSAGE.WF_20251204_195220
 
+# 业务函数
 
-## TODO: shutil.copytree(copy_func=os.link)
+def get_dirty_files(src: Path, dst: Path) -> list[Path]:
+    """
+    获取脏文件。
+    在源中没有的文件，与源不同的文件，被认为是脏文件。
+
+    :param src: 文件或目录
+    :param dst: 文件或目录
+    """
+    if src.is_file():
+        return [dst] if not filecmp.cmp(src, dst) else []
+    
+    d_paths: list[Path] = list(dst.rglob("*"))
+    dirty = []
+
+    for d in d_paths:
+        s = src / d.relative_to(dst)
+        # 源不存在，或者文件类型不同时
+        if not s.exists() or s.is_file() != d.is_file():
+            dirty.append(d)
+            continue
+        # 文件不同时
+        if d.is_file() and not filecmp.cmp(s, d):
+            dirty.append(d)
+
+    return dirty
+
+
+def hardlink_copy(src: Path, dst: Path) -> tuple[int, int]:
+    """
+    硬链接克隆。
+
+    :return: 文件数，目录数
+    """
+    if src.is_file():
+        s_paths = [src]
+        d_paths = [dst]
+    else:
+        # 广度优先顺序
+        s_paths = [src] + list(src.rglob("*"))
+        d_paths = [dst / s.relative_to(src) for s in s_paths]
+
+    sd_dirs = []
+    file_count, dir_count = 0, 0
+    for s, d in tqdm(zip(s_paths, d_paths), total=len(s_paths)):
+        if s.is_dir():
+            d.mkdir(exist_ok=True)
+            sd_dirs.append((s, d))
+            dir_count += 1
+            continue
+
+        if not d.is_file():
+            d.hardlink_to(s.resolve())
+            shutil.copystat(s, d)
+        file_count += 1
+
+    # 倒序 复制目录元数据
+    for s, d in tqdm(reversed(sd_dirs), total=len(sd_dirs), miniters=1):
+        shutil.copystat(s, d)
+
+    return file_count, dir_count
 
 # 主函数
 
 def main():
     lprint(MESSAGE.WF_20251204_195221)
-    
-    src_given = easy_linput(MESSAGE.WF_20251204_195222, return_type=Path)
-    dst_given = easy_linput(MESSAGE.WF_20251204_195223, return_type=Path)
 
-    if not src_given.exists():
+    src = easy_linput(MESSAGE.WF_20251204_195222, return_type=Path)
+    dst_parent = easy_linput(MESSAGE.WF_20251204_195223, return_type=Path)
+
+    if not src.exists():
         lprint(MESSAGE.WF_20251204_195224)
         return
-    
-    dst = dst_given / src_given.name
+
+    dst = dst_parent / src.name
+
+    # 若目标存在，文件类型不同时或是用户选择时，使用新位置克隆
     if dst.exists():
-        dst = dst_given / f"{src_given.name} {int(time.time())}"
+        if src.is_file() != dst.is_file() or not easy_linput(MESSAGE.WF_20251204_195226, default="Y", return_type=str) == "Y":
+            dst = dst_parent / f"{src.name} {datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
+    # 若目标存在，删除差异文件
+    if dst.exists():
+        dirty = list(reversed(get_dirty_files(src, dst)))
+        if dirty:
+            [lprint(p) for p in dirty]
+            if not easy_linput(MESSAGE.WF_20251204_195227, default="Y", return_type=str) == "Y":
+                return
+            [p.unlink() if p.is_file() else p.rmdir() for p in dirty]
 
     st = time.time()
 
-    # 仅单个文件
-    if src_given.is_file():
-        dst.hardlink_to(src_given)
-        shutil.copystat(src_given, dst)
-        lprint(MESSAGE.WF_20251204_195225.format(1, 0, time.time()-st))
-        return
+    c1, c2 = hardlink_copy(src, dst)
 
-    dst.mkdir(parents=True, exist_ok=True)
+    lprint(MESSAGE.WF_20251204_195225.format(c1, c2, time.time()-st))
 
-    src_files = list(src_given.rglob("*"))
-    dst_files = [dst / s.relative_to(src_given) for s in src_files]
 
-    file_count, dir_count = 0, 0
-    for s, d in tqdm(zip(src_files, dst_files), total=len(src_files)):
-        if s.is_dir():
-            d.mkdir()
-            dir_count += 1
-        else:
-            d.hardlink_to(s.resolve())
-            shutil.copystat(s, d)
-            file_count += 1
-
-    # 倒序 复制目录元数据
-    for s in tqdm(reversed(list(filter(Path.is_dir, src_files))), miniters=1):
-        d = dst / s.relative_to(src_given)
-        shutil.copystat(s, d)
-
-    shutil.copystat(src_given, dst)
-
-    lprint(MESSAGE.WF_20251204_195225.format(file_count, dir_count, time.time()-st))

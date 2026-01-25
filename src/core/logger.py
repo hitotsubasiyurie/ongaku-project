@@ -106,8 +106,9 @@ _ongaku_logger = OngakuLogger()
 logger = _ongaku_logger.logger
 
 # 设置 日志
-os.makedirs(global_settings.temp_directory, exist_ok=True)
-_ongaku_logger.set_output(global_settings.temp_directory)
+logdir = os.path.join(global_settings.temp_directory, "log")
+os.makedirs(logdir, exist_ok=True)
+_ongaku_logger.set_output(logdir)
 
 _level_map = {1: logging.DEBUG, 2: logging.INFO, 3: logging.WARNING, 4: logging.ERROR, 5: logging.FATAL}
 logger.setLevel(_level_map.get(global_settings.log_level, 2))

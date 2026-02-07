@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QAbstractItemView, QStyle)
 
 from src.core.kanban import ResourceState, ThemeKanBan
-from src.lang import MESSAGE
+from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
 

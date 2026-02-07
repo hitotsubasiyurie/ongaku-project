@@ -3,9 +3,9 @@ import shutil
 
 from src.core.kanban import KanBan
 from src.core.logger import lprint
-from src.core.settings import global_settings
-from src.lang import MESSAGE
-from src.workflow.common import easy_linput
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
+from src.cli.common import easy_linput
 from src.external import rar_archive
 
 
@@ -15,7 +15,7 @@ OPERATION_NAME = MESSAGE.WF_20251221_202001
 # 主函数
 
 def main() -> None:
-    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory, global_settings.archive_directory)
+    kanban = KanBan(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
 
     total = sum(1 for tk in kanban.theme_kanbans for ak in tk.album_kanbans if os.path.isdir(ak.album_dir))
     current = 0

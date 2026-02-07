@@ -5,6 +5,7 @@ import sys
 import itertools
 import subprocess
 import tempfile
+from typing import Union
 
 from src.core.logger import logger
 
@@ -53,6 +54,10 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
     return process
 
 
+################################################################################
+### ffmpeg
+################################################################################
+
 def decode_audio_to_pcm(audio_path: str) -> bytes:
     """
     解码音频为裸 PCM 数据。
@@ -81,11 +86,26 @@ def convert_audio_bytes_to_wav(audio_data: bytes) -> bytes:
     return process.stdout
 
 
-def show_audio_stream_info(audio_path: str) -> dict:
-    logger.info(f"Show audio stream info. {audio_path}")
+def show_audio_stream_info(audio_input: Union[str, bytes]) -> dict:
+    """
+    获取音频流信息。
+
+    :param audio_input: str 类型的音频文件路径，或者 bytes 类型的音频字节数据
+    """
+    if not isinstance(audio_input, (str, bytes)):
+        raise TypeError(f"audio_input is not str or bytes. {type(audio_input)}")
+    if not audio_input:
+        raise ValueError(f"Empty audio_input.")
+    
+    is_path = isinstance(audio_input, str)
+    logger.info(f"Show audio stream info. {audio_input if is_path else ''}")
     ffprobe_path = os.path.abspath(os.path.join("bin", "ffprobe.exe"))
-    cmd = [ffprobe_path, "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a", audio_path]
-    process = run_subprocess(cmd, text=True)
+    if is_path:
+        cmd = [ffprobe_path, "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a", audio_input]
+        process = run_subprocess(cmd, text=True)
+    else:
+        cmd = [ffprobe_path, "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a"]
+        process = run_subprocess(cmd, input=audio_input)
     return json.loads(process.stdout)
 
 
@@ -99,6 +119,7 @@ def compress_image(img_path: str) -> None:
 def make_junction(srcdir: str, dstdir: str) -> None:
     """
     创建 Windows 目录联接。
+
     /c      执行完立刻退出
     /J      目录联接
     """
@@ -108,6 +129,10 @@ def make_junction(srcdir: str, dstdir: str) -> None:
     run_subprocess(cmd)
 
 
+################################################################################
+### WinRAR
+################################################################################
+
 def rar_archive(dstrar: str, srcdir: str) -> None:
     """
     压缩文件夹。
@@ -115,6 +140,7 @@ def rar_archive(dstrar: str, srcdir: str) -> None:
     :param dstrar: 目标压缩包路径
     :param srcdir: 源文件夹路径
     
+    a       添加文件到压缩文件中
     -@      禁用文件列表
     -ams    保留压缩文件元数据
     -cfg-   忽略默认配置文件和环境变量
@@ -167,6 +193,8 @@ def rar_rename(dstrar: str, oldnames: list[str], newnames: list[str]) -> None:
     :param dstrar: 目标压缩包路径
     :param oldname: 旧文件名列表
     :param newname: 新文件名列表
+
+    rn      重命名压缩文件
     """
     if len(oldnames) != len(newnames) or not newnames:
         raise ValueError(f"two list are not equal in length. {oldnames} {newnames}")
@@ -186,6 +214,7 @@ def rar_list(dstrar: str) -> list[str]:
     :param dstrar: 目标压缩包路径
     :return filenames: 文件名列表。
 
+    lb       压缩文件的内容列表
     -scf     指定 UTF-8 字符集
     """
     dstrar = os.path.abspath(dstrar)
@@ -202,17 +231,19 @@ def rar_list(dstrar: str) -> list[str]:
 def rar_read(dstrar: str, filename: str) -> bytes:
     """
     读取压缩包内的文件。
-    文件名为空或不存在时将会抛异常。
+    filename 为空将会返回空字节。
 
     :param dstrar: 目标压缩包路径
     :param filename: 文件名
+
+    p       打印文件到标准输出设备
     """
-    if not filename:
-        raise ValueError(f"Empty filename.")
-    
     dstrar = os.path.abspath(dstrar)
     logger.info(f"Read rar file. {dstrar} {filename}")
 
+    if not filename:
+        return b""
+    
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
     cmd = ([rar_path, "p", dstrar, filename])
     process = run_subprocess(cmd)
@@ -223,20 +254,19 @@ _NAME_PAT = re.compile(r"^\s+名称:\s+(.+)$", re.MULTILINE)
 _SIZE_PAT = re.compile(r"^\s+大小:\s+(\d+)$", re.MULTILINE)
 
 
-def rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
+def rar_stats(dstrar: str) -> dict[str, os.stat_result]:
     """
     统计压缩包内的文件属性。
-    文件名为空或者不存在时对应的 stat 为 None 。
 
     :param dstrar: 目标压缩包路径
-    :param filenames: 文件名列表。
 
     :return stats: 仅填充 stat_result.st_size 。
 
+    lt       显示详细的文件信息
     -scf     指定 UTF-8 字符集
     """
     dstrar = os.path.abspath(dstrar)
-    logger.info(f"Stat rar file. {dstrar} {filenames}")
+    logger.info(f"Stat rar file. {dstrar}")
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
     cmd = [rar_path, "lt", "-scf", dstrar]
@@ -250,10 +280,35 @@ def rar_stats(dstrar: str, filenames: list[str]) -> list[os.stat_result | None]:
         if name and size:
             _dict[name.group(1)] = os.stat_result((0,)*6 + (int(size.group(1)),) + (0,)*3)
 
-    stats = [_dict.get(n) for n in filenames]
-    logger.debug(f"stats: {stats}")
-    return stats
+    logger.debug(f"stats: {_dict}")
+    return _dict
 
+
+def rar_extract(dstrar: str, filename: str, savedir: str) -> None:
+    """
+    提取压缩包内的文件。
+    filename 为空时将直接返回。
+
+    :param dstrar: 目标压缩包路径
+    :param filename: 文件名
+    :param savedir: 保存目录
+
+    e       不带压缩路径解压文件
+    """
+    dstrar = os.path.abspath(dstrar)
+    logger.info(f"Extract rar file. {dstrar} {filename} {savedir}")
+
+    if not filename:
+        return
+
+    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
+    cmd = ([rar_path, "e", dstrar, filename, savedir])
+    run_subprocess(cmd)
+
+
+################################################################################
+### PostgreSQL
+################################################################################
 
 def init_pgdata(pgdata: str) -> None:
     """
@@ -324,5 +379,4 @@ def pg_dump_database(dbname: str, dmpfile: str) -> None:
     pg_dump_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_dump.exe"))
     cmd = [pg_dump_exe, "-Upostgres", "-Fc", "-f", dmpfile, dbname]
     run_subprocess(cmd, text=True)
-
 

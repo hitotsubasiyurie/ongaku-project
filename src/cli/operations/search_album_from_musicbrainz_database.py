@@ -5,11 +5,11 @@ from tqdm import tqdm
 
 from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import lprint
-from src.core.settings import global_settings
-from src.lang import MESSAGE
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
 from src.scraper.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
-from src.workflow.common import abstract_tracks_info
-from src.workflow.common import easy_linput
+from src.cli.common import abstract_tracks_info
+from src.cli.common import easy_linput
 
 
 OPERATION_NAME = MESSAGE.WF_20251204_195520
@@ -20,7 +20,7 @@ def main():
     lprint(MESSAGE.WF_20251204_195521)
 
     # 检查 PGDATA 路径
-    pgdata = Path(global_settings.temp_directory, "musicbrainz_pgdata")
+    pgdata = Path(settings.temp_directory, "musicbrainz_pgdata")
     if not pgdata.is_dir() or not Path(pgdata, "postgresql.conf").is_file():
         lprint(MESSAGE.WF_20251204_195522.format(pgdata))
         return

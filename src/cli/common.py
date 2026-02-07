@@ -82,7 +82,8 @@ def abstract_tracks_info(album: Album) -> str:
 
 def count_track_similarity(a: Track, b: Track) -> float:
     """
-    计算两个 Track 的相似度。\n
+    计算两个 Track 的相似度。
+
     :return ratio: 相似度，0 ~ 100
     """
     ratio = fuzz.ratio(f"{a.tracknumber}. {a.title}", f"{b.tracknumber}. {b.title}")
@@ -95,7 +96,8 @@ def count_track_similarity(a: Track, b: Track) -> float:
 
 def count_album_similarity(a: Album, b: Album) -> float:
     """
-    计算两个 Album 的相似度。\n
+    计算两个 Album 的相似度。
+
     :return ratio: 相似度，0 ~ 100
     """
     if abs(len(a.tracks) - len(b.tracks)) == 0:
@@ -119,13 +121,14 @@ def albums_assignment(row_albums: list[Album], col_albums: list[Album],
                       filter_catno: bool = False, filter_trackcount: bool = False
                       ) -> tuple[list[int], list[int], float, list[list[float]]]:
     """
-    Album 模型 总相似度最大分配。会 print 进度条。\n
+    Album 模型 总相似度最大分配。会 print 进度条。
+
         c1 c2 c3 ... cm
     r1  
     r2  
     ...  
     rn  
-    \n
+
     :param row_albums: 行 Album 模型列表
     :param col_albums: 列 Album 模型列表
     :param filter_catno: 是否过滤 catno 相同
@@ -163,7 +166,8 @@ def albums_assignment(row_albums: list[Album], col_albums: list[Album],
 def tracks_assignment(row_tracks: list[Track], col_tracks: list[Track]
                       ) -> tuple[list[int], list[int], float, list[list[float]]]:
     """
-    Track 模型 总相似度最大分配。\n
+    Track 模型 总相似度最大分配。
+    
     :param row_tracks: 行 Track 模型列表
     :param col_tracks: 列 Track 模型列表
     :returns row_ind, col_ind, aver_similarity, sim_matrix: 

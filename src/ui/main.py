@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 
-from src.core.settings import global_settings
+from src.core.settings import settings
 from src.core.kanban import KanBan
 from src.ui.toast_notifier import ToastNotifier
 from src.ui.scan_archive_progress_dialog import ScanArchiveProgressDialog
@@ -32,8 +32,8 @@ if __name__ == "__main__":
 
     # 设置字体
     font = app.font()
-    global_settings.ui_font_size and font.setPointSize(global_settings.ui_font_size)
-    global_settings.ui_font_family and font.setFamily(global_settings.ui_font_family)
+    settings.ui_font_size and font.setPointSize(settings.ui_font_size)
+    settings.ui_font_family and font.setFamily(settings.ui_font_family)
     app.setFont(font)
 
     # 扫描 专辑归档 生成缓存
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     # 加载看板
     QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-    kanban = KanBan(global_settings.metadata_directory, global_settings.resource_directory, global_settings.archive_directory)
+    kanban = KanBan(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
     main_windows.set_kanban(kanban)
     QApplication.restoreOverrideCursor()
 

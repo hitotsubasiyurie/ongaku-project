@@ -7,7 +7,7 @@ import requests
 
 from src.core.basemodels import Album, Disc
 from src.core.logger import logger
-from src.core.settings import global_settings
+from src.core.settings import settings
 from src.utils import retry, RateLimiter
 
 
@@ -22,7 +22,7 @@ class Scraper:
     # 请求 重试间隔 5 秒
     _REQUEST_RETRY_DELAY = 5
     # 请求 缓存 位置
-    _REQUEST_CACHE_PATH = Path(global_settings.temp_directory, "request_cache")
+    _REQUEST_CACHE_PATH = Path(settings.temp_directory, "request_cache")
     # 请求 请求头
     _REQUEST_HEADERS = None
 

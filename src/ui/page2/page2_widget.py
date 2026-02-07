@@ -13,8 +13,8 @@ from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 from src.core.basemodels import Album
 from src.core.constants import AUDIO_EXTS, IMG_EXTS
 from src.core.kanban import ThemeKanBan, track_stemnames
-from src.core.settings import global_settings
-from src.lang import MESSAGE
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.page2.album_table_view import AlbumTableView
 from src.ui.page2.cover_label import CoverLabel
@@ -22,7 +22,7 @@ from src.ui.page2.link_combo_box import LinkComboBox
 from src.ui.page2.text_edit_message_box import TextEditMessageBox
 from src.ui.page2.track_table_view import TrackTableView
 from src.ui.toast_notifier import toast_notify
-from src.workflow.common import tracks_assignment, analyze_track
+from src.cli.common import tracks_assignment, analyze_track
 
 
 class Page2Widget(QWidget):
@@ -254,8 +254,8 @@ Average Similarity:\t{aver_similarity:.02f}
         if not self.theme_kanban:
             return
         
-        sources = global_settings.cover_search_engine_sources
-        country = global_settings.cover_search_engine_country
+        sources = settings.cover_search_engine_sources
+        country = settings.cover_search_engine_country
 
         ps = self.album_table_view.get_selected_ps()
         for p in ps:

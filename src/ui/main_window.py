@@ -5,8 +5,8 @@ from PySide6.QtGui import QShortcut, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
 from src.core.kanban import KanBan
-from src.core.settings import global_settings
-from src.lang import MESSAGE
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.color_theme import BUTTON_QSS
 from src.ui.toast_notifier import toast_notify
@@ -38,12 +38,12 @@ class MainWindow(QWidget):
         self.page3 = Page3Widget()
         self.stack.addWidget(self.page3)
 
-        self.page_prev_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page_prev.png"), "", parent=self)
+        self.page_prev_btn = QPushButton(QIcon(f"./assets/{settings.ui_color_theme}/page_prev.png"), "", parent=self)
         self.page_prev_btn.setToolTip(MESSAGE.UI_20260101_112220)
         self.page_prev_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_prev_btn.setIconSize(self.page_prev_btn.size())
 
-        self.page_next_btn = QPushButton(QIcon(f"./assets/{global_settings.ui_color_theme}/page_next.png"), "", parent=self)
+        self.page_next_btn = QPushButton(QIcon(f"./assets/{settings.ui_color_theme}/page_next.png"), "", parent=self)
         self.page_next_btn.setToolTip(MESSAGE.UI_20260101_112221)
         self.page_next_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_next_btn.setIconSize(self.page_next_btn.size())

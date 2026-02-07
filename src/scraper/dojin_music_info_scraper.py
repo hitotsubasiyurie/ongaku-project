@@ -24,7 +24,8 @@ class DoujinMusicInfoScraper(Scraper):
 
     def get_cd_ids_from_circle(self, circle_id: str) -> None:
         """
-        从 circle 页面获取 cd ids 。\n
+        从 circle 页面获取 cd ids 。
+        
         :raises OngakuException:
         """
         url = self.CIRCLE_PAGE_URL.format(circle_id)
@@ -41,7 +42,8 @@ class DoujinMusicInfoScraper(Scraper):
 
     def get_album_from_cd(self, cd_id: str) -> Album:
         """
-        从 cd 页面获取 Album 模型。\n
+        从 cd 页面获取 Album 模型。
+        
         :raises OngakuException:
         """
         url = self.CD_PAGE_URL.format(cd_id)
@@ -64,7 +66,8 @@ class DoujinMusicInfoScraper(Scraper):
     @staticmethod
     def _get_tracks(html: etree._Element) -> list[Track]:
         """
-        从 html 元素获取 Track 模型列表。\n
+        从 html 元素获取 Track 模型列表。
+        
         :raises OngakuException:
         """
         tracks = []

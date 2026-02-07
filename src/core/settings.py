@@ -1,87 +1,38 @@
+import os
 from pathlib import Path
-from typing import Any, Literal
 
 import rtoml
-import tomli_w
-from pydantic import BaseModel, Field
+from attrs import define, field, validators, fields
+
 
 SETTINGS_FILE = Path("settings.toml")
 
+LOG_LEVELS = (1, 2, 3, 4, 5)
+LANGUAGES = ("en", "zh_cn", "ja", "ko")
+COLOR_THEMES = ("dark", "light")
 
-class _GlobalSettings(BaseModel, validate_assignment=True):
 
-    # 控制 自动保存
-    _auto_save: bool = False
+@define(slots=True, frozen=True)
+class _Settings:
+    """只读配置"""
 
-    log_level: Literal[1, 2, 3, 4, 5] = Field(
-        default=2, 
-        description='Options: 1 (debug), 2 (info), 3 (warning), 4 (error), 5 (fatal)'
-    )
-
-    language: Literal["en", "zh_cn", "ja", "ko"] = Field(
-        default="en", 
-        description='Interface language. Options: "en" (English), "zh_cn" (Chinese), "ja" (Japanese), "ko" (Korean)'
-    )
-
-    temp_directory: str = Field(
-        default="D:\\ongaku-tmp", 
-        description=r'Directory for storing temporary files (logs, cache, etc.), e.g. "D:\\ongaku-tmp"',
-        min_length=1
-    )
-
-    metadata_directory: str = Field(
-        default="D:\\ongaku-metadata", 
-        description=r'Directory for storing album metadata files, e.g. "D:\\ongaku-metadata"',
-        min_length=1
-    )
-
-    resource_directory: str = Field(
-        default="D:\\ongaku-resource", 
-        description=r'Directory for storing album audio files, e.g. "D:\\ongaku-resource"',
-        min_length=1
-    )
-
-    archive_directory: str = Field(
-        default="D:\\ongaku-archive", 
-        description=r'Directory for storing album archives, e.g. "D:\\ongaku-archive"',
-        min_length=1
-    )
-
-    ui_color_theme: Literal["dark", "light"] = Field(
-        default="light", 
-        description='Visual theme for the interface. Options: "dark", "light"'
-    )
-
-    ui_font_size: int = Field(
-        default=9, 
-        gt=0, 
-        description="Base font size for the user interface (in points)"
-    )
-
-    ui_font_family: str = Field(
-        default="JetBrains Mono", 
-        description='Font family used throughout the interface. Recommended: "JetBrains Mono"',
-        min_length=1
-    )
-
-    cover_search_engine_sources: str = Field(
-        default="amazonmusic,applemusic,itunes,ototoy,kkbox,lastfm,musicbrainz,discogs,soundcloud", 
-        description='',
-        min_length=1
-    )
-
-    cover_search_engine_country: str = Field(
-        default="jp", 
-        description='',
-        min_length=1
-    )
+    log_level: int = field(default=2, validator=validators.in_(LOG_LEVELS))
+    language: str = field(default="zh_cn", validator=validators.in_(LANGUAGES))
+    
+    temp_directory: str = field(default=r"D:\ongaku-tmp", converter=os.path.abspath)
+    metadata_directory: str = field(default=r"D:\ongaku-metadata", converter=os.path.abspath)
+    resource_directory: str = field(default=r"D:\ongaku-resource", converter=os.path.abspath)
+    
+    ui_color_theme: str = field(default="light", validator=validators.in_(COLOR_THEMES))
+    ui_font_size: int = field(default=9, validator=validators.gt(0))
+    ui_font_family: str = field(default="JetBrains Mono")
+    ui_cov_sources: str = field(default="amazonmusic,applemusic,itunes,ototoy,kkbox,lastfm,musicbrainz,discogs,soundcloud")
+    ui_cov_country: str = field(default="jp")
 
     @classmethod
-    def load(cls) -> "_GlobalSettings":
-        # 生成配置文件
+    def load(cls) -> "_Settings":
         if not SETTINGS_FILE.exists():
             obj = cls()
-            obj.save()
             return obj
 
         try:
@@ -90,40 +41,18 @@ class _GlobalSettings(BaseModel, validate_assignment=True):
         except Exception as e:
             print(f"Failed to parse settings file. {text} {e}")
             return cls()
-        
-        # 非法字段使用默认值
-        obj = cls()
-        for name, _ in _GlobalSettings.model_fields.items():
-            if name not in data:
-                continue
-            try:
-                setattr(obj, name, data[name])
-            except Exception as e:
-                print(f"Invalid filed value. {name} {data[name]} {e}")
-        
-        obj._auto_save = True
-        return obj
 
-    def save(self):
-        lines = []
+        for attr in fields(cls):
+            name = attr.name
+            if name in data:
+                try:
+                    attr.validator and attr.validator(None, attr, data[name])
+                except Exception as e:
+                    print(f"Invalid field value (read): {name} {e}")
+                    data.pop(name)
 
-        for name, field in _GlobalSettings.model_fields.items():
-            desc = field.description or ""
-            if desc:
-                lines.append(f"# {desc}")
-            toml_str = tomli_w.dumps({name: getattr(self, name)}).strip()
-            lines.append(toml_str)
-            lines.append("")
-
-        SETTINGS_FILE.write_text("\n".join(lines), encoding="utf-8")
-
-    def __setattr__(self, name: Any, value: Any) -> None:
-        if value == getattr(self, name, None):
-            return
-        super().__setattr__(name, value)
-        self._auto_save and self.save()
+        return cls(**data)
 
 
-global_settings = _GlobalSettings.load()
-
+settings = _Settings.load()
 

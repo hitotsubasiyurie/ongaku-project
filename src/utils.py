@@ -12,12 +12,13 @@ from typing import Callable, Mapping, Any
 
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import ID3, APIC, PictureType
-from mutagen.mp3 import EasyMP3
+from mutagen.mp3 import EasyMP3, MP3
 
 
 def retry(retries: int = 3, delay: int | float = 5) -> Callable:
     """
-    重试装饰器。\n
+    重试装饰器。
+
     :param retries: 重试次数
     :param delay: 重试间隔秒
     """
@@ -40,7 +41,8 @@ def retry(retries: int = 3, delay: int | float = 5) -> Callable:
 
 class RateLimiter:
     """
-    函数调用频率限制装饰器。\n
+    函数调用频率限制装饰器。
+
     :param interval: 调用间隔秒
     """
 
@@ -65,7 +67,8 @@ def legalize_filename(name: str) -> str:
     """
     1. 用全角符号替换路径中的非法符号
     2. 去除路径结尾空格
-    3. 限制 250 字符文件名\n
+    3. 限制 250 字符文件名
+    
     :param name: 文件名，如 1.txt
     """
     name = str(name)
@@ -81,7 +84,8 @@ def legalize_filename(name: str) -> str:
 
 def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
     """
-    1. 扁平列表不换行缩进\n
+    1. 扁平列表不换行缩进
+    
     :param obj: 字典
     :param file: 可选，保存的文件路径
     :return text: 
@@ -118,12 +122,36 @@ def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
     return text
 
 
+def read_audio_cover(audio: str) -> bytes:
+    """
+    读取音频封面。
+
+    :param audio: 音频文件，格式 [".mp3", ".flac"]
+    """
+    audio = Path(audio)
+    if audio.suffix.lower() == ".flac":
+        flac = FLAC(audio)
+        # 无封面
+        if not flac.pictures:
+            return b""
+        return flac.pictures[0].data
+
+    elif audio.suffix.lower() == ".mp3":
+        mp3 = MP3(audio, ID3=ID3)
+        # 无封面
+        apic_tag = next((t for t in mp3.tags.values() if isinstance(t, APIC)), None)
+        if not apic_tag:
+            return b""
+        return apic_tag.data
+
+
 def read_audio_tags(audio: str, standard: bool = True) -> dict[str, str]:
     """
-    读取音频标准元数据标签。\n
+    读取音频标准元数据标签。
+    
     标准化标签：
     1. 包含键 ["catalognumber", "date", "album", "tracknumber", "title", "artist"]
-    2. 值为字符串，以 // 为多值连接符\n
+    2. 值为字符串，以 // 为多值连接符
 
     :param audio: 音频文件，格式 [".mp3", ".flac"]
     :param standard: 是否返回标准化标签
@@ -148,6 +176,8 @@ def write_audio_tags(audio: str,
                      tracknumber: str = "", title: str = "", artist: str = "") -> None:
     """
     写入音频元数据标签。仅更新传入的非空值。
+
+    :param audio: 音频文件，格式 [".mp3", ".flac"]
     """
     audio = Path(audio)
 

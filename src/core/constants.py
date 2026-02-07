@@ -3,7 +3,7 @@
 AUDIO_EXTS = {".mp3", ".flac"}
 
 # 项目 接受的图片格式
-IMG_EXTS = {".jpg", ".png"}
+IMG_EXT = ".png"
 
 # 项目 的 归档格式
 ARCHIVE_EXT = ".rar"

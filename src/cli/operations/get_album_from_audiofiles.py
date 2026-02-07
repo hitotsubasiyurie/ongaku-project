@@ -5,9 +5,9 @@ from pathlib import Path
 from src.core.constants import AUDIO_EXTS
 from src.core.kanban import load_albums_from_toml, dump_albums_to_toml
 from src.core.logger import lprint
-from src.lang import MESSAGE
-from src.workflow.common import analyze_album
-from src.workflow.common import easy_linput
+from src.core.i18n import MESSAGE
+from src.cli.common import analyze_album
+from src.cli.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_194620
 

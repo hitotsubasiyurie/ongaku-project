@@ -9,12 +9,12 @@ from tqdm import tqdm
 
 from src.core.basemodels import Album
 from src.core.logger import logger, lprint
-from src.core.settings import global_settings
-from src.lang import MESSAGE
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
 from src.external import pg_ctl_start, pg_ctl_stop, pg_dump_database
 from src.scraper.musicbrainz_scraper import MusicBrainzScraper
 from src.scraper.musicbrainz_database import init_musicbrainz_database, MusicBrainzDatabase
-from src.workflow.common import easy_linput
+from src.cli.common import easy_linput
 
 
 OPERATION_NAME = MESSAGE.WF_20251204_194120
@@ -63,7 +63,7 @@ def main():
 
     recordings = {r["id"]: r for r in map(orjson.loads, read_musicbrainz_tar_dump(recording_tar))}
 
-    pgdata = os.path.join(global_settings.temp_directory, "musicbrainz_pgdata")
+    pgdata = os.path.join(settings.temp_directory, "musicbrainz_pgdata")
     if os.path.isdir(pgdata):
         if easy_linput(MESSAGE.WF_20251204_194123, default="N") == "Y":
             shutil.rmtree(pgdata)
@@ -111,7 +111,7 @@ def main():
 
     # 备份数据库
     lprint(MESSAGE.WF_20251204_194128)
-    dmpfile = os.path.join(global_settings.temp_directory, "musicbrainz.dmp")
+    dmpfile = os.path.join(settings.temp_directory, "musicbrainz.dmp")
     pg_dump_database("musicbrainz", dmpfile)
     lprint(MESSAGE.WF_20251204_194127.format(dmpfile))
 

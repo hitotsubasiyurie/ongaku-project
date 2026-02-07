@@ -9,7 +9,7 @@ from src.core.basemodels import Album
 from src.core.exception import OngakuException
 from src.core.logger import logger
 from src.external import init_pgdata, pg_ctl_start, pg_ctl_stop
-from src.workflow.common import abstract_tracks_info
+from src.cli.common import abstract_tracks_info
 
 
 CREATE_DATABASE_SQL = "CREATE DATABASE musicbrainz;"

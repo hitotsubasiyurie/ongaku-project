@@ -9,7 +9,7 @@ from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShor
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from src.core.kanban import AlbumKanBan
-from src.lang import MESSAGE
+from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.toast_notifier import toast_notify
 

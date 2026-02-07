@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QHeaderView, QAbstractItemView, QStyle)
 
 from src.core.kanban import AlbumKanBan
-from src.lang import MESSAGE
+from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
 from src.ui.page2.album_table_view import AlbumStateItemDelegate

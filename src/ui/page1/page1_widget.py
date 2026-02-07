@@ -5,7 +5,7 @@ from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.kanban import KanBan
-from src.lang import MESSAGE
+from src.core.i18n import MESSAGE
 from src.ui.page1.theme_table_view import ThemeTableView
 
 

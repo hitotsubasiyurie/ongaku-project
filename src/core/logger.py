@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TextIO, Callable
 
-from src.core.settings import global_settings
+from src.core.settings import settings
 
 
 class CompressedRotatingFileHandler(RotatingFileHandler):
@@ -35,7 +35,7 @@ class CompressedRotatingFileHandler(RotatingFileHandler):
 
 
 class WithRawFormatter(logging.Formatter):
-    """生打印格式化"""
+    """原样打印"""
 
     IN_RAW_KEY = "IS_IN_RAW"
 
@@ -71,7 +71,8 @@ class OngakuLogger:
 
     def set_output(self, anypath: str = None) -> None:
         """
-        重新设置日志输出文件位置。\n
+        重新设置日志输出文件位置。
+        
         :param anypath: None、文件、目录
         """
         if not anypath or not os.path.exists(anypath):
@@ -106,12 +107,12 @@ _ongaku_logger = OngakuLogger()
 logger = _ongaku_logger.logger
 
 # 设置 日志
-logdir = os.path.join(global_settings.temp_directory, "log")
+logdir = os.path.join(settings.temp_directory, "log")
 os.makedirs(logdir, exist_ok=True)
 _ongaku_logger.set_output(logdir)
 
-_level_map = {1: logging.DEBUG, 2: logging.INFO, 3: logging.WARNING, 4: logging.ERROR, 5: logging.FATAL}
-logger.setLevel(_level_map.get(global_settings.log_level, 2))
+_LOG_LEVEL_MAP = {1: logging.DEBUG, 2: logging.INFO, 3: logging.WARNING, 4: logging.ERROR, 5: logging.FATAL}
+logger.setLevel(_LOG_LEVEL_MAP.get(settings.log_level, 2))
 
 
 def lprint(*values: object, sep: str | None = " ", end: str | None = "\n", 
@@ -120,7 +121,7 @@ def lprint(*values: object, sep: str | None = " ", end: str | None = "\n",
     print 函数，在调用之前先将内容原样写入日志文件。
     """
     s = sep.join(str(a) for a in values) + end
-    logger.info(s, extra={WithRawFormatter.IN_RAW_KEY: True})
+    logger.debug(s, extra={WithRawFormatter.IN_RAW_KEY: True})
 
     print(*values, sep=sep, end=end, file=file, flush=flush)
 
@@ -130,14 +131,15 @@ def linput(prompt: object  = "") -> str:
     input 函数，在调用之后将提示和输入原样写入日志文件。
     """
     s = input(prompt)
-    logger.info(prompt + s + "\n", extra={WithRawFormatter.IN_RAW_KEY: True})
+    logger.debug(prompt + s + "\n", extra={WithRawFormatter.IN_RAW_KEY: True})
 
     return s
 
 
 def logger_watched(level: int) -> Callable:
     """
-    函数出入口日志打印装饰器。\n
+    函数出入口日志打印装饰器。
+    
     :param level: 缩进级别， [1, 5]
     """
     level = max(1, min(level, 5))

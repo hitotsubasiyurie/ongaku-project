@@ -59,7 +59,8 @@ class MusicBrainzScraper(Scraper):
     @logger_watched(3)
     def get_album_ids_from_series(self, series_id: str) -> list[str]:
         """
-        给定 series mbid 获取 release mbid 列表。\n
+        给定 series mbid 获取 release mbid 列表。
+        
         raises: OngakuException
         """
         r_ids = []
@@ -75,7 +76,8 @@ class MusicBrainzScraper(Scraper):
     @logger_watched(2)
     def get_album_ids_from_release_group(self, rg_id: str) -> list[str]:
         """
-        给定 release-group mbid 获取 release mbid 列表。\n
+        给定 release-group mbid 获取 release mbid 列表。
+        
         raises: OngakuException
         """
         release_group = self.lookup_entity(rg_id, "release-group", "releases")
@@ -86,7 +88,8 @@ class MusicBrainzScraper(Scraper):
     @logger_watched(1)
     def get_album_from_release(self, release_id: str) -> list[Album]:
         """
-        给定 release mbid 获取 Album 模型列表。\n
+        给定 release mbid 获取 Album 模型列表。
+        
         raises: OngakuException
         """
         logger.info(f"Will get album. {release_id}")
@@ -98,7 +101,7 @@ class MusicBrainzScraper(Scraper):
 
     def lookup_entity(self, mbid: str, entity_type: str, inc: str = "") -> dict:
         """
-        调用 lookup api 。\n
+        调用 lookup api 。
         """
         url = f"{self.ROOT_URL}/{entity_type}/{mbid}?fmt=json&inc={inc}"
         logger.info(f"Lookup {entity_type}. {url}")
@@ -110,7 +113,7 @@ class MusicBrainzScraper(Scraper):
 
     def _browse_recordings_of_release(self, release_id: str) -> list[dict]:
         """
-        浏览 release 的所有 recordings 。\n
+        浏览 release 的所有 recordings 。
         """
         recordings = []
         limit, offset = 100, 0
@@ -137,7 +140,7 @@ class MusicBrainzScraper(Scraper):
 
     def _get_release_with_recordings(self, release_id: str) -> dict:
         """
-        获取带有 recordings 信息的 release 。\n
+        获取带有 recordings 信息的 release 。
         """
         release = self.lookup_entity(release_id, "release", "recordings+labels")
         recordings = self._browse_recordings_of_release(release_id)
@@ -154,7 +157,7 @@ class MusicBrainzScraper(Scraper):
     @staticmethod
     def _build_album_from_release(release: dict) -> list[Album]:
         """
-        从带有 recordings 信息的 release 中构造 Album 模型列表。\n
+        从带有 recordings 信息的 release 中构造 Album 模型列表。
         """
         # catnos 不进行 "none" 字符过滤，以免影响专辑分配
         catnos = [l["catalog-number"] for l in release["label-info"] if l["catalog-number"]]
@@ -174,7 +177,7 @@ class MusicBrainzScraper(Scraper):
     @staticmethod
     def _build_disc_from_release(release: dict) -> list[Disc]:
         """
-        从带有 recordings 信息的 release 中构造 Disc 模型列表。\n
+        从带有 recordings 信息的 release 中构造 Disc 模型列表。
         """
         disc_models = []
         for media in release["media"]:

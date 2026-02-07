@@ -9,8 +9,8 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QAbstractItemView)
 
 from src.core.kanban import KanBan
-from src.core.settings import global_settings
-from src.lang import MESSAGE
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom import CustomTableItemModel
 
@@ -83,7 +83,7 @@ class ThemeTableItemModel(CustomTableItemModel):
         # 列表头 播放中 仅展示装饰图标
         if orientation == Qt.Orientation.Vertical and self.layout_ps and self.layout_ps[section] == self.playing_p:
             if role == Qt.ItemDataRole.DecorationRole:
-                return QIcon(f"./assets/{global_settings.ui_color_theme}/locate.png")
+                return QIcon(f"./assets/{settings.ui_color_theme}/locate.png")
             else:
                 return
         

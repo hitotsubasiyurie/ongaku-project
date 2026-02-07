@@ -5,10 +5,10 @@ from tqdm import tqdm
 
 from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
-from src.core.settings import global_settings
-from src.lang import MESSAGE
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
 from src.scraper import VGMdbScraper
-from src.workflow.common import easy_linput
+from src.cli.common import easy_linput
 
 
 OPERATION_NAME = MESSAGE.WF_20251204_194920
@@ -17,8 +17,8 @@ OPERATION_NAME = MESSAGE.WF_20251204_194920
 def main():
     lprint(MESSAGE.WF_20251204_194921)
 
-    input_path = easy_linput(MESSAGE.WF_20251204_194922.format(global_settings.temp_directory), 
-                             default=Path(global_settings.temp_directory), return_type=Path)
+    input_path = easy_linput(MESSAGE.WF_20251204_194922.format(settings.temp_directory), 
+                             default=Path(settings.temp_directory), return_type=Path)
     input_urls = easy_linput(MESSAGE.WF_20251204_194923, return_type=str)
 
     # 创建目录

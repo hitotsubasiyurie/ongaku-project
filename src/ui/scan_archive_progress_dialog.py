@@ -5,8 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 from PySide6.QtWidgets import QWidget, QProgressDialog
 from PySide6.QtCore import Signal
 
-from src.lang import MESSAGE
-from src.core.settings import global_settings
+from src.core.i18n import MESSAGE
+from src.core.settings import settings
 from src.core.kanban import _cached_rar_list, _cached_rar_stats
 
 
@@ -26,7 +26,7 @@ class ScanArchiveProgressDialog(QProgressDialog):
         self.progress_signal.connect(self._update_progress)
 
     def scan_archive(self) -> bool:
-        rar_files = list(map(os.path.abspath, Path(global_settings.archive_directory).rglob("*.rar")))
+        rar_files = list(map(os.path.abspath, Path(settings.archive_directory).rglob("*.rar")))
         if not rar_files:
             self.close()
             return True

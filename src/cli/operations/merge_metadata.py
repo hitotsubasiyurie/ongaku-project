@@ -5,11 +5,11 @@ import rtoml
 
 from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import lprint
-from src.core.settings import global_settings
-from src.lang import MESSAGE
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
 from src.utils import dump_toml
-from src.workflow.common import album_to_unique_str, albums_assignment, abstract_tracks_info
-from src.workflow.common import easy_linput
+from src.cli.common import album_to_unique_str, albums_assignment, abstract_tracks_info
+from src.cli.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_195020
 
@@ -54,7 +54,7 @@ def main():
     src_track_infos, dst_track_infos = list(map(abstract_tracks_info, src_albums)), list(map(abstract_tracks_info, dst_albums))
 
     merge_details = []
-    merge_details_file = Path(global_settings.temp_directory, "merge_details.toml")
+    merge_details_file = Path(settings.temp_directory, "merge_details.toml")
 
     # 生成 merge_details
     row_ind, col_ind, _, sim_matrix = albums_assignment(src_albums, dst_albums, filter_catno, filter_trackcount)

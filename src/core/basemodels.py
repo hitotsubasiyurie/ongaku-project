@@ -6,102 +6,104 @@ catalognumber, date, album, tracknumber, title, artist
 links, mark
 """
 
-from typing import Any, Annotated, Iterable
+import re
+from enum import IntEnum
 
-from pydantic import BaseModel, Field, BeforeValidator, field_validator
+from attrs import define, field, validators
 
 
-def _validate_int(value: Any) -> int:
+_DATE_PATTERN = re.compile(r"^$|^\d{4}$|^\d{4}-\d{2}$|^\d{4}-\d{2}-\d{2}$")
+
+
+class TrackMark(IntEnum):
+    """音轨标记"""
+    # 没有听过
+    UNKNOWN = -1
+    # 听过
+    LISTENED = 0
+    # 喜爱
+    FAVOURITE = 1
+
+
+def _convert_string(value: str) -> str:
     """
-    1. 转换 None 为 0
+    1. 去除首尾空字符
     """
-    if value is None:
-        value = 0
-    if not isinstance(value, int):
-        raise ValueError(f"value is not int: {value}")
-    return value
-
-
-def _validate_string(value: Any) -> str:
-    """
-    1. 转换 None 为空字符串
-    2. 去除首尾空字符
-    """
-    if value is None:
-        value = ""
-    if not isinstance(value, str):
-        raise ValueError(f"value is not str: {value}")
     return value.strip()
 
 
-def _validate_strtuple(value: Any) -> tuple:
+def _convert_string_tuple(value: tuple[str, ...]) -> tuple[str, ...]:
     """
-    1. do_string
-    2. 元组排序、去重
+    1. _convert_string
+    2. 元组去重
+    3. 元组排序
     """
-    if not isinstance(value, Iterable) or isinstance(value, str):
-        raise ValueError(f"value is not iterable: {value}")
-    value = tuple(sorted(set(map(_validate_string, value))))
-    return value
+    return tuple(sorted(set(map(_convert_string, value))))
 
 
-def _validate_tracks_field(tracks: tuple["Track"]) -> tuple["Track"]:
+def _convert_track_tuple(value: tuple["Track", ...]) -> tuple["Track", ...]:
     """
-    1. 列表转元组
-    2. 按照 tracknumber 排序
+    1. 元组按照 Track.tracknumber 排序
     """
-    tracks = tuple(sorted(tracks, key=lambda t: t.tracknumber))
-    return tracks
+    return tuple(sorted(value, key=lambda t: t.tracknumber))
 
 
-_CustomInt = Annotated[int, BeforeValidator(_validate_int)]
-_CustomStr = Annotated[str, BeforeValidator(_validate_string)]
-_CustomStrTuple = Annotated[tuple[str, ...], BeforeValidator(_validate_strtuple)]
-
-
-class Album(BaseModel, validate_assignment=True):
+@define(slots=True, frozen=True, cache_hash=True)
+class Track:
     """
-    :param catalognumber: 目录编号
-    :param date: 日期，仅允许四种模式： ["", "2005", "2005-01", "2005-01-01"]
-    :param album: 专辑名
-    :param tracks: 轨道 Track 模型列表
-    :param links: 链接
-    """
-    catalognumber: _CustomStr = Field(default="")
-    date: _CustomStr = Field(default="", pattern=r"^$|^\d{4}$|^\d{4}-\d{1,2}$|^\d{4}-\d{1,2}-\d{1,2}$")
-    album: _CustomStr = Field(default="")
-    tracks: tuple["Track", ...] = Field(default_factory=tuple)
-    links: _CustomStrTuple = Field(default_factory=tuple)
+    Track 只读模型。
 
-    _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
-
-    def __hash__(self) -> int:
-        return hash((self.catalognumber, self.date, self.album, self.tracks, self.links))
-
-
-class Disc(BaseModel, validate_assignment=True):
-    discnumber: _CustomInt = Field(default=0)
-    disc: _CustomStr = Field(default="")
-    tracks: tuple["Track", ...] = Field(default_factory=tuple)
-
-    _validate_tracks = field_validator("tracks", mode="after")(_validate_tracks_field)
-
-    def __hash__(self) -> int:
-        return hash((self.discnumber, self.disc, self.tracks))
-
-
-class Track(BaseModel, validate_assignment=True):
-    """
     :param tracknumber: 序号
     :param title: 标题
     :param artist: 艺术家
-    :param mark: 自定义标记信息
+    :param mark: 音轨标记信息
     """
-    tracknumber: _CustomInt = Field(default=0)
-    title: _CustomStr = Field(default="")
-    artist: _CustomStr = Field(default="")
-    mark: _CustomStr = Field(default="")
+    tracknumber: int = field(default=0, validator=validators.and_(validators.instance_of(int), validators.ge(0)))
+    title: str = field(default="", converter=_convert_string, validator=validators.instance_of(str))
+    artist: str = field(default="", converter=_convert_string, validator=validators.instance_of(str))
+    mark: TrackMark = field(default=TrackMark.UNKNOWN, validator=validators.in_(TrackMark))
 
-    def __hash__(self) -> int:
-        return hash((self.tracknumber, self.title, self.artist, self.mark))
+
+@define(slots=True, frozen=True, cache_hash=True)
+class Disc:
+    """
+    Disc 只读模型。
+
+    :param discnumber: 序号
+    :param title: 标题
+    :param tracks: Track 模型列表。按照 Track.tracknumber 升序
+    """
+    discnumber: int = field(default=0, validator=validators.and_(validators.instance_of(int), validators.ge(0)))
+    title: str = field(default="", converter=_convert_string, validator=validators.instance_of(str))
+    tracks: tuple[Track, ...] = field(default=(), 
+                                      converter=_convert_track_tuple,
+                                      validator=validators.deep_iterable(
+                                          member_validator=validators.instance_of(Track), 
+                                          iterable_validator=validators.instance_of(tuple)))
+
+
+@define(slots=True, frozen=True, cache_hash=True)
+class Album:
+    """
+    Album 只读模型。
+
+    :param catalognumber: 目录编号
+    :param date: 日期。仅允许四种模式： ["", "2005", "2005-01", "2005-01-01"]
+    :param album: 专辑名
+    :param tracks: Track 模型列表。按照 Track.tracknumber 升序
+    :param links: 链接列表。升序
+    """
+    catalognumber: str = field(default="", converter=_convert_string, validator=validators.instance_of(str))
+    date: str = field(default="", converter=_convert_string, validator=validators.matches_re(_DATE_PATTERN))
+    album: str = field(default="", converter=_convert_string, validator=validators.instance_of(str))
+    tracks: tuple[Track, ...] = field(default=(), 
+                                      converter=_convert_track_tuple, 
+                                      validator=validators.deep_iterable(
+                                          member_validator=validators.instance_of(Track), 
+                                          iterable_validator=validators.instance_of(tuple)))
+    links: tuple[str, ...] = field(default=(), 
+                                   converter=_convert_string_tuple,
+                                   validator=validators.deep_iterable(
+                                       member_validator=validators.instance_of(str), 
+                                       iterable_validator=validators.instance_of(tuple)))
 

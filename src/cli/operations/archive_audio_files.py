@@ -9,10 +9,10 @@ from src.core.basemodels import Album
 from src.core.constants import AUDIO_EXTS
 from src.core.kanban import load_albums_from_toml, album_stemname, track_stemnames
 from src.core.logger import lprint
-from src.core.settings import global_settings
-from src.lang import MESSAGE
+from src.core.settings import settings
+from src.core.i18n import MESSAGE
 from src.utils import dump_toml
-from src.workflow.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str,
+from src.cli.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str,
                                  track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 
 
@@ -123,7 +123,7 @@ def main() -> None:
     filter_trackcount = easy_linput(MESSAGE.WF_20251204_190041, default="Y", return_type=str)  == "Y"
 
     theme_directory = Path(dst_parent, metadata_file.stem)
-    archive_details_file = Path(global_settings.temp_directory, "archive_details.toml")
+    archive_details_file = Path(settings.temp_directory, "archive_details.toml")
 
     # 存在音频 的目录 认为是专辑目录
     src_dirs = [d for d in src_parent.rglob("*") 

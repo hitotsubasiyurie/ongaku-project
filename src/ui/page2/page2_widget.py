@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 
 from src.core.basemodels import Album
 from src.core.constants import AUDIO_EXTS, IMG_EXTS
-from src.core.kanban import ThemeKanBan, track_stemnames
+from src.core.kanban import ThemeKanban, track_stemnames
 from src.core.settings import settings
 from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
@@ -99,7 +99,7 @@ class Page2Widget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.theme_kanban: Optional[ThemeKanBan] = None
+        self.theme_kanban: Optional[ThemeKanban] = None
 
         # 保存元数据文件 防抖定时器 10 秒
         self._save_timer = QTimer(self)
@@ -112,7 +112,7 @@ class Page2Widget(QWidget):
         self.setup_event()
         self.setup_shortcut()
 
-    def set_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
+    def set_theme_kanban(self, theme_kanban: ThemeKanban = None) -> None:
         self.theme_kanban = theme_kanban
         # 清空搜索框
         [x.clear() for x in [self.album_field, self.catno_field, self.date_field, self.track_field]]

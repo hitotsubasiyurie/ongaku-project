@@ -68,7 +68,7 @@ def legalize_filename(name: str) -> str:
     1. 用全角符号替换路径中的非法符号
     2. 去除路径结尾空格
     3. 限制 250 字符文件名
-    
+
     :param name: 文件名，如 1.txt
     """
     name = str(name)
@@ -85,7 +85,7 @@ def legalize_filename(name: str) -> str:
 def dump_toml(obj: Mapping[str, Any], file: str = None) -> str:
     """
     1. 扁平列表不换行缩进
-    
+
     :param obj: 字典
     :param file: 可选，保存的文件路径
     :return text: 

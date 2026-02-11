@@ -12,7 +12,7 @@ from mutagen.id3 import ID3, APIC
 from mutagen.mp3 import MP3
 
 from src.core.basemodels import Album, Track
-from src.core.kanban import KanBan, track_stemnames
+from src.core.kanban import Kanban, track_stemnames
 from src.core.logger import lprint, logger
 from src.core.settings import settings
 from src.external import show_audio_stream_info, compress_image
@@ -43,7 +43,7 @@ def write_metadata(dst_file: str | Path, cover: str, album: Album, track: Track)
 
 # 业务函数
 
-def get_missing_files(kanban: KanBan) -> tuple[list, list]:
+def get_missing_files(kanban: Kanban) -> tuple[list, list]:
     missing_favs, missing_covers = [], []
 
     for tk in kanban.theme_kanbans:
@@ -61,7 +61,7 @@ def get_missing_files(kanban: KanBan) -> tuple[list, list]:
     return missing_favs, missing_covers
 
 
-def get_eported_map(export_dir: Path, kanban: KanBan) -> dict[tuple[int, int, int], Path]:
+def get_eported_map(export_dir: Path, kanban: Kanban) -> dict[tuple[int, int, int], Path]:
     exported_map = {}
 
     for i, theme_kanban in enumerate(kanban.theme_kanbans):
@@ -89,7 +89,7 @@ def main() -> None:
 
     export_dir = easy_linput(MESSAGE.WF_20251204_194422, return_type=Path)
     
-    kanban = KanBan(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
+    kanban = Kanban(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
 
     # 检查缺失文件
     missing_favs, missing_covers = get_missing_files(kanban)

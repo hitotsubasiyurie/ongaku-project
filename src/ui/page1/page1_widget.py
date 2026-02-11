@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QModelIndex, Signal, QTimer
 from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
-from src.core.kanban import KanBan
+from src.core.kanban import Kanban
 from src.core.i18n import MESSAGE
 from src.ui.page1.theme_table_view import ThemeTableView
 
@@ -47,7 +47,7 @@ class Page1Widget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.kanban: Optional[KanBan] = None
+        self.kanban: Optional[Kanban] = None
         # 当前播放的主题看板 指针
         self.playing_p: Optional[int] = None
 
@@ -55,7 +55,7 @@ class Page1Widget(QWidget):
         self.setup_event()
         self.setup_shortcut()
 
-    def set_kanban(self, kanban: KanBan = None) -> None:
+    def set_kanban(self, kanban: Kanban = None) -> None:
         self.kanban = kanban
         self.theme_table_view.item_model.reset_kanban(kanban)
         self.theme_table_view.hightlight_row(0)

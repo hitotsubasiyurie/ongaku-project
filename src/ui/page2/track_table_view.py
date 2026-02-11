@@ -6,7 +6,7 @@ from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMet
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView,
                                QHeaderView, QAbstractItemView, QStyle)
 
-from src.core.kanban import AlbumKanBan
+from src.core.kanban import AlbumKanban
 from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
@@ -23,9 +23,9 @@ class TrackTableItemModel(CustomTableItemModel):
 
         self.headers: list[str] = ["S", MESSAGE.UI_20260101_112210]
 
-        self.album_kanban: Optional[AlbumKanBan] = None
+        self.album_kanban: Optional[AlbumKanban] = None
 
-    def reset_album_kanban(self, album_kanban: AlbumKanBan = None) -> None:
+    def reset_album_kanban(self, album_kanban: AlbumKanban = None) -> None:
         # 声明重置模型
         self.beginResetModel()
         

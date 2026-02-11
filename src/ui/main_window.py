@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
-from src.core.kanban import KanBan
+from src.core.kanban import Kanban
 from src.core.settings import settings
 from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
@@ -66,13 +66,13 @@ class MainWindow(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.kanban: Optional[KanBan] = None
+        self.kanban: Optional[Kanban] = None
 
         self.setup_ui()
         self.setup_event()
         self.setup_shortcut()
 
-    def set_kanban(self, kanban: KanBan) -> None:
+    def set_kanban(self, kanban: Kanban) -> None:
         self.kanban = kanban
         self.page1.set_kanban(kanban)
         self.page2.set_theme_kanban(None)

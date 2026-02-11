@@ -6,7 +6,7 @@ from PySide6.QtGui import (QWheelEvent, )
 from PySide6.QtWidgets import (QWidget, QComboBox, )
 
 from src.core.i18n import MESSAGE
-from src.core.kanban import AlbumKanBan
+from src.core.kanban import AlbumKanban
 
 class LinkComboBox(QComboBox):
 
@@ -15,7 +15,7 @@ class LinkComboBox(QComboBox):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.album_kanban: Optional[AlbumKanBan] = None
+        self.album_kanban: Optional[AlbumKanban] = None
 
         # 设置默认文本
         self.setEditable(True)
@@ -32,7 +32,7 @@ class LinkComboBox(QComboBox):
         self.activated.connect(self._on_activated)
         self.lineEdit().returnPressed.connect(self._on_return_pressed)
 
-    def set_album_kanban(self, album_kanban: AlbumKanBan | None) -> None:
+    def set_album_kanban(self, album_kanban: AlbumKanban | None) -> None:
         self.album_kanban = album_kanban
         self._set_items()
 

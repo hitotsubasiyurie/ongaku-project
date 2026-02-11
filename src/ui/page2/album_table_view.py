@@ -6,7 +6,7 @@ from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QAction, QPaint
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView, QStyle)
 
-from src.core.kanban import ResourceState, ThemeKanBan
+from src.core.kanban import ResourceState, ThemeKanban
 from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
@@ -22,9 +22,9 @@ class AlbumTableItemModel(CustomTableItemModel):
 
         self.headers: list[str] = ["S", MESSAGE.UI_20260101_112207, MESSAGE.UI_20260101_112208, MESSAGE.UI_20260101_112209]
         
-        self.theme_kanban: Optional[ThemeKanBan] = None
+        self.theme_kanban: Optional[ThemeKanban] = None
 
-    def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
+    def reset_theme_kanban(self, theme_kanban: ThemeKanban = None) -> None:
         # 声明重置模型
         self.beginResetModel()
 

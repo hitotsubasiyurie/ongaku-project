@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from src.core.kanban import KanBan
+from src.core.kanban import Kanban
 from src.core.logger import lprint
 from src.core.settings import settings
 from src.core.i18n import MESSAGE
@@ -15,7 +15,7 @@ OPERATION_NAME = MESSAGE.WF_20251221_202001
 # 主函数
 
 def main() -> None:
-    kanban = KanBan(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
+    kanban = Kanban(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
 
     total = sum(1 for tk in kanban.theme_kanbans for ak in tk.album_kanbans if os.path.isdir(ak.album_dir))
     current = 0

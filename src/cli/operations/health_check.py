@@ -15,7 +15,7 @@ from mutagen.id3 import ID3, APIC
 from mutagen.mp3 import MP3
 
 from src.core.basemodels import Album, Track
-from src.core.kanban import KanBan, track_stemnames, _cached_rar_list, _cached_rar_stats, album_stemname
+from src.core.kanban import Kanban, track_stemnames, _cached_rar_list, _cached_rar_stats, album_stemname
 from src.core.logger import lprint, logger
 from src.core.settings import settings
 from src.external import show_audio_stream_info, compress_image, rar_extract, rar_add
@@ -46,7 +46,7 @@ def scan_archive_directory() -> None:
     pbar.close()
 
 
-def check_favourites(kanban: KanBan) -> None:
+def check_favourites(kanban: Kanban) -> None:
     lprint(MESSAGE.WF_20260128_092704)
 
     missing_favs, missing_covers = [], []
@@ -69,7 +69,7 @@ def check_favourites(kanban: KanBan) -> None:
         lprint(MESSAGE.WF_20260128_092707)
 
 
-def check_cover_size(kanban: KanBan) -> bool:
+def check_cover_size(kanban: Kanban) -> bool:
     lprint(MESSAGE.WF_20260128_092705)
 
     _list = []
@@ -115,7 +115,7 @@ def main() -> None:
 
     scan_archive_directory()
 
-    kanban = KanBan(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
+    kanban = Kanban(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
 
     check_favourites(kanban)
 

@@ -21,12 +21,18 @@ _data = {
 MESSAGE = SimpleNamespace(**_data)
 
 
+################################################################################
+### 更新配置文件中的注释说明至对应语言版本
+################################################################################
+
+
 _SETTING2COMMENT = {
     _Settings.log_level.__name__: MESSAGE.SET_20260131_090300,
     _Settings.language.__name__: MESSAGE.SET_20260131_090301,
 
     _Settings.temp_directory.__name__: MESSAGE.SET_20260131_090302,
     _Settings.metadata_directory.__name__: MESSAGE.SET_20260131_090303,
+    _Settings.cover_directory.__name__: MESSAGE.SET_20260131_090309,
     _Settings.resource_directory.__name__: MESSAGE.SET_20260131_090304,
 
     _Settings.ui_color_theme.__name__: MESSAGE.SET_20260131_090306,
@@ -38,9 +44,6 @@ _SETTING2COMMENT = {
 
 
 def _update_settings_comments() -> None:
-    """
-    更新配置文件中的注释说明至对应语言版本。
-    """
     # 序列化
     lines = []
 

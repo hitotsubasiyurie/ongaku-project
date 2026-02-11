@@ -5,7 +5,7 @@ from PySide6.QtCore import QModelIndex, Qt, QObject, Signal
 from PySide6.QtGui import QAction, QBrush, QResizeEvent, QIcon
 from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
-from src.core.kanban import ThemeKanBan, ResourceState
+from src.core.kanban import ThemeKanban, ResourceState
 from src.core.settings import settings
 from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
@@ -29,14 +29,14 @@ class PlayTableItemModel(CustomTableItemModel):
         self.headers: list[str] = [MESSAGE.UI_20260101_112211, MESSAGE.UI_20260101_112210, MESSAGE.UI_20260101_112212, 
                                    MESSAGE.UI_20260101_112207, MESSAGE.UI_20260101_112209, MESSAGE.UI_20260101_112206]
 
-        self.theme_kanban: Optional[ThemeKanBan] = None
+        self.theme_kanban: Optional[ThemeKanban] = None
 
         # 看板索引
         self.kanban_ij: list[tuple[int, int]] = []
         # 播放中索引
         self.playing_ij: Optional[tuple[int, int]] = None
 
-    def reset_theme_kanban(self, theme_kanban: ThemeKanBan = None) -> None:
+    def reset_theme_kanban(self, theme_kanban: ThemeKanban = None) -> None:
         # 声明重置模型
         self.beginResetModel()
 

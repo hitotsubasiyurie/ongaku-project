@@ -16,7 +16,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 
 from src.core.settings import settings
-from src.core.kanban import KanBan
+from src.core.kanban import Kanban
 from src.ui.toast_notifier import ToastNotifier
 from src.ui.scan_archive_progress_dialog import ScanArchiveProgressDialog
 from src.ui.main_window import MainWindow
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     # 加载看板
     QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-    kanban = KanBan(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
+    kanban = Kanban(settings.metadata_directory, settings.resource_directory, settings.archive_directory)
     main_windows.set_kanban(kanban)
     QApplication.restoreOverrideCursor()
 

@@ -1,5 +1,6 @@
 import os
 import pickle
+import itertools
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
@@ -11,11 +12,11 @@ from typing import Callable, Any
 from functools import _make_key
 
 import rtoml
-from attrs import asdict
 from cattrs import Converter
 from pympler import asizeof
+from attrs import define, field, validators, asdict
 
-from src.core.basemodels import Album, Track
+from src.core.basemodels import Album, Track, TrackMark
 from src.core.constants import IMG_EXT, ARCHIVE_EXT
 from src.core.settings import settings
 from src.utils import legalize_filename, dump_toml
@@ -33,6 +34,7 @@ class FileSystemCache:
     _CACHE_LOCK = Lock()
     _CACHE_FILE = Path(settings.temp_directory, "filesystem_cache")
     _CACHE: OrderedDict = None
+    # 缓存 大小 MiB
     _MAX_SIZE = 50 * 1024 * 1024
 
     @staticmethod
@@ -113,8 +115,6 @@ except Exception:
 ALBUM_STEMNAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"
 # 音轨文件名主干
 TRACK_STEMNAME = "{tracknumber}. {title}"
-# 封面文件名
-COVER_NAME = "cover.png"
 
 
 def album_stemname(album: Album) -> str:
@@ -204,153 +204,44 @@ class MetadataState(IntFlag):
 ################################################################################
 
 
-@dataclass
-class ElementKanBan:
-    """
-    专辑元素看板。
-
-    :param parent_path: 
-    :param filename: 
-    """
-
-    parent_path: str
-    """专辑目录路径 或 专辑归档文件路径。文件不存在时为专辑目录路径"""
-    filename: str
-    """文件名。文件不存在时为空字符串。"""
-
-    def __post_init__(self) -> None:
-        self.parent_path = os.path.abspath(self.parent_path)
-
-    @cached_property
-    def is_archive_format(self) -> bool:
-        """文件是否为归档格式。文件不存在时默认为目录格式"""
-        return self.filename and os.path.isfile(self.parent_path)
-
-    @property
-    def stat_result(self)-> os.stat_result | None:
-        """文件属性。文件不存在时为 None"""
-        if not self.filename:
-            return None
-        if not self.is_archive_format:
-            return Path(self.parent_path, self.filename).stat()
-        else:
-            return FileSystemCache.rar_stats(self.parent_path).get(self.filename)
-
-    def read_bytes(self) -> bytes:
-        """
-        读取文件字节数据。文件不存在时为 b""
-        """
-        if not self.filename:
-            return b""
-        if not self.is_archive_format:
-            return Path(self.parent_path, self.filename).read_bytes()
-        else:
-            return FileSystemCache.rar_read(self.parent_path, self.filename)
-
-
-@dataclass
-class TrackKanBan(ElementKanBan):
-    """
-    音轨看板。
-
-    :param parent_path: 
-    :param filename: 
-    :param track: 
-    """
-
-    track: Track
-    """Track 模型"""
-
-    def __post_init__(self) -> None:
-        super().__post_init__()
-
-    @property
-    def metadata_state(self) -> MetadataState:
-        """音轨元数据状态"""
-        s = MetadataState.ALL_EXIST
-        if not self.track.artist:
-            s &= ~MetadataState.ARTIST_EXIST
-        return s
-
-    @property
-    def resource_state(self) -> ResourceState:
-        """音轨资源状态"""
-        return _RESOURCE_STATE_MAP[Path(self.filename).suffix.lower() if self.filename else ""]
-
-    @property
-    def audio_stream_info(self) -> dict:
-        """音轨音频流信息。文件不存在时为 {}"""
-        if not self.filename:
-            return {}
-        if not self.is_archive_format:
-            return show_audio_stream_info(os.path.join(self.parent_path, self.filename))
-        else:
-            return show_audio_stream_info(rar_read(self.parent_path, self.filename))
-
-
-@dataclass
-class AlbumKanBan:
+@define()
+class AlbumKanban:
     """
     专辑看板。
-
-    :param album: 
-    :param album_dir: 
-    :param album_archive: 
+    对专辑元数据和音轨文件的统计属性的汇总。
     """
 
-    album: Album
-    """Album 模型"""
-    album_dir: str
+    album: Album = field(validator=validators.instance_of(Album))
+    """专辑模型"""
+    album_dir: str = field(converter=os.path.abspath)
     """将会搜索的专辑目录路径。扁平地存放每一个音轨文件。优先级高"""
-    album_archive: str
+    album_archive: str = field(converter=os.path.abspath)
     """将会搜索的专辑归档路径。扁平地存放每一个音轨文件"""
 
-    def __post_init__(self) -> None:
-        self.album_dir = os.path.abspath(self.album_dir)
-        self.album_archive = os.path.abspath(self.album_archive)
+    @cached_property
+    def cover_path(self) -> str:
+        """专辑封面路径"""
+        return os.path.join(settings.cover_directory, f"{album_stemname(self.album)}{IMG_EXT}")
 
-    @property
-    def cover_kanban(self) -> ElementKanBan:
-        """封面看板"""
-        # 专辑目录和专辑归档 都不存在时
-        if not os.path.isdir(self.album_dir) and not os.path.isfile(self.album_archive):
-            return ElementKanBan(self.album_dir, "")
+    @cached_property
+    def track_paths(self) -> tuple[tuple[str, str], ...]:
+        """
+        音轨文件路径列表。
+        每个 path 为元组 (parent, filename)。
+        音轨文件不存在时，path 为 (album_dir, stemname)
+        """
+        stemnames = track_stemnames(self.album)
 
-        # 专辑目录 优先级更高
-        name2parent = {}
+        stem2path = {n: (self.album_dir, n) for n in stemnames}
+
         if os.path.isfile(self.album_archive):
-            name2parent.update({n: self.album_archive for n in _cached_rar_list(self.album_archive)})
-
+            stem2path.update({Path(n).stem: (self.album_archive, n) for n in FileSystemCache.rar_list(self.album_archive)})
         if os.path.isdir(self.album_dir):
-            name2parent.update({n: self.album_dir for n in os.listdir(self.album_dir)})
+            stem2path.update({Path(n).stem: (self.album_dir, n) for n in os.listdir(self.album_dir)})
 
-        names = list(map(Path, name2parent.keys()))
+        return tuple(stem2path[n] for n in stemnames)
 
-        cover_filename = next((n.name for n in names if n.stem.lower() == COVER_STEMNAME and n.suffix.lower() in IMG_EXTS), "")
-        return ElementKanBan(name2parent[cover_filename], cover_filename)
-
-    @property
-    def track_kanbans(self) -> tuple[TrackKanBan, ...]:
-        """音轨看板列表"""
-        # 专辑目录和专辑归档 都不存在时
-        if not os.path.isdir(self.album_dir) and not os.path.isfile(self.album_archive):
-            return tuple(TrackKanBan(self.album_dir, "", t) for t in self.album.tracks)
-
-        # 专辑目录 优先级更高
-        name2parent = {}
-        if os.path.isfile(self.album_archive):
-            name2parent.update({n: self.album_archive for n in _cached_rar_list(self.album_archive)})
-        if os.path.isdir(self.album_dir):
-            name2parent.update({n: self.album_dir for n in os.listdir(self.album_dir)})
-
-        names = list(map(Path, name2parent.keys()))
-
-        stem2ext = {n.stem: n.suffix for n in names}
-        track_filenames = tuple((n+stem2ext[n]) if n in stem2ext else "" for n in track_stemnames(self.album))
-        return tuple(TrackKanBan(name2parent[n] if n else self.album_dir, n, t) 
-                                 for n, t in zip(track_filenames, self.album.tracks))
-
-    @property
+    @cached_property
     def metadata_state(self) -> MetadataState:
         """专辑元数据状态"""
         s = MetadataState.NONE
@@ -366,53 +257,81 @@ class AlbumKanBan:
             # 任一 track 有 artist 信息 
             if any(t.artist for t in self.album.tracks):
                 s |= MetadataState.ARTIST_EXIST
-        if self.cover_kanban.filename:
+        if os.path.isfile(self.cover_path):
             s |= MetadataState.COVER_EXIST
 
         return s
 
-    @property
+    @cached_property
+    def track_resource_states(self) -> tuple[ResourceState, ...]:
+        """音轨资源状态列表"""
+        return tuple(_RESOURCE_STATE_MAP[Path(p[1]).suffix.lower()] for p in self.track_paths)
+
+    @cached_property
     def resource_state(self) -> ResourceState:
         """专辑资源状态"""
-        # 元数据 无 tracks 时为 MISSING
+        # 元数据没有 tracks 信息时为 MISSING
         if not self.album.tracks:
-            return ResourceState.MISSING
-
-        states = [tk.resource_state for tk in self.track_kanbans]
-        if all(states):
-            return min(states)
-        elif any(states):
-            return ResourceState.PARTIAL
+            s = ResourceState.MISSING
+        elif all(self.track_resource_states):
+            s = min(self.track_resource_states)
+        elif any(self.track_resource_states):
+            s = ResourceState.PARTIAL
         else:
-            return ResourceState.MISSING
+            s = ResourceState.MISSING
 
-    @property
+        return s
+
+    @cached_property
     def is_favourite(self) -> bool:
         """是否喜欢"""
-        return any(tk.is_favourite for tk in self.track_kanbans)
+        return any(t.mark == TrackMark.FAVOURITE for t in self.album.tracks)
+
+    @cached_property
+    def track_stat_results(self) -> tuple[os.stat_result | None, ...]:
+        """音轨文件属性列表"""
+        arch_stats = FileSystemCache.rar_stats(self.album_archive) if os.path.isfile(self.album_archive) else {}
+        dir_stats = {p.name: p.stat() for p in Path(self.album_dir).iterdir()} if os.path.isdir(self.album_dir) else {}
+        return tuple(arch_stats.get(p[1]) if p[0] == self.album_archive else dir_stats.get(p[1]) for p in self.track_paths)
+
+    def read_track_bytes(self, p: tuple[str, str]) -> bytes | None:
+        """
+        读取音轨文件字节数据。
+        
+        :param p: 音轨文件路径
+        """
+        return rar_read(*p) if p[0] == self.album_archive else Path(*p).read_bytes()
+
+    def refresh(self) -> None:
+        """
+        刷新缓存。
+        """
+        # 先刷新子看板缓存 再刷新自身缓存
+        attrs = ("cover_path", "track_paths", "metadata_state", "track_resource_states", 
+                 "resource_state", "is_favourite", "track_stat_results")
+        [self.__dict__.pop(a, None) for a in attrs]
 
 
-@dataclass
-class ThemeKanBan:
-    """
-    主题看板。
+@define()
+class ThemeKanban:
+    """主题看板"""
 
-    :param theme_metadata_file: 
-    :param theme_resource_dir: 
-    """
-
-    theme_metadata_file: str
+    theme_metadata_file: str = field(converter=os.path.abspath)
     """主题元数据文件路径"""
-    theme_resource_dir: str
-    """主题资源目录路径。扁平地存放每一个专辑资源目录或者专辑归档"""
+    theme_resource_dir: str = field(converter=os.path.abspath)
+    """主题资源目录路径。扁平地存放每一个专辑目录或专辑归档"""
 
-    album_kanbans: tuple[AlbumKanBan, ...] = field(init=False)
+    album_kanbans: tuple[AlbumKanban, ...] = field(init=False)
     """专辑看板列表"""
 
-    def __post_init__(self) -> None:
-        self.theme_metadata_file = os.path.abspath(self.theme_metadata_file)
-        self.theme_resource_dir = os.path.abspath(self.theme_resource_dir)
-        self.scan()
+    def __attrs_post_init__(self) -> None:
+        # 创建 主题目录
+        os.makedirs(self.theme_resource_dir, exist_ok=True)
+
+        albums = load_albums_from_toml(self.theme_metadata_file)
+        album_dirs = [os.path.join(self.theme_resource_dir, album_stemname(a)) for a in albums]
+        album_archives = [os.path.join(self.theme_resource_dir, f"{album_stemname(a)}{ARCHIVE_EXT}") for a in albums]
+        self.album_kanbans = tuple(AlbumKanban(*args) for args in zip(albums, album_dirs, album_archives))
 
     @cached_property
     def theme_name(self) -> str:
@@ -420,114 +339,104 @@ class ThemeKanBan:
         return Path(self.theme_metadata_file).stem
 
     @cached_property
-    def album_collection_progress(self) -> tuple[int, int]:
+    def collecting_progress(self) -> tuple[int, int]:
         """资源收集进度"""
-        albums = [k.album for k in self.album_kanbans]
-        if albums:
-            return sum(k.resource_state != ResourceState.MISSING for k in self.album_kanbans), len(albums)
+        states = [s != ResourceState.MISSING for ak in self.album_kanbans for s in ak.track_resource_states]
+        if states: return sum(states), len(states)
         return 0, 0
 
     @cached_property
-    def track_mark_progress(self) -> tuple[int, int]:
+    def marking_progress(self) -> tuple[int, int]:
         """标记进度"""
-        albums = [k.album for k in self.album_kanbans]
-        total = sum(len(a.tracks) for a in albums)
-        if total:
-            return sum(bool(t.mark) for a in albums for t in a.tracks), total
+        marks = [t.mark != TrackMark.UNKNOWN for ak in self.album_kanbans for t in ak.album.tracks]
+        if marks: return sum(marks), len(marks)
         return 0, 0
 
     @cached_property
-    def start_date(self) -> tuple[str, str]:
+    def start_date(self) -> str:
         """最早的专辑日期"""
-        dates = list(sorted(filter(None, (k.album.date for k in self.album_kanbans))))
+        dates = list(sorted(filter(None, (ak.album.date for ak in self.album_kanbans))))
         return dates[0] if dates else ""
 
     @cached_property
-    def end_date(self) -> tuple[str, str]:
+    def end_date(self) -> str:
         """最晚的专辑日期"""
-        dates = list(sorted(filter(None, (k.album.date for k in self.album_kanbans))))
+        dates = list(sorted(filter(None, (ak.album.date for ak in self.album_kanbans))))
         return dates[-1] if dates else ""
-
-    def scan(self) -> None:
-        """
-        扫描文件系统。
-        """
-        albums = load_albums_from_toml(self.theme_metadata_file)
-        album_dirs = [os.path.join(self.theme_resource_dir, album_stemname(a)) for a in albums]
-        album_archives = [os.path.join(self.theme_resource_dir, album_stemname(a) + ARCHIVE_EXT) for a in albums]
-        self.album_kanbans = tuple(AlbumKanBan(*args) for args in zip(albums, album_dirs, album_archives))
 
     def save_metadata_file(self) -> None:
         """
         保存元数据文件。
         """
-        albums = [k.album for k in self.album_kanbans]
+        albums = [ak.album for ak in self.album_kanbans]
         dump_albums_to_toml(albums, self.theme_metadata_file)
 
-    def __hash__(self) -> int:
-        return hash((self.theme_metadata_file, self.theme_resource_dir, self.album_kanbans))
+    def refresh(self) -> None:
+        """
+        刷新缓存。
+        """
+        # 先刷新子看板缓存 再刷新自身缓存
+        [ak.refresh() for ak in self.album_kanbans]
+        attrs = ("collecting_progress", "marking_progress", "start_date", "end_date")
+        [self.__dict__.pop(a, None) for a in attrs]
 
 
-@dataclass
-class KanBan:
-    """
-    项目看板。
+@define()
+class Kanban:
+    """总看板"""
 
-    :param metadata_dir: 
-    :param resource_dir: 
-    """
-
-    metadata_dir: str
+    metadata_dir: str = field(converter=os.path.abspath)
     """元数据目录路径"""
-    resource_dir: str
+    resource_dir: str = field(converter=os.path.abspath)
     """资源目录路径"""
 
-    theme_kanbans: tuple[ThemeKanBan, ...] = field(init=False)
+    theme_kanbans: tuple[ThemeKanban, ...] = field(init=False)
     """主题看板列表"""
 
-    def __post_init__(self) -> None:
-        self.metadata_dir = os.path.abspath(self.metadata_dir)
-        self.resource_dir = os.path.abspath(self.resource_dir)
-        self.scan()
+    def __attrs_post_init__(self) -> None:
+        # 创建 目录
+        os.makedirs(self.metadata_dir, exist_ok=True)
+        os.makedirs(self.resource_dir, exist_ok=True)
 
-    @cached_property
-    def album_collection_progress(self) -> tuple[int, int]:
-        """资源收集进度"""
-        if self.theme_kanbans:
-            colls, totals = list(zip(*[tk.album_collection_progress for tk in self.theme_kanbans]))
-            return sum(colls), sum(totals)
-        return 0, 0
-
-    @cached_property
-    def track_mark_progress(self) -> tuple[int, int]:
-        """标记进度"""
-        if self.theme_kanbans:
-            marks, totals = list(zip(*[tk.track_mark_progress for tk in self.theme_kanbans]))
-            return sum(marks), sum(totals)
-        return 0, 0
-
-    def scan(self) -> None:
-        """
-        扫描文件系统。
-        """
         # 允许嵌套
         # 元数据目录、资源目录、归档目录 保持相同结构
-        theme_mdfs = list(Path(self.metadata_dir).rglob("*.toml"))
-        theme_res_dirs = [os.path.join(self.resource_dir, f.relative_to(self.metadata_dir).with_suffix("")) for f in theme_mdfs]
+        mdfs = list(Path(self.metadata_dir).rglob("*.toml"))
+        paths = [os.path.join(self.resource_dir, f.relative_to(self.metadata_dir).with_suffix("")) for f in mdfs]
 
         # 默认 max_workers = cpu_count + 4
         with ThreadPoolExecutor() as executor:
-            self.theme_kanbans = tuple(executor.map(ThemeKanBan, theme_mdfs, theme_res_dirs))
+            self.theme_kanbans = tuple(executor.map(ThemeKanban, mdfs, paths))
 
-        # 保存 rar 缓存
-        _rar_cache_file.write_bytes(pickle.dumps(_rar_cache))
+    @cached_property
+    def collecting_progress(self) -> tuple[int, int]:
+        """资源收集进度"""
+        if not self.theme_kanbans:
+            return 0, 0
+        colls, totals = list(zip(*(tk.collecting_progress for tk in self.theme_kanbans)))
+        return sum(colls), sum(totals)
+        
+    @cached_property
+    def marking_progress(self) -> tuple[int, int]:
+        """标记进度"""
+        if not self.theme_kanbans:
+            return 0, 0
+        marks, totals = list(zip(*[tk.marking_progress for tk in self.theme_kanbans]))
+        return sum(marks), sum(totals)
 
-    def get_theme_kanban(self, name: str) -> ThemeKanBan | None:
+    def get_theme_kanban(self, name: str) -> ThemeKanban | None:
         if not name:
             return None
         return next((k for k in self.theme_kanbans if k.theme_name == name), None)
 
-    def __hash__(self) -> int:
-        return hash((self.metadata_dir, self.resource_dir, self.theme_kanbans))
+    def refresh(self) -> None:
+        """
+        刷新缓存。
+        """
+        # 先刷新子看板缓存 再刷新自身缓存
+        [tk.refresh() for tk in self.theme_kanbans]
+        attrs = ("collecting_progress", "marking_progress")
+        [self.__dict__.pop(a, None) for a in attrs]
+
+
 
 

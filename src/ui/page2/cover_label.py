@@ -8,7 +8,7 @@ from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShor
                            QGuiApplication, QFont)
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
-from src.core.kanban import AlbumKanBan
+from src.core.kanban import AlbumKanban
 from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.toast_notifier import toast_notify
@@ -24,7 +24,7 @@ class CoverLabel(QLabel):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.album_kanban: Optional[AlbumKanBan] = None
+        self.album_kanban: Optional[AlbumKanban] = None
         # 封面
         self.pix: Optional[QPixmap] = None
         # 缩放的封面
@@ -48,7 +48,7 @@ class CoverLabel(QLabel):
         # 快捷键
         QShortcut(QKeySequence("Ctrl+V"), self, activated=self._on_image_pasted)
 
-    def set_album_kanban(self, album_kanban: AlbumKanBan | None) -> None:
+    def set_album_kanban(self, album_kanban: AlbumKanban | None) -> None:
         self.album_kanban = album_kanban
         self.pix, self.scaled_pix, self.image_info = None, None, None
 

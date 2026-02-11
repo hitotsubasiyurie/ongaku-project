@@ -8,7 +8,7 @@ from PySide6.QtGui import QPainter, QAction, QPalette, QIcon
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView)
 
-from src.core.kanban import KanBan
+from src.core.kanban import Kanban
 from src.core.settings import settings
 from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
@@ -23,11 +23,11 @@ class ThemeTableItemModel(CustomTableItemModel):
         self.headers: list[str] = [MESSAGE.UI_20260101_112201, MESSAGE.UI_20260101_112202, MESSAGE.UI_20260101_112203, 
                                    MESSAGE.UI_20260101_112204, MESSAGE.UI_20260101_112205, MESSAGE.UI_20260101_112206]
 
-        self.kanban: Optional[KanBan] = None
+        self.kanban: Optional[Kanban] = None
         # 播放中索引
         self.playing_p: Optional[int] = None
 
-    def reset_kanban(self, kanban: KanBan = None) -> None:
+    def reset_kanban(self, kanban: Kanban = None) -> None:
         # 声明重置模型
         self.beginResetModel()
 

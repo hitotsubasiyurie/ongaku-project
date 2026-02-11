@@ -18,11 +18,12 @@ class _Settings:
 
     log_level: int = field(default=2, validator=validators.in_(LOG_LEVELS))
     language: str = field(default="zh_cn", validator=validators.in_(LANGUAGES))
-    
+
     temp_directory: str = field(default=r"D:\ongaku-tmp", converter=os.path.abspath)
     metadata_directory: str = field(default=r"D:\ongaku-metadata", converter=os.path.abspath)
+    cover_directory: str = field(default=r"D:\ongaku-metadata\cover", converter=os.path.abspath)
     resource_directory: str = field(default=r"D:\ongaku-resource", converter=os.path.abspath)
-    
+
     ui_color_theme: str = field(default="light", validator=validators.in_(COLOR_THEMES))
     ui_font_size: int = field(default=9, validator=validators.gt(0))
     ui_font_family: str = field(default="JetBrains Mono")

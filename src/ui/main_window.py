@@ -9,7 +9,7 @@ from src.core.settings import settings
 from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.color_theme import BUTTON_QSS
-from src.ui.toast_notifier import toast_notify
+from ui.notifier import show_toast_msg
 from src.ui.page1.page1_widget import Page1Widget
 from src.ui.page2.page2_widget import Page2Widget
 from src.ui.page3.page3_widget import Page3Widget
@@ -77,7 +77,7 @@ class MainWindow(QWidget):
         self.page1.set_kanban(kanban)
         self.page2.set_theme_kanban(None)
         self.page3.set_theme_kanban(None)
-        toast_notify(MESSAGE.UI_20251201_110005.format(kanban.album_collection_progress[0], kanban.track_mark_progress[0]))
+        show_toast_msg(MESSAGE.UI_20251201_110005.format(kanban.album_collection_progress[0], kanban.track_mark_progress[0]))
         self._change_page(0)
 
     # 重写方法

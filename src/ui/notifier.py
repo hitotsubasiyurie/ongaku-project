@@ -2,7 +2,12 @@ from datetime import datetime
 from typing import Literal
 
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy, QMessageBox
+
+
+################################################################################
+### 弹窗消息
+################################################################################
 
 
 INFO_LABEL_QSS = """
@@ -39,9 +44,7 @@ ERROR_LABEL_QSS = """
 
 class ToastNotifier(QWidget):
 
-    _instance: "ToastNotifier" = None
-
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
         layout = QVBoxLayout()
@@ -58,15 +61,10 @@ class ToastNotifier(QWidget):
         # 初始化 0 大小
         self.resize(0, 0)
 
-        ToastNotifier._instance = self
-
     _LABEL_QSS = [INFO_LABEL_QSS, WARNNING_LABEL_QSS, ERROR_LABEL_QSS]
 
     def show_message(self, text: str, level: Literal[0, 1, 2]) -> None:
-        """
-        :param level: 级别。信息 0，警告 1，错误 2
-        """
-        label = QLabel(f"{datetime.now().strftime("%H:%M:%S")} {text}", self)
+        label = QLabel(f"{datetime.now().strftime('%H:%M:%S')} {text}", self)
         # 高度固定
         label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         label.setStyleSheet(self._LABEL_QSS[level])
@@ -105,9 +103,50 @@ class ToastNotifier(QWidget):
         self.move(x, y)
 
 
-def toast_notify(text: str, level: Literal[0, 1, 2] = 0) -> None:
-    if not ToastNotifier._instance:
+################################################################################
+### 对外接口
+################################################################################
+
+
+_main_window: QWidget = None
+_toast_notifier: ToastNotifier = None
+
+
+def init_notifier(main_window: QWidget) -> None:
+    global _main_window, _toast_notifier
+    _main_window = main_window
+    _toast_notifier = ToastNotifier(parent=main_window)
+
+
+def show_toast_msg(text: str, level: Literal[0, 1, 2] = 0) -> None:
+    """
+    :param level: 级别。信息 0，警告 1，错误 2
+    """
+    if _toast_notifier is None:
         return
-    
-    ToastNotifier._instance.show_message(text, level)
+
+    _toast_notifier.show_message(text, level)
+
+
+def show_dialog_msg(text: str, level: Literal[0, 1, 2] = 0, title: str = "") -> None:
+    """
+    :param level: 级别。信息 0，警告 1，错误 2。
+    """
+    msg = QMessageBox(_main_window)
+    msg.setText(text)
+    title = title or ("Info", "Warning", "Error")[level]
+    msg.setWindowTitle(title)
+    msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+    # 对话框文字可选
+    msg.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
+    icon = (QMessageBox.Icon.Information, QMessageBox.Icon.Warning, QMessageBox.Icon.Critical)[level]
+    msg.setIcon(icon)
+    msg.exec()
+
+
+def show_confirm_msg(text: str, title: str = "Confirm") -> bool:
+    reply = QMessageBox.question(_main_window, title, text, 
+                                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+                                 defaultButton=QMessageBox.StandardButton.No)
+    return reply == QMessageBox.StandardButton.Yes
 

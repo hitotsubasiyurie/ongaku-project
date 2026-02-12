@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt
 
 from src.core.settings import settings
 from src.core.kanban import Kanban
-from src.ui.toast_notifier import ToastNotifier
+from src.ui.notifier import init_notifier
 from src.ui.scan_archive_progress_dialog import ScanArchiveProgressDialog
 from src.ui.main_window import MainWindow
 from src.ui.color_theme import current_theme
@@ -43,22 +43,22 @@ if __name__ == "__main__":
         sys.exit(0)
 
     # 主窗口
-    main_windows = MainWindow()
-    ToastNotifier(parent=main_windows)
+    main_window = MainWindow()
+    init_notifier(main_window)
 
     screen = app.screens()[0]
     screen_geometry = screen.availableGeometry()
-    main_windows.resize(screen_geometry.width(), screen_geometry.height() * 0.75)
-    main_windows.move(screen_geometry.left(), screen_geometry.top())
-    main_windows.show()
+    main_window.resize(screen_geometry.width(), screen_geometry.height() * 0.75)
+    main_window.move(screen_geometry.left(), screen_geometry.top())
+    main_window.show()
 
-    main_windows.showMaximized()
+    main_window.showMaximized()
     app.processEvents()
 
     # 加载看板
     QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
     kanban = Kanban(settings.metadata_directory, settings.resource_directory)
-    main_windows.set_kanban(kanban)
+    main_window.set_kanban(kanban)
     QApplication.restoreOverrideCursor()
 
     sys.exit(app.exec())

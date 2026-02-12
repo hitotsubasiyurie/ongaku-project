@@ -10,7 +10,7 @@ from src.external import convert_audio_bytes_to_wav
 from src.ui.common import with_busy_cursor
 from src.ui.page3.music_player_bar import MusicPlayerBar
 from src.ui.page3.play_table_view import PlayTableView
-from src.ui.toast_notifier import toast_notify
+from ui.notifier import show_toast_msg
 
 
 class Page3Widget(QWidget):
@@ -100,7 +100,7 @@ class Page3Widget(QWidget):
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(5000)
-        self._save_timer.timeout.connect(lambda: [toast_notify(MESSAGE.UI_20251231_180010), 
+        self._save_timer.timeout.connect(lambda: [show_toast_msg(MESSAGE.UI_20251231_180010), 
                                                   with_busy_cursor(self.theme_kanban.save_metadata_file)()])
 
         self.setup_ui()

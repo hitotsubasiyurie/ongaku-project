@@ -55,4 +55,4 @@ class TextEditMessageBox(QMessageBox):
         self.adjustSize()
 
 
-
+    def show_message()

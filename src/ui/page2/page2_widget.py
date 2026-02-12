@@ -21,7 +21,7 @@ from src.ui.page2.cover_label import CoverLabel
 from src.ui.page2.link_combo_box import LinkComboBox
 from src.ui.page2.text_edit_message_box import TextEditMessageBox
 from src.ui.page2.track_table_view import TrackTableView
-from src.ui.toast_notifier import toast_notify
+from ui.notifier import show_toast_msg
 from src.cli.common import tracks_assignment, analyze_track
 
 
@@ -105,7 +105,7 @@ class Page2Widget(QWidget):
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(10000)
-        self._save_timer.timeout.connect(lambda: [toast_notify(MESSAGE.UI_20251231_180010), 
+        self._save_timer.timeout.connect(lambda: [show_toast_msg(MESSAGE.UI_20251231_180010), 
                                                   with_busy_cursor(self.theme_kanban.save_metadata_file)()])
 
         self.setup_ui()
@@ -230,7 +230,7 @@ Average Similarity:\t{aver_similarity:.02f}
         if not ps:
             return
         if any(self.theme_kanban.album_kanbans[p].album_res_state for p in ps):
-            toast_notify("Albums with resources cannot be deleted.", 2)
+            show_toast_msg("Albums with resources cannot be deleted.", 2)
             return
         if not self._ask_for_confirm("Check Again", f"Delete {len(ps)} albums?"):
             return

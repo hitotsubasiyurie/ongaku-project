@@ -11,7 +11,7 @@ from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 
 from src.core.basemodels import Album
-from src.core.constants import AUDIO_EXTS, IMG_EXTS
+from src.core.constants import AUDIO_EXTS, IMG_EXT
 from src.core.kanban import ThemeKanban, track_stemnames
 from src.core.settings import settings
 from src.core.i18n import MESSAGE

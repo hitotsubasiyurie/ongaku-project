@@ -7,7 +7,7 @@ from PySide6.QtCore import Signal
 
 from src.core.i18n import MESSAGE
 from src.core.settings import settings
-from src.core.kanban import _cached_rar_list, _cached_rar_stats
+from src.core.kanban import FunctionCallCache
 
 
 class ScanArchiveProgressDialog(QProgressDialog):
@@ -26,13 +26,13 @@ class ScanArchiveProgressDialog(QProgressDialog):
         self.progress_signal.connect(self._update_progress)
 
     def scan_archive(self) -> bool:
-        rar_files = list(map(os.path.abspath, Path(settings.archive_directory).rglob("*.rar")))
+        rar_files = list(map(os.path.abspath, Path(settings.resource_directory).rglob("*.rar")))
         if not rar_files:
             self.close()
             return True
         
         self.setMaximum(len(rar_files))
-        
+
         # 默认 max_workers = cpu_count + 4
         executor = ThreadPoolExecutor()
         [executor.submit(self._work, f) for f in rar_files]
@@ -45,7 +45,8 @@ class ScanArchiveProgressDialog(QProgressDialog):
         return completed
 
     def _work(self, f: str) -> None:
-        _cached_rar_stats(f, _cached_rar_list(f))
+        FunctionCallCache.rar_list(f)
+        FunctionCallCache.rar_stats(f)
         self.progress_signal.emit()
 
     def _update_progress(self) -> None:

@@ -9,7 +9,7 @@ from pathlib import Path
 from threading import Lock
 from collections import OrderedDict
 from typing import Callable, Any
-from functools import _make_key
+import hashlib
 
 import rtoml
 from cattrs import Converter
@@ -20,7 +20,7 @@ from src.core.basemodels import Album, Track, TrackMark
 from src.core.constants import IMG_EXT, ARCHIVE_EXT
 from src.core.settings import settings
 from src.utils import legalize_filename, dump_toml
-from src.external import rar_list, rar_read, rar_stats, rar_add, show_audio_stream_info
+from src.external import rar_list, rar_read, rar_stats, show_audio_stream_info
 
 
 ################################################################################
@@ -28,50 +28,63 @@ from src.external import rar_list, rar_read, rar_stats, rar_add, show_audio_stre
 ################################################################################
 
 
-class FileSystemCache:
-    """文件系统缓存"""
+class FunctionCallCache:
+    """函数调用缓存"""
 
     _CACHE_LOCK = Lock()
-    _CACHE_FILE = Path(settings.temp_directory, "filesystem_cache")
+    _CACHE_FILE = Path(settings.temp_directory, "function_call_cache")
     _CACHE: OrderedDict = None
     # 缓存 大小 MiB
     _MAX_SIZE = 50 * 1024 * 1024
 
     @staticmethod
+    def load() -> None:
+        """
+        加载函数调用缓存。
+        """
+        try:
+            FunctionCallCache._CACHE = pickle.loads(FunctionCallCache._CACHE_FILE.read_bytes())
+        except Exception:
+            FunctionCallCache._CACHE = OrderedDict()
+
+    @staticmethod
     def save() -> None:
-        with FileSystemCache._CACHE_LOCK:
-            items = list(FileSystemCache._CACHE.items())
+        """
+        保存函数调用缓存。
+        """
+        with FunctionCallCache._CACHE_LOCK:
+            items = list(FunctionCallCache._CACHE.items())
 
         total_size = 0
         keep_from = len(items)
 
         for i in range(len(items) - 1, -1, -1):
             total_size += asizeof.asizeof(items[i][1])
-            if total_size > FileSystemCache._MAX_SIZE:
+            if total_size > FunctionCallCache._MAX_SIZE:
                 break
             keep_from = i
 
-        with FileSystemCache._CACHE_LOCK:
-            FileSystemCache._CACHE = OrderedDict(items[keep_from:])
-            FileSystemCache._CACHE_FILE.write_bytes(pickle.dumps(FileSystemCache._CACHE))
+        with FunctionCallCache._CACHE_LOCK:
+            FunctionCallCache._CACHE = OrderedDict(items[keep_from:])
+            FunctionCallCache._CACHE_FILE.write_bytes(pickle.dumps(FunctionCallCache._CACHE))
 
     @staticmethod
     def rar_list(dstrar: str) -> list[str]:
-        return FileSystemCache._with_cache_call(rar_list, dstrar, related_file=dstrar)
+        return FunctionCallCache._with_cache_call(rar_list, dstrar, related_file=dstrar)
 
     @staticmethod
     def rar_stats(dstrar: str) -> dict[str, os.stat_result]:
-        return FileSystemCache._with_cache_call(rar_stats, dstrar, related_file=dstrar)
+        return FunctionCallCache._with_cache_call(rar_stats, dstrar, related_file=dstrar)
 
     @staticmethod
     def show_audio_stream_info(filepath: str) -> dict:
-        return FileSystemCache._with_cache_call(show_audio_stream_info, filepath, related_file=filepath)
+        return FunctionCallCache._with_cache_call(show_audio_stream_info, filepath, related_file=filepath)
 
     @staticmethod
     def show_rar_audio_stream_info(dstrar: str, filename: str) -> dict:
         func = lambda x, y: show_audio_stream_info(rar_read(x, y))
         func.__name__ = "show_rar_audio_stream_info"
-        return FileSystemCache._with_cache_call(func, dstrar, filename, related_file=dstrar)
+        return FunctionCallCache._with_cache_call(func, dstrar, filename, related_file=dstrar)
 
     @staticmethod
     def _with_cache_call(func: Callable, *args, related_file: str = "") -> Any:
@@ -80,30 +93,31 @@ class FileSystemCache:
         """
         if related_file:
             stat = os.stat(related_file)
-            key = _make_key((func.__name__, related_file, stat.st_mtime, stat.st_size) + args)
+            key = FunctionCallCache._make_key((func.__name__, related_file, stat.st_mtime, stat.st_size) + args, {}, False)
         else:
-            key = _make_key((func.__name__, ) + args)
+            key = FunctionCallCache._make_key((func.__name__, ) + args, {}, False)
 
-        with FileSystemCache._CACHE_LOCK:
-            val = FileSystemCache._CACHE.get(key)
+        with FunctionCallCache._CACHE_LOCK:
+            val = FunctionCallCache._CACHE.get(key)
             if val is not None:
-                FileSystemCache._CACHE.move_to_end(key)
+                FunctionCallCache._CACHE.move_to_end(key)
                 return val
 
         val = func(*args)
 
-        with FileSystemCache._CACHE_LOCK:
-            FileSystemCache._CACHE[key] = val
-            FileSystemCache._CACHE.move_to_end(key)
+        with FunctionCallCache._CACHE_LOCK:
+            FunctionCallCache._CACHE[key] = val
+            FunctionCallCache._CACHE.move_to_end(key)
 
         return val
 
+    def _make_key(*args) -> str:
+        key = ":".join(str(a) for a in args)
+        return hashlib.md5(key.encode()).hexdigest()
+
 
 # 加载 缓存
-try:
-    FileSystemCache._CACHE = pickle.loads(FileSystemCache._CACHE_FILE.read_bytes())
-except Exception:
-    FileSystemCache._CACHE = OrderedDict()
+FunctionCallCache.load()
 
 
 ################################################################################
@@ -235,7 +249,7 @@ class AlbumKanban:
         stem2path = {n: (self.album_dir, n) for n in stemnames}
 
         if os.path.isfile(self.album_archive):
-            stem2path.update({Path(n).stem: (self.album_archive, n) for n in FileSystemCache.rar_list(self.album_archive)})
+            stem2path.update({Path(n).stem: (self.album_archive, n) for n in FunctionCallCache.rar_list(self.album_archive)})
         if os.path.isdir(self.album_dir):
             stem2path.update({Path(n).stem: (self.album_dir, n) for n in os.listdir(self.album_dir)})
 
@@ -290,7 +304,7 @@ class AlbumKanban:
     @cached_property
     def track_stat_results(self) -> tuple[os.stat_result | None, ...]:
         """音轨文件属性列表"""
-        arch_stats = FileSystemCache.rar_stats(self.album_archive) if os.path.isfile(self.album_archive) else {}
+        arch_stats = FunctionCallCache.rar_stats(self.album_archive) if os.path.isfile(self.album_archive) else {}
         dir_stats = {p.name: p.stat() for p in Path(self.album_dir).iterdir()} if os.path.isdir(self.album_dir) else {}
         return tuple(arch_stats.get(p[1]) if p[0] == self.album_archive else dir_stats.get(p[1]) for p in self.track_paths)
 
@@ -406,6 +420,9 @@ class Kanban:
         # 默认 max_workers = cpu_count + 4
         with ThreadPoolExecutor() as executor:
             self.theme_kanbans = tuple(executor.map(ThemeKanban, mdfs, paths))
+        
+        # 保存函数调用缓存
+        FunctionCallCache.save()
 
     @cached_property
     def collecting_progress(self) -> tuple[int, int]:
@@ -436,7 +453,6 @@ class Kanban:
         [tk.refresh() for tk in self.theme_kanbans]
         attrs = ("collecting_progress", "marking_progress")
         [self.__dict__.pop(a, None) for a in attrs]
-
 
 
 

@@ -115,6 +115,11 @@ _LOG_LEVEL_MAP = {1: logging.DEBUG, 2: logging.INFO, 3: logging.WARNING, 4: logg
 logger.setLevel(_LOG_LEVEL_MAP.get(settings.log_level, 2))
 
 
+################################################################################
+### logger 工具函数
+################################################################################
+
+
 def lprint(*values: object, sep: str | None = " ", end: str | None = "\n", 
             file: TextIO | None = None, flush: bool = False) -> None:
     """

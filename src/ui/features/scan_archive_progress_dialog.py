@@ -1,8 +1,9 @@
 import os
+import sys
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
-from PySide6.QtWidgets import QWidget, QProgressDialog
+from PySide6.QtWidgets import QWidget, QProgressDialog, QApplication
 from PySide6.QtCore import Signal
 
 from src.core.i18n import MESSAGE
@@ -25,12 +26,7 @@ class ScanArchiveProgressDialog(QProgressDialog):
 
         self.progress_signal.connect(self._update_progress)
 
-    def scan_archive(self) -> bool:
-        rar_files = list(map(os.path.abspath, Path(settings.resource_directory).rglob("*.rar")))
-        if not rar_files:
-            self.close()
-            return True
-        
+    def scan(self, rar_files: list[str]) -> bool:
         self.setMaximum(len(rar_files))
 
         # 默认 max_workers = cpu_count + 4
@@ -55,3 +51,13 @@ class ScanArchiveProgressDialog(QProgressDialog):
         # 完成
         if v >= self.maximum():
             self.accept()
+
+
+def scan_archive() -> bool:
+    rar_files = list(map(os.path.abspath, Path(settings.resource_directory).rglob("*.rar")))
+    if not rar_files:
+        return True
+
+    scan_progress_dialog = ScanArchiveProgressDialog()
+    return scan_progress_dialog.scan(rar_files)
+

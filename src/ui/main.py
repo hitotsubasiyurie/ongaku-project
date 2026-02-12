@@ -18,7 +18,7 @@ from PySide6.QtCore import Qt
 from src.core.settings import settings
 from src.core.kanban import Kanban
 from src.ui.notifier import init_notifier
-from src.ui.scan_archive_progress_dialog import ScanArchiveProgressDialog
+from src.ui.features.scan_archive_progress_dialog import scan_archive
 from src.ui.main_window import MainWindow
 from src.ui.color_theme import current_theme
 
@@ -37,8 +37,7 @@ if __name__ == "__main__":
     app.setFont(font)
 
     # 扫描 专辑归档 生成缓存
-    scan_progress_dialog = ScanArchiveProgressDialog()
-    if not scan_progress_dialog.scan_archive():
+    if not scan_archive():
         app.quit()
         sys.exit(0)
 

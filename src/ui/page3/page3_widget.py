@@ -10,7 +10,7 @@ from src.external import convert_audio_bytes_to_wav
 from src.ui.common import with_busy_cursor
 from src.ui.page3.music_player_bar import MusicPlayerBar
 from src.ui.page3.play_table_view import PlayTableView
-from ui.notifier import show_toast_msg
+from src.ui.notifier import show_toast_msg
 
 
 class Page3Widget(QWidget):

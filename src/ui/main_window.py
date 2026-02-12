@@ -9,7 +9,7 @@ from src.core.settings import settings
 from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
 from src.ui.color_theme import BUTTON_QSS
-from ui.notifier import show_toast_msg
+from src.ui.notifier import show_toast_msg
 from src.ui.page1.page1_widget import Page1Widget
 from src.ui.page2.page2_widget import Page2Widget
 from src.ui.page3.page3_widget import Page3Widget

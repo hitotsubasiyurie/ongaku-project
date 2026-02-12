@@ -21,7 +21,7 @@ from src.ui.page2.cover_label import CoverLabel
 from src.ui.page2.link_combo_box import LinkComboBox
 from src.ui.page2.text_edit_message_box import TextEditMessageBox
 from src.ui.page2.track_table_view import TrackTableView
-from ui.notifier import show_toast_msg
+from src.ui.notifier import show_toast_msg
 from src.cli.common import tracks_assignment, analyze_track
 
 

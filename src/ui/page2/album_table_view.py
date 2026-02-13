@@ -178,7 +178,7 @@ class AlbumTableItemModel(CustomTableItemModel):
 
     def _get_data(self, col: int, p: int) -> str:
         if col == 0:
-            return (self.theme_kanban.album_kanbans[p].album_res_state, 
+            return (self.theme_kanban.album_kanbans[p].resource_state, 
                     self.theme_kanban.album_kanbans[p].metadata_state)
         elif col == 1:
             return self.theme_kanban.album_kanbans[p].album.album

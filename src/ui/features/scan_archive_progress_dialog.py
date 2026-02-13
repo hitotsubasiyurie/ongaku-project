@@ -54,6 +54,9 @@ class ScanArchiveProgressDialog(QProgressDialog):
 
 
 def scan_archive() -> bool:
+    """ 
+    :return: 是否扫描成功
+    """
     rar_files = list(map(os.path.abspath, Path(settings.resource_directory).rglob("*.rar")))
     if not rar_files:
         return True

@@ -144,15 +144,15 @@ class ThemeTableItemModel(CustomTableItemModel):
         elif col == 3:
             return self.kanban.theme_kanbans[p].end_date
         elif col == 4:
-            return "/".join(map(str, self.kanban.theme_kanbans[p].album_collection_progress))
+            return "/".join(map(str, self.kanban.theme_kanbans[p].collecting_progress))
         elif col == 5:
-            return "/".join(map(str, self.kanban.theme_kanbans[p].track_mark_progress))
+            return "/".join(map(str, self.kanban.theme_kanbans[p].marking_progress))
 
     def _get_sort_data(self, col: int, p: int) -> str:
         if col == 4:
-            return operator.truediv(*self.kanban.theme_kanbans[p].album_collection_progress)
+            return operator.truediv(*self.kanban.theme_kanbans[p].collecting_progress)
         elif col == 5:
-            return operator.truediv(*self.kanban.theme_kanbans[p].track_mark_progress)
+            return operator.truediv(*self.kanban.theme_kanbans[p].marking_progress)
         # 字符串 不区分 大小写
         return self._get_data(col, p).lower().strip()
 

@@ -2,7 +2,9 @@ from datetime import datetime
 from typing import Literal
 
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy, QMessageBox
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy, QMessageBox, QGridLayout, \
+    QPlainTextEdit, QApplication
+from PySide6.QtGui import QFontMetrics, QShowEvent
 
 
 ################################################################################
@@ -104,6 +106,65 @@ class ToastNotifier(QWidget):
 
 
 ################################################################################
+### 长消息
+################################################################################
+
+
+class LongMessageBox(QMessageBox):
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+
+        # 删除原有 QLabel
+        layout: QGridLayout = self.layout()
+        for i in reversed(range(layout.count())):
+            item = layout.itemAt(i)
+            widget = item.widget()
+            if isinstance(widget, QLabel):
+                layout.removeWidget(widget)
+                widget.deleteLater()
+
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
+
+        # 文本框
+        self.text_edit = QPlainTextEdit()
+        self.text_edit.setReadOnly(True)
+        # 不自动换行
+        self.text_edit.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+
+        layout.addWidget(self.text_edit, 0, 0)
+
+    def setText(self, text) -> None:
+        self.text_edit.setPlainText(text)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self._adjust_size()
+        super().showEvent(event)
+        # 中心 展示
+        self.move(QApplication.primaryScreen().availableGeometry().center() - self.rect().center())
+
+    # 内部方法
+
+    def _adjust_size(self) -> None:
+        # 获取屏幕尺寸
+        screen_geometry = QApplication.primaryScreen().availableGeometry()
+        screen_width = screen_geometry.width()
+        screen_height = screen_geometry.height()
+
+        # text_edit 自适应尺寸
+        fm = QFontMetrics(self.text_edit.font())
+        lines = self.text_edit.toPlainText().split("\n")
+        text_width = max((fm.horizontalAdvance(l) for l in lines))
+        text_height = fm.lineSpacing() * (len(lines)+2)
+
+        self.text_edit.setFixedSize(min(max(50, text_width + 50), screen_width*0.5),
+                                    min(max(20, text_height), screen_height*0.6))
+
+        self.adjustSize()
+
+
+################################################################################
 ### 对外接口
 ################################################################################
 
@@ -149,4 +210,22 @@ def show_confirm_msg(text: str, title: str = "Confirm") -> bool:
                                  QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
                                  defaultButton=QMessageBox.StandardButton.No)
     return reply == QMessageBox.StandardButton.Yes
+
+
+def show_dialog_long_msg(text: str, title: str = "Info") -> None:
+    msg = LongMessageBox(_main_window)
+    msg.setText(text)
+    msg.setWindowTitle(title)
+    msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+    msg.exec()
+
+
+def show_confirm_long_msg(text: str, title: str = "Confirm") -> bool:
+    msg = LongMessageBox(_main_window)
+    msg.setText(text)
+    msg.setWindowTitle(title)
+    msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+    msg.setDefaultButton(QMessageBox.StandardButton.No)
+    return msg.exec() == QMessageBox.StandardButton.Yes
+
 

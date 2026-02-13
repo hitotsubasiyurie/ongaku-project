@@ -38,7 +38,7 @@ _SETTING2COMMENT = {
     _Settings.ui_color_theme.__name__: MESSAGE.SET_20260131_090306,
     _Settings.ui_font_size.__name__: MESSAGE.SET_20260131_090307,
     _Settings.ui_font_family.__name__: MESSAGE.SET_20260131_090308,
-    _Settings.ui_cov_sources.__name__: MESSAGE.SET_20260131_090309,
+    _Settings.ui_cov_sources.__name__: MESSAGE.SET_20260131_090310,
     _Settings.ui_cov_country.__name__: MESSAGE.SET_20260131_090310,
 }
 

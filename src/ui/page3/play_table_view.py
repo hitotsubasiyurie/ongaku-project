@@ -5,6 +5,7 @@ from PySide6.QtCore import QModelIndex, Qt, QObject, Signal
 from PySide6.QtGui import QAction, QBrush, QResizeEvent, QIcon
 from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
+from src.core.basemodels import TrackMark
 from src.core.kanban import ThemeKanban, ResourceState
 from src.core.settings import settings
 from src.core.i18n import MESSAGE
@@ -75,7 +76,7 @@ class PlayTableItemModel(CustomTableItemModel):
         if role == Qt.ItemDataRole.ForegroundRole:
             # Size 列 资源状态
             if col == 0:
-                return self.RESOURCE_STATE_QBRUSHS[self.theme_kanban.album_kanbans[i].track_res_states[j]]
+                return self.RESOURCE_STATE_QBRUSHS[self.theme_kanban.album_kanbans[i].track_resource_states[j]]
             # 已有 Mark 信息
             if self.theme_kanban.album_kanbans[i].album.tracks[j].mark:
                 return self.MARKED_FOREGROUND_QBRUSHES
@@ -205,7 +206,7 @@ class PlayTableItemModel(CustomTableItemModel):
             return self.theme_kanban.album_kanbans[i].album.date
         elif col == 5:
             mark = self.theme_kanban.album_kanbans[i].album.tracks[j].mark
-            return "🤍" if mark == "1" and role == Qt.ItemDataRole.DisplayRole else mark
+            return "🤍" if mark == TrackMark.FAVOURITE and role == Qt.ItemDataRole.DisplayRole else mark
 
 
 class PlayTableView(QTableView):

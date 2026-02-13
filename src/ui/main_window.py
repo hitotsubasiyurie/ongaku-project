@@ -77,7 +77,7 @@ class MainWindow(QWidget):
         self.page1.set_kanban(kanban)
         self.page2.set_theme_kanban(None)
         self.page3.set_theme_kanban(None)
-        show_toast_msg(MESSAGE.UI_20251201_110005.format(kanban.album_collection_progress[0], kanban.track_mark_progress[0]))
+        show_toast_msg(MESSAGE.UI_20251201_110005.format(kanban.collecting_progress[0], kanban.marking_progress[0]))
         self._change_page(0)
 
     # 重写方法
@@ -108,7 +108,7 @@ class MainWindow(QWidget):
 
     @with_busy_cursor
     def _change_page(self, index: int) -> None:
-        self.kanban.invalidate_cache()
+        self.kanban.refresh()
         self.stack.setCurrentIndex(index)
         self._set_btns_geometry()
         # 切换页面 聚焦 view

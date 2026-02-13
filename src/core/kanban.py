@@ -218,7 +218,7 @@ class MetadataState(IntFlag):
 ################################################################################
 
 
-@define()
+@define(slots=False)
 class AlbumKanban:
     """
     专辑看板。
@@ -279,7 +279,7 @@ class AlbumKanban:
     @cached_property
     def track_resource_states(self) -> tuple[ResourceState, ...]:
         """音轨资源状态列表"""
-        return tuple(_RESOURCE_STATE_MAP[Path(p[1]).suffix.lower()] for p in self.track_paths)
+        return tuple(_RESOURCE_STATE_MAP.get(Path(p[1]).suffix.lower(), ResourceState.MISSING) for p in self.track_paths)
 
     @cached_property
     def resource_state(self) -> ResourceState:
@@ -326,7 +326,7 @@ class AlbumKanban:
         [self.__dict__.pop(a, None) for a in attrs]
 
 
-@define()
+@define(slots=False)
 class ThemeKanban:
     """主题看板"""
 
@@ -395,7 +395,7 @@ class ThemeKanban:
         [self.__dict__.pop(a, None) for a in attrs]
 
 
-@define()
+@define(slots=False)
 class Kanban:
     """总看板"""
 

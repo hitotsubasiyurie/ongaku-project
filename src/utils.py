@@ -67,18 +67,17 @@ def legalize_filename(name: str) -> str:
     """
     1. 用全角符号替换路径中的非法符号
     2. 去除路径结尾空格
-    3. 限制 250 字符文件名
 
     :param name: 文件名，如 1.txt
+    :raises ValueError: 文件名超出 256 字符
     """
     name = str(name)
+    if len(name) > 256:
+        raise ValueError(f"File name exceeds 256 characters. {len(name)} {name}")
+
     for i, j in zip(r'\/:*?"<>|', "＼／：＊？＂＜＞｜"):
         name = name.replace(i, j)
         name = name.rstrip()
-    if len(name) > 255:
-        ext = Path(name).suffix
-        uid = str(uuid.uuid3(uuid.NAMESPACE_X500, name))
-        name = name[:250-36-len(ext)] + uid + ext
     return name
 
 

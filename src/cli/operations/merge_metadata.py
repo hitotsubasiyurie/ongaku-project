@@ -3,13 +3,13 @@ from pathlib import Path
 
 import rtoml
 
+from src.cli.common import album_to_unique_str, albums_assignment, abstract_tracks_info
+from src.cli.common import easy_linput
+from src.core.i18n import MESSAGE
 from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import lprint
 from src.core.settings import settings
-from src.core.i18n import MESSAGE
 from src.utils import dump_toml
-from src.cli.common import album_to_unique_str, albums_assignment, abstract_tracks_info
-from src.cli.common import easy_linput
 
 OPERATION_NAME = MESSAGE.WF_20251204_195020
 

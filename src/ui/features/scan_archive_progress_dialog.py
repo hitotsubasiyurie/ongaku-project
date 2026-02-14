@@ -1,14 +1,13 @@
 import os
-import sys
-from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
-from PySide6.QtWidgets import QWidget, QProgressDialog, QApplication
 from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QWidget, QProgressDialog
 
 from src.core.i18n import MESSAGE
-from src.core.settings import settings
 from src.core.kanban import FunctionCallCache
+from src.core.settings import settings
 
 
 class ScanArchiveProgressDialog(QProgressDialog):

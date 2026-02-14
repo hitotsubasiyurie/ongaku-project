@@ -2,10 +2,9 @@ from datetime import datetime
 from typing import Literal
 
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
+from PySide6.QtGui import QFontMetrics, QShowEvent
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy, QMessageBox, QGridLayout, \
     QPlainTextEdit, QApplication
-from PySide6.QtGui import QFontMetrics, QShowEvent
-
 
 ################################################################################
 ### 弹窗消息

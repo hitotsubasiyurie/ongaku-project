@@ -1,4 +1,4 @@
-from src.scraper.musicbrainz_scraper import MusicBrainzScraper
-from src.scraper.musicbrainz_database import MusicBrainzDatabase
-from src.scraper.vgmdb_scraper import VGMdbScraper
 from src.scraper.dojin_music_info_scraper import DoujinMusicInfoScraper
+from src.scraper.musicbrainz_database import MusicBrainzDatabase
+from src.scraper.musicbrainz_scraper import MusicBrainzScraper
+from src.scraper.vgmdb_scraper import VGMdbScraper

@@ -3,13 +3,12 @@ from pathlib import Path
 
 from tqdm import tqdm
 
+from src.cli.common import easy_linput
+from src.core.i18n import MESSAGE
 from src.core.kanban import dump_albums_to_toml, load_albums_from_toml
 from src.core.logger import logger, lprint
 from src.core.settings import settings
-from src.core.i18n import MESSAGE
 from src.scraper import VGMdbScraper
-from src.cli.common import easy_linput
-
 
 OPERATION_NAME = MESSAGE.WF_20251204_194920
 

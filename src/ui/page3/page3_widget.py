@@ -4,13 +4,13 @@ from PySide6.QtCore import Qt, QModelIndex, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
-from src.core.kanban import ThemeKanban
 from src.core.i18n import MESSAGE
+from src.core.kanban import ThemeKanban
 from src.external import convert_audio_bytes_to_wav
 from src.ui.common import with_busy_cursor
+from src.ui.notifier import show_toast_msg
 from src.ui.page3.music_player_bar import MusicPlayerBar
 from src.ui.page3.play_table_view import PlayTableView
-from src.ui.notifier import show_toast_msg
 
 
 class Page3Widget(QWidget):

@@ -7,15 +7,14 @@ from typing import Generator
 import orjson
 from tqdm import tqdm
 
+from src.cli.common import easy_linput
 from src.core.basemodels import Album
+from src.core.i18n import MESSAGE
 from src.core.logger import logger, lprint
 from src.core.settings import settings
-from src.core.i18n import MESSAGE
 from src.external import pg_ctl_start, pg_ctl_stop, pg_dump_database
-from src.scraper.musicbrainz_scraper import MusicBrainzScraper
 from src.scraper.musicbrainz_database import init_musicbrainz_database, MusicBrainzDatabase
-from src.cli.common import easy_linput
-
+from src.scraper.musicbrainz_scraper import MusicBrainzScraper
 
 OPERATION_NAME = MESSAGE.WF_20251204_194120
 

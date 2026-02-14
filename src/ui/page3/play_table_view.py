@@ -6,9 +6,9 @@ from PySide6.QtGui import QAction, QBrush, QResizeEvent, QIcon
 from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
 from src.core.basemodels import TrackMark
+from src.core.i18n import MESSAGE
 from src.core.kanban import ThemeKanban, ResourceState
 from src.core.settings import settings
-from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
 

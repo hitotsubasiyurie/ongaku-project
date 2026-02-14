@@ -4,11 +4,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
-from src.core.kanban import Kanban
-from src.core.settings import settings
 from src.core.i18n import MESSAGE
-from src.ui.common import with_busy_cursor
+from src.core.settings import settings
 from src.ui.color_theme import BUTTON_QSS
+from src.ui.common import with_busy_cursor
 from src.ui.notifier import show_toast_msg
 from src.ui.page1.page1_widget import Page1Widget
 from src.ui.page2.page2_widget import Page2Widget

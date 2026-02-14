@@ -4,7 +4,6 @@ from pathlib import Path
 import rtoml
 from attrs import define, field, validators, fields
 
-
 SETTINGS_FILE = Path("settings.toml")
 
 LOG_LEVELS = (1, 2, 3, 4, 5)

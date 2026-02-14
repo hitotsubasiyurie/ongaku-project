@@ -4,8 +4,8 @@ from types import SimpleNamespace
 import rtoml
 from attrs import fields
 
-from src.utils import dump_toml
 from src.core.settings import SETTINGS_FILE, settings, _Settings
+from src.utils import dump_toml
 
 
 def _load_toml(p: Path) -> dict:

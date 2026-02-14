@@ -2,9 +2,9 @@ import msvcrt
 import os
 from pathlib import Path
 
-from src.core.logger import lprint
-from src.core.i18n import MESSAGE
 from src.cli.common import easy_linput
+from src.core.i18n import MESSAGE
+from src.core.logger import lprint
 
 OPERATION_NAME = MESSAGE.WF_20251204_194720
 

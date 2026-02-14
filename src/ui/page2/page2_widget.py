@@ -1,4 +1,3 @@
-import itertools
 import os
 import shutil
 import subprocess
@@ -10,18 +9,18 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
 
+from src.cli.common import tracks_assignment, analyze_track
 from src.core.basemodels import Album
-from src.core.constants import AUDIO_EXTS, IMG_EXT
+from src.core.constants import AUDIO_EXTS
+from src.core.i18n import MESSAGE
 from src.core.kanban import ThemeKanban, track_stemnames
 from src.core.settings import settings
-from src.core.i18n import MESSAGE
 from src.ui.common import with_busy_cursor
+from src.ui.notifier import show_toast_msg
 from src.ui.page2.album_table_view import AlbumTableView
 from src.ui.page2.cover_label import CoverLabel
 from src.ui.page2.link_combo_box import LinkComboBox
 from src.ui.page2.track_table_view import TrackTableView
-from src.ui.notifier import show_toast_msg
-from src.cli.common import tracks_assignment, analyze_track
 
 
 class Page2Widget(QWidget):

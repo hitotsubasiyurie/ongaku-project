@@ -4,8 +4,8 @@ from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import (QWidget, QSlider, QLabel, QPushButton, QHBoxLayout, QVBoxLayout,
                                QStyle, )
 
-from src.core.settings import settings
 from src.core.i18n import MESSAGE
+from src.core.settings import settings
 from src.ui.color_theme import BUTTON_QSS
 
 

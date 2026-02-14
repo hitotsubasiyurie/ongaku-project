@@ -3,7 +3,6 @@ from PySide6.QtWidgets import QApplication
 
 from src.core.settings import settings
 
-
 BUTTON_QSS = """
 QPushButton {{
     /* 透明背景 */

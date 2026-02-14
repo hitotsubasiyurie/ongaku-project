@@ -11,7 +11,6 @@ from enum import IntEnum
 
 from attrs import define, field, validators
 
-
 _DATE_PATTERN = re.compile(r"^$|^\d{4}$|^\d{4}-\d{2}$|^\d{4}-\d{2}-\d{2}$")
 
 

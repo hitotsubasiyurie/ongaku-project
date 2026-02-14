@@ -6,7 +6,6 @@ from PySide6.QtGui import QPainter, QDragEnterEvent, QDropEvent, QFont, QFontMet
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView,
                                QHeaderView, QAbstractItemView, QStyle)
 
-from src.core.kanban import AlbumKanban
 from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel

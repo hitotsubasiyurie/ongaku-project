@@ -1,26 +1,24 @@
+import hashlib
 import os
 import pickle
-import itertools
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
 from functools import cached_property
 from pathlib import Path
 from threading import Lock
-from collections import OrderedDict
 from typing import Callable, Any
-import hashlib
 
 import rtoml
+from attrs import define, field, validators, asdict
 from cattrs import Converter
 from pympler import asizeof
-from attrs import define, field, validators, asdict
 
-from src.core.basemodels import Album, Track, TrackMark
+from src.core.basemodels import Album, TrackMark
 from src.core.constants import IMG_EXT, ARCHIVE_EXT
 from src.core.settings import settings
-from src.utils import legalize_filename, dump_toml
 from src.external import rar_list, rar_read, rar_stats, show_audio_stream_info
+from src.utils import legalize_filename, dump_toml
 
 
 ################################################################################

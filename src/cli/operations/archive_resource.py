@@ -1,13 +1,11 @@
 import os
 import shutil
 
-from src.core.kanban import Kanban
+from src.cli.common import easy_linput
+from src.core.i18n import MESSAGE
 from src.core.logger import lprint
 from src.core.settings import settings
-from src.core.i18n import MESSAGE
-from src.cli.common import easy_linput
 from src.external import rar_archive
-
 
 OPERATION_NAME = MESSAGE.WF_20251221_202001
 

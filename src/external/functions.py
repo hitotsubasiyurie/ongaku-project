@@ -1,9 +1,9 @@
+import itertools
 import json
 import os
 import re
-import sys
-import itertools
 import subprocess
+import sys
 import tempfile
 from typing import Union
 

@@ -1,13 +1,9 @@
 import itertools
-import pickle
 import re
-import uuid
-from pathlib import Path
 
 from src.core.basemodels import Album, Disc, Track
 from src.core.logger import logger, logger_watched
 from src.scraper._scraper import Scraper
-
 
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')
 

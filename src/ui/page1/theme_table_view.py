@@ -8,9 +8,9 @@ from PySide6.QtGui import QPainter, QAction, QPalette, QIcon
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView)
 
+from src.core.i18n import MESSAGE
 from src.core.kanban import Kanban
 from src.core.settings import settings
-from src.core.i18n import MESSAGE
 from src.ui.color_theme import current_theme
 from src.ui.custom import CustomTableItemModel
 

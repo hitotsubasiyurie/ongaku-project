@@ -8,11 +8,10 @@ from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShor
                            QGuiApplication, QFont)
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
-from src.core.kanban import AlbumKanban
 from src.core.i18n import MESSAGE
+from src.core.kanban import AlbumKanban
 from src.ui.common import with_busy_cursor
 from src.ui.notifier import show_toast_msg
-
 
 OPACITY_CYCLE = itertools.cycle([0.2, 1, 0])
 

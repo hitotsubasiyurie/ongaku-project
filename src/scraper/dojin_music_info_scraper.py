@@ -1,10 +1,5 @@
-import pickle
-import pickle
 import re
-import uuid
-from pathlib import Path
 
-import requests
 from lxml import etree
 
 from src.core.basemodels import Album, Track

@@ -15,6 +15,7 @@ from src.core.constants import AUDIO_EXTS
 from src.core.i18n import MESSAGE
 from src.core.kanban import ThemeKanban, track_stemnames
 from src.core.settings import settings
+from src.external import open_in_explorer
 from src.ui.common import with_busy_cursor
 from src.ui.notifier import show_toast_msg
 from src.ui.page2.album_table_view import AlbumTableView
@@ -242,10 +243,13 @@ Average Similarity:\t{aver_similarity:.02f}
         if not self.theme_kanban:
             return
         ps = self.album_table_view.get_selected_ps()
-        for p in ps:
-            res_dir = self.theme_kanban.album_kanbans[p].album_dir
-            not os.path.isdir(res_dir) and os.makedirs(res_dir, exist_ok=True)
-            subprocess.run(f'explorer "{res_dir}"')
+        if not ps:
+            return
+        p = ps[0]
+        if os.path.isfile(self.theme_kanban.album_kanbans[p].album_archive):
+            open_in_explorer(self.theme_kanban.album_kanbans[p].album_archive)
+        else:
+            open_in_explorer(self.theme_kanban.album_kanbans[p].album_dir)
 
     def _action_search_cover(self) -> None:
         """搜索所选 album 的封面"""

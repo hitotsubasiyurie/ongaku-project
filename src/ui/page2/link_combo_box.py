@@ -31,7 +31,6 @@ class LinkComboBox(QComboBox):
         self.setMouseTracking(False)
 
         self.activated.connect(self._on_activated)
-        self.lineEdit().returnPressed.connect(self._on_return_pressed)
 
     def set_album_kanban(self, album_kanban: AlbumKanban | None) -> None:
         self.album_kanban = album_kanban
@@ -57,15 +56,4 @@ class LinkComboBox(QComboBox):
     def _on_activated(self, index: int) -> None:
         webbrowser.open(self.album_kanban.album.links[index])
         self.lineEdit().clear()
-
-    def _on_return_pressed(self) -> None:
-        text = self.lineEdit().text().strip()
-        self.lineEdit().clear()
-
-        if not text or text in self.album_kanban.album.links:
-            return
-        
-        self.album_kanban.album.links = self.album_kanban.album.links + (text, )
-        self._set_items()
-        self.link_added.emit()
 

@@ -9,14 +9,15 @@ from pathlib import Path
 from threading import Lock
 from typing import Callable, Any
 
-from attrs import define, field, validators, asdict
+from attrs import define, field
 from pympler import asizeof
 
 from src.core.basemodels import Album, TrackMark
 from src.core.constants import IMG_EXT, ARCHIVE_EXT
 from src.core.settings import settings
 from src.external import rar_list, rar_read, rar_stats, show_audio_stream_info
-from src.core.storage import album_stemname, track_stemnames, dump_albums_to_toml, load_albums_from_toml
+from src.core.storage import album_stemname, track_stemnames, dump_albums_to_toml, load_albums_from_toml, \
+    COVER_NAME
 
 
 ################################################################################
@@ -159,7 +160,7 @@ class AlbumKanban:
     对专辑元数据和音轨文件的统计属性的汇总。
     """
 
-    album: Album = field(validator=validators.instance_of(Album))
+    album: Album
     """专辑模型"""
     album_dir: str = field(converter=os.path.abspath)
     """将会搜索的专辑目录路径。扁平地存放每一个音轨文件。优先级高"""
@@ -167,9 +168,16 @@ class AlbumKanban:
     """将会搜索的专辑归档路径。扁平地存放每一个音轨文件"""
 
     @cached_property
-    def cover_path(self) -> str:
-        """专辑封面路径"""
-        return os.path.join(settings.cover_directory, f"{album_stemname(self.album)}{IMG_EXT}")
+    def cover_path(self) -> tuple[str, str]:
+        """
+        专辑封面路径.
+        封面文件不存在时，path 为 (album_dir, COVER_NAME)
+        """
+        if Path(self.album_dir, COVER_NAME).is_file():
+            return self.album_dir, COVER_NAME
+        if os.path.isfile(self.album_archive) and COVER_NAME in FunctionCallCache.rar_list(self.album_archive):
+            return self.album_archive, COVER_NAME
+        return self.album_dir, COVER_NAME
 
     @cached_property
     def track_paths(self) -> tuple[tuple[str, str], ...]:
@@ -205,7 +213,7 @@ class AlbumKanban:
             # 任一 track 有 artist 信息 
             if any(t.artist for t in self.album.tracks):
                 s |= MetadataState.ARTIST_EXIST
-        if os.path.isfile(self.cover_path):
+        if self.cover_path[0] == self.album_archive or Path(*self.cover_path).is_file():
             s |= MetadataState.COVER_EXIST
 
         return s
@@ -242,13 +250,24 @@ class AlbumKanban:
         dir_stats = {p.name: p.stat() for p in Path(self.album_dir).iterdir()} if os.path.isdir(self.album_dir) else {}
         return tuple(arch_stats.get(p[1]) if p[0] == self.album_archive else dir_stats.get(p[1]) for p in self.track_paths)
 
-    def read_track_bytes(self, p: tuple[str, str]) -> bytes | None:
+    @cached_property
+    def cover_stat_result(self) -> os.stat_result | None:
+        """封面文件属性"""
+        if self.cover_path[0] == self.album_archive:
+            return FunctionCallCache.rar_stats(self.album_archive)[self.cover_path[1]]
+        p = Path(*self.cover_path)
+        return p.stat() if p.is_file() else None
+
+    def read_path_bytes(self, p: tuple[str, str]) -> bytes:
         """
-        读取音轨文件字节数据。
-        
-        :param p: 音轨文件路径
+        读取路径文件字节数据。路径文件不存在时返回空字节。
+
+        :param p: 封面文件路径或音轨文件路径
         """
-        return rar_read(*p) if p[0] == self.album_archive else Path(*p).read_bytes()
+        if p[0] == self.album_archive:
+            return rar_read(*p)
+        path = Path(*p)
+        return path.read_bytes() if path.is_file() else b""
 
     def refresh(self) -> None:
         """
@@ -256,7 +275,7 @@ class AlbumKanban:
         """
         # 先刷新子看板缓存 再刷新自身缓存
         attrs = ("cover_path", "track_paths", "metadata_state", "track_resource_states", 
-                 "resource_state", "is_favourite", "track_stat_results")
+                 "resource_state", "is_favourite", "track_stat_results", "cover_stat_result")
         [self.__dict__.pop(a, None) for a in attrs]
 
 

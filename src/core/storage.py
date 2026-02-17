@@ -8,7 +8,7 @@ import rtoml
 from attrs import asdict
 from cattrs import Converter
 
-from src.core.basemodels import Album
+from src.core.basemodels import Album, TrackMark
 from src.utils import legalize_filename, dump_toml
 
 
@@ -16,7 +16,8 @@ from src.utils import legalize_filename, dump_toml
 ALBUM_STEMNAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"
 # 音轨文件名主干
 TRACK_STEMNAME = "{tracknumber}. {title}"
-
+# 封面文件名
+COVER_NAME = "cover.png"
 
 def album_stemname(album: Album) -> str:
     """
@@ -62,8 +63,14 @@ def load_albums_from_toml(filepath: str) -> list[Album]:
     obj = rtoml.loads(text)
     ds = obj.values()
     for d in ds:
+        # 适配 artist mark 字段省略
+        for t in d["tracks"]:
+            if len(t) == 2: t.append("")
+            if len(t) == 3: t.append(TrackMark.UNKNOWN)
         d["tracks"] = [{"tracknumber": t[0], "title": t[1], "artist": t[2], "mark": t[3]} 
                        for t in d["tracks"]]
     converter = Converter()
     albums = [converter.structure(d, Album) for d in ds]
     return albums
+
+

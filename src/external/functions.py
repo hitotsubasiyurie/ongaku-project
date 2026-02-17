@@ -34,9 +34,9 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
         if len(cwd) >= 257:
             tmpdir = tempfile.TemporaryDirectory(prefix="run_subprocess_")
             d = os.path.join(tmpdir.name, "_")
-            make_junction(cwd, d)
+            os.symlink(cwd, d, target_is_directory=True)
             kwargs["cwd"] = d
-            logger.info("cwd too long, replace it with a temp directory.")
+            logger.info(f"Parameter cwd exceeds 256 characters, replace it with a temp directory. {len(cwd)} {cwd}.")
 
     try:
         process = subprocess.run(cmd, stdout=stdout, stderr=stderr, check=True, 
@@ -55,7 +55,7 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
 
 
 ################################################################################
-### ffmpeg
+### FFMpeg
 ################################################################################
 
 def decode_audio_to_pcm(audio_path: str) -> bytes:
@@ -109,23 +109,14 @@ def show_audio_stream_info(audio_input: Union[str, bytes]) -> dict:
     return json.loads(process.stdout)
 
 
+################################################################################
+### PNGQuant
+################################################################################
+
 def compress_image(img_path: str) -> None:
     logger.info(f"Compress image. {img_path}")
     pngquant_path = os.path.abspath(os.path.join("bin", "pngquant.exe"))
     cmd = [pngquant_path, "--force", "--output", img_path, "--", img_path]
-    run_subprocess(cmd)
-
-
-def make_junction(srcdir: str, dstdir: str) -> None:
-    """
-    创建 Windows 目录联接。
-
-    /c      执行完立刻退出
-    /J      目录联接
-    """
-    os.makedirs(dstdir, exist_ok=True)
-    logger.info(f"Make junction. {srcdir} -> {dstdir}")
-    cmd = ["cmd", "/c", "mklink", "/J", dstdir, srcdir]
     run_subprocess(cmd)
 
 
@@ -231,10 +222,9 @@ def rar_list(dstrar: str) -> list[str]:
 def rar_read(dstrar: str, filename: str) -> bytes:
     """
     读取压缩包内的文件。
-    filename 为空将会返回空字节。
 
     :param dstrar: 目标压缩包路径
-    :param filename: 文件名
+    :param filename: 文件名。为空时将会返回空字节。
 
     p       打印文件到标准输出设备
     """
@@ -243,11 +233,31 @@ def rar_read(dstrar: str, filename: str) -> bytes:
 
     if not filename:
         return b""
-    
+
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
     cmd = ([rar_path, "p", dstrar, filename])
     process = run_subprocess(cmd)
     return process.stdout
+
+
+def rar_delete(dstrar: str, filename: str) -> None:
+    """
+    删除压缩包内的文件。
+
+    :param dstrar: 目标压缩包路径
+    :param filename: 文件名。为空时将会直接返回。
+
+    d       从压缩文件中删除文件
+    """
+    dstrar = os.path.abspath(dstrar)
+    logger.info(f"Delete rar file. {dstrar} {filename}")
+
+    if not filename:
+        return
+
+    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
+    cmd = ([rar_path, "d", dstrar, filename])
+    run_subprocess(cmd)
 
 
 _NAME_PAT = re.compile(r"^\s+名称:\s+(.+)$", re.MULTILINE)
@@ -380,3 +390,22 @@ def pg_dump_database(dbname: str, dmpfile: str) -> None:
     cmd = [pg_dump_exe, "-Upostgres", "-Fc", "-f", dmpfile, dbname]
     run_subprocess(cmd, text=True)
 
+
+################################################################################
+### Windows
+################################################################################
+
+def open_in_explorer(path: str) -> None:
+    """
+    在资源管理器中打开路径。
+
+    :param path: 文件或文件夹
+    """
+    if os.path.isfile(path):
+        cmd = ["explorer", "/select,", path]
+    elif os.path.isdir(path):
+        cmd = ["explorer", path]
+    else:
+        raise FileNotFoundError(path)
+
+    run_subprocess(cmd)

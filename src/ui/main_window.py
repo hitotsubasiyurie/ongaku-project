@@ -5,6 +5,7 @@ from PySide6.QtGui import QShortcut, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
 from src.core.i18n import MESSAGE
+from src.core.kanban import Kanban
 from src.core.settings import settings
 from src.ui.color_theme import BUTTON_QSS
 from src.ui.common import with_busy_cursor

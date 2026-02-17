@@ -32,7 +32,6 @@ _SETTING2COMMENT = {
 
     _Settings.temp_directory.__name__: MESSAGE.SET_20260131_090302,
     _Settings.metadata_directory.__name__: MESSAGE.SET_20260131_090303,
-    _Settings.cover_directory.__name__: MESSAGE.SET_20260131_090309,
     _Settings.resource_directory.__name__: MESSAGE.SET_20260131_090304,
 
     _Settings.ui_color_theme.__name__: MESSAGE.SET_20260131_090306,

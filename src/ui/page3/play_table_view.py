@@ -21,8 +21,8 @@ class PlayTableItemModel(CustomTableItemModel):
         ResourceState.MISSING: QBrush(current_theme.MISSING_COLOR),
     }
 
-    MARKED_BACKGROUND_QBRUSHES = QBrush(current_theme.MARKED_BACKGROUND_COLOR)
-    MARKED_FOREGROUND_QBRUSHES = QBrush(current_theme.MARKED_FOREGROUND_COLOR)
+    LISTENED_BACKGROUND_QBRUSHES = QBrush(current_theme.LISTENED_BACKGROUND_COLOR)
+    LISTENED_FOREGROUND_QBRUSHES = QBrush(current_theme.LISTENED_FOREGROUND_COLOR)
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -78,14 +78,14 @@ class PlayTableItemModel(CustomTableItemModel):
             if col == 0:
                 return self.RESOURCE_STATE_QBRUSHS[self.theme_kanban.album_kanbans[i].track_resource_states[j]]
             # 已有 Mark 信息
-            if self.theme_kanban.album_kanbans[i].album.tracks[j].mark:
-                return self.MARKED_FOREGROUND_QBRUSHES
+            if self.theme_kanban.album_kanbans[i].album.tracks[j].mark != TrackMark.UNKNOWN:
+                return self.LISTENED_FOREGROUND_QBRUSHES
  
         # 背景
         if role == Qt.ItemDataRole.BackgroundRole:
             # 已有 Mark 信息
-            if self.theme_kanban.album_kanbans[i].album.tracks[j].mark:
-                return self.MARKED_BACKGROUND_QBRUSHES
+            if self.theme_kanban.album_kanbans[i].album.tracks[j].mark != TrackMark.UNKNOWN:
+                return self.LISTENED_BACKGROUND_QBRUSHES
 
         # 文本对齐
         if role == Qt.ItemDataRole.TextAlignmentRole:

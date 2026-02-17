@@ -140,19 +140,17 @@ class Page3Widget(QWidget):
     def _play(self, row: int) -> None:
         p = self.play_table_view.item_model.layout_ps[row]
         i, j = self.play_table_view.item_model.kanban_ij[p]
-        filename = self.theme_kanban.album_kanbans[i].track_filenames[j]
-        data = self.theme_kanban.album_kanbans[i].read_file(filename)
-        # 播放
-        self.music_player_bar.set_media_data(convert_audio_bytes_to_wav(data))
-        self.play_table_view.hightlight_row(row)
         # 更新播放图标
+        self.play_table_view.hightlight_row(row)
         self.play_table_view.item_model.playing_ij = (i, j)
         self.play_table_view.verticalHeader().viewport().update()
         # 更新 track mark
         self._set_track_mark([row], "0", force=False)
-
+        # 播放
+        data = self.theme_kanban.album_kanbans[i].read_path_bytes(self.theme_kanban.album_kanbans[i].track_paths[j])
+        self.music_player_bar.set_media_data(convert_audio_bytes_to_wav(data))
         # 文件不存在时
-        if not filename:
+        if not self.theme_kanban.album_kanbans[i].track_resource_states[j]:
             self._on_playback_finished()
 
     # 事件动作

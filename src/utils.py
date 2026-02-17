@@ -4,11 +4,13 @@
 
 import mimetypes
 import time
-import uuid
 from functools import wraps
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Mapping, Any
+from io import BytesIO
+
+from PIL import Image
 
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import ID3, APIC, PictureType
@@ -210,4 +212,17 @@ def write_audio_tags(audio: str,
                          data=Path(cover).read_bytes()))
             id3.save(audio)
 
+
+def convert_to_png(data: bytes) -> bytes:
+    """
+    将图片字节数据转换为 PNG 格式字节数据。
+
+    :param data: 原始图片 bytes
+    """
+    input_buffer = BytesIO(data)
+    with Image.open(input_buffer) as img:
+        img = img.convert("RGBA")
+        output_buffer = BytesIO()
+        img.save(output_buffer, format="PNG")
+        return output_buffer.getvalue()
 

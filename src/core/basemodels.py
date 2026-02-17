@@ -9,7 +9,8 @@ links, mark
 import re
 from enum import IntEnum
 
-from attrs import define, field, validators
+from attrs import define, field, validators, setters
+
 
 _DATE_PATTERN = re.compile(r"^$|^\d{4}$|^\d{4}-\d{2}$|^\d{4}-\d{2}-\d{2}$")
 
@@ -47,10 +48,10 @@ def _convert_track_tuple(value: tuple["Track", ...]) -> tuple["Track", ...]:
     return tuple(sorted(value, key=lambda t: t.tracknumber))
 
 
-@define(slots=True, frozen=True, cache_hash=True)
+@define(slots=True, on_setattr=setters.validate)
 class Track:
     """
-    Track 只读模型。
+    Track 模型。
 
     :param tracknumber: 序号
     :param title: 标题
@@ -63,10 +64,10 @@ class Track:
     mark: TrackMark = field(default=TrackMark.UNKNOWN, validator=validators.in_(TrackMark))
 
 
-@define(slots=True, frozen=True, cache_hash=True)
+@define(slots=True, on_setattr=setters.validate)
 class Disc:
     """
-    Disc 只读模型。
+    Disc 模型。
 
     :param discnumber: 序号
     :param title: 标题
@@ -81,10 +82,10 @@ class Disc:
                                           iterable_validator=validators.instance_of(tuple)))
 
 
-@define(slots=True, frozen=True, cache_hash=True)
+@define(slots=True, on_setattr=setters.validate)
 class Album:
     """
-    Album 只读模型。
+    Album 模型。
 
     :param catalognumber: 目录编号
     :param date: 日期。仅允许四种模式： ["", "2005", "2005-01", "2005-01-01"]

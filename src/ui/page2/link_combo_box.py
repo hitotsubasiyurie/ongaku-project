@@ -6,6 +6,7 @@ from PySide6.QtGui import (QWheelEvent, )
 from PySide6.QtWidgets import (QWidget, QComboBox, )
 
 from src.core.i18n import MESSAGE
+from src.core.kanban import AlbumKanban
 
 
 class LinkComboBox(QComboBox):

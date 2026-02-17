@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QHeaderView, QAbstractItemView, QStyle)
 
 from src.core.i18n import MESSAGE
+from src.core.basemodels import TrackMark
+from src.core.kanban import AlbumKanban
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
 from src.ui.page2.album_table_view import AlbumStateItemDelegate
@@ -14,8 +16,8 @@ from src.ui.page2.album_table_view import AlbumStateItemDelegate
 
 class TrackTableItemModel(CustomTableItemModel):
 
-    MARKED_BACKGROUND_QBRUSHES = QBrush(current_theme.MARKED_BACKGROUND_COLOR)
-    MARKED_FOREGROUND_QBRUSHES = QBrush(current_theme.MARKED_FOREGROUND_COLOR)
+    LISTENED_BACKGROUND_QBRUSHES = QBrush(current_theme.LISTENED_BACKGROUND_COLOR)
+    LISTENED_FOREGROUND_QBRUSHES = QBrush(current_theme.LISTENED_FOREGROUND_COLOR)
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -53,14 +55,14 @@ class TrackTableItemModel(CustomTableItemModel):
         # 前景
         if role == Qt.ItemDataRole.ForegroundRole:
             # 已有 Mark 信息
-            if self.album_kanban.album.tracks[p].mark:
-                return self.MARKED_FOREGROUND_QBRUSHES
+            if self.album_kanban.album.tracks[p].mark != TrackMark.UNKNOWN:
+                return self.LISTENED_FOREGROUND_QBRUSHES
  
         # 背景
         if role == Qt.ItemDataRole.BackgroundRole:
             # 已有 Mark 信息
-            if self.album_kanban.album.tracks[p].mark:
-                return self.MARKED_BACKGROUND_QBRUSHES
+            if self.album_kanban.album.tracks[p].mark != TrackMark.UNKNOWN:
+                return self.LISTENED_BACKGROUND_QBRUSHES
 
         # DisplayRole, EditRole
         if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
@@ -118,7 +120,7 @@ class TrackTableItemModel(CustomTableItemModel):
         return True
 
     # drop 支持
-    
+
     def supportedDropActions(self) -> Qt.DropAction:
         return Qt.DropAction.CopyAction | Qt.DropAction.MoveAction
     
@@ -168,7 +170,7 @@ class TrackTitleItemDelegate(QStyledItemDelegate):
         
         artist_rect = QRect(rect.left(), title_rect.bottom()+fh//4, rect.width(),
                             self._get_content_height(font, width, artist))
-        painter.setPen(current_theme.MARKED_FOREGROUND_COLOR)
+        painter.setPen(current_theme.LISTENED_FOREGROUND_COLOR)
         # artist 字体减小
         font.setPointSize(font.pointSize() - 1)
         painter.setFont(font)

@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QAbstractItemView, QStyle)
 
 from src.core.i18n import MESSAGE
+from src.core.basemodels import TrackMark
 from src.core.kanban import ResourceState, ThemeKanban
 from src.ui.color_theme import current_theme
 from src.ui.custom.custom_table_item_model import CustomTableItemModel
@@ -14,8 +15,8 @@ from src.ui.custom.custom_table_item_model import CustomTableItemModel
 
 class AlbumTableItemModel(CustomTableItemModel):
 
-    MARKED_BACKGROUND_QBRUSHES = QBrush(current_theme.MARKED_BACKGROUND_COLOR)
-    MARKED_FOREGROUND_QBRUSHES = QBrush(current_theme.MARKED_FOREGROUND_COLOR)
+    LISTENED_BACKGROUND_QBRUSHES = QBrush(current_theme.LISTENED_BACKGROUND_COLOR)
+    LISTENED_FOREGROUND_QBRUSHES = QBrush(current_theme.LISTENED_FOREGROUND_COLOR)
 
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
@@ -52,14 +53,14 @@ class AlbumTableItemModel(CustomTableItemModel):
         # 前景
         if role == Qt.ItemDataRole.ForegroundRole:
             # 所有 track 都有 Mark 信息
-            if all(t.mark for t in self.theme_kanban.album_kanbans[p].album.tracks):
-                return self.MARKED_FOREGROUND_QBRUSHES
+            if all(t.mark != TrackMark.UNKNOWN for t in self.theme_kanban.album_kanbans[p].album.tracks):
+                return self.LISTENED_FOREGROUND_QBRUSHES
  
         # 背景
         if role == Qt.ItemDataRole.BackgroundRole:
             # 所有 track 都有 Mark 信息
-            if all(t.mark for t in self.theme_kanban.album_kanbans[p].album.tracks):
-                return self.MARKED_BACKGROUND_QBRUSHES
+            if all(t.mark != TrackMark.UNKNOWN for t in self.theme_kanban.album_kanbans[p].album.tracks):
+                return self.LISTENED_BACKGROUND_QBRUSHES
 
         # 字体
         if role == Qt.ItemDataRole.FontRole:

@@ -1,6 +1,7 @@
 import itertools
 from io import BytesIO
 from typing import Optional
+from pathlib import Path
 
 from PIL import Image
 from PySide6.QtCore import Qt, QEvent, QObject, Signal, QByteArray, QBuffer
@@ -9,7 +10,7 @@ from PySide6.QtGui import (QPixmap, QPainter, QColor, QPaintEvent, QBrush, QShor
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from src.core.i18n import MESSAGE
-from src.core.kanban import AlbumKanban
+from src.core.kanban import AlbumKanban, MetadataState
 from src.ui.common import with_busy_cursor
 from src.ui.notifier import show_toast_msg
 
@@ -52,7 +53,7 @@ class CoverLabel(QLabel):
         self.pix, self.scaled_pix, self.image_info = None, None, None
 
         # 不/半透明时 加载封面
-        if album_kanban and album_kanban.cover_filename and self.opacity:
+        if album_kanban and (album_kanban.metadata_state & MetadataState.COVER_EXIST) and self.opacity:
             self._load_cover()
 
         self._set_geometry()
@@ -71,7 +72,7 @@ class CoverLabel(QLabel):
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
 
         # 切换 不/半透明时 加载封面
-        if self.album_kanban and self.album_kanban.cover_filename and self.opacity and self.pix is None:
+        if self.album_kanban and (self.album_kanban.metadata_state & MetadataState.COVER_EXIST) and self.opacity and self.pix is None:
             self._load_cover()
             self._set_geometry()
 
@@ -144,12 +145,12 @@ class CoverLabel(QLabel):
     def _load_cover(self) -> None:
         self.pix = QPixmap()
         self.scaled_pix = None
-        cover_bytes = self.album_kanban.read_file(self.album_kanban.cover_filename)
+        cover_bytes = self.album_kanban.read_path_bytes(self.album_kanban.cover_path)
         self.pix.loadFromData(cover_bytes)
 
         # Image.open 是惰性操作
         with Image.open(BytesIO(cover_bytes)) as img:
-            info = {"filename": self.album_kanban.cover_filename, "format": img.format, 
+            info = {"format": img.format, 
                     "mode": img.mode, "resolution": img.size, 
                     "file_size": "{:.2f} MiB".format(len(cover_bytes) / 1024 / 1024)}
 

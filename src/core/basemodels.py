@@ -48,7 +48,7 @@ def _convert_track_tuple(value: tuple["Track", ...]) -> tuple["Track", ...]:
     return tuple(sorted(value, key=lambda t: t.tracknumber))
 
 
-@define(slots=True, on_setattr=setters.validate)
+@define(slots=True, hash=True, on_setattr=setters.validate)
 class Track:
     """
     Track 模型。
@@ -64,7 +64,7 @@ class Track:
     mark: TrackMark = field(default=TrackMark.UNKNOWN, validator=validators.in_(TrackMark))
 
 
-@define(slots=True, on_setattr=setters.validate)
+@define(slots=True, hash=True, on_setattr=setters.validate)
 class Disc:
     """
     Disc 模型。
@@ -82,7 +82,7 @@ class Disc:
                                           iterable_validator=validators.instance_of(tuple)))
 
 
-@define(slots=True, on_setattr=setters.validate)
+@define(slots=True, hash=True, on_setattr=setters.validate)
 class Album:
     """
     Album 模型。

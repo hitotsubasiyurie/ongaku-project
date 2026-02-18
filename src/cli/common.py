@@ -204,9 +204,9 @@ def analyze_track(track_file: str | Path) -> Track | None:
         if not tracknumber.isdigit(): tracknumber = match.group(1)
         if not title: title = match.group(2)
     
-    tracknumber = int(tracknumber) if tracknumber.isdigit() else None
+    tracknumber = int(tracknumber) if tracknumber.isdigit() else 0
     if not title: title = track_file.name
-    
+
     return Track(tracknumber=tracknumber, title=title, artist=artist)
 
 # 按优先级排序

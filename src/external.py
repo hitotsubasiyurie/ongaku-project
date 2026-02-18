@@ -10,8 +10,9 @@ from typing import Union
 from src.core.logger import logger
 
 
-def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text: bool = False, **kwargs
-                    ) -> subprocess.CompletedProcess:
+def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+                   check: bool = True, text: bool = False, **kwargs
+                   ) -> subprocess.CompletedProcess:
     """
     封装 subprocess.run 。
     1. 在执行命令的前后、进程错误时打印日志。
@@ -39,13 +40,13 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
             logger.info(f"Parameter cwd exceeds 256 characters, replace it with a temp directory. {len(cwd)} {cwd}.")
 
     try:
-        process = subprocess.run(cmd, stdout=stdout, stderr=stderr, check=True, 
+        process = subprocess.run(cmd, stdout=stdout, stderr=stderr, check=check, 
                                  text=text, startupinfo=info, **kwargs)
     except subprocess.CalledProcessError as e:
         if text:
             logger.debug(f"stdout: {e.stdout}")
             logger.debug(f"stderr: {e.stderr}")
-        logger.error(f"Failed to run cmd. {cmd}")
+        logger.error(f"Failed to run cmd. {cmd}", exc_info=1)
         raise
     finally:
         tmpdir and tmpdir.cleanup()
@@ -397,15 +398,26 @@ def pg_dump_database(dbname: str, dmpfile: str) -> None:
 
 def open_in_explorer(path: str) -> None:
     """
-    在资源管理器中打开路径。
+    在资源管理器中打开文件夹或选中文件。
 
     :param path: 文件或文件夹
     """
     if os.path.isfile(path):
-        cmd = ["explorer", "/select,", path]
+        cmd = f'explorer /select,"{path}"'
     elif os.path.isdir(path):
-        cmd = ["explorer", path]
+        cmd = f'explorer "{path}"'
     else:
         raise FileNotFoundError(path)
 
-    run_subprocess(cmd)
+    run_subprocess(cmd, check=False, shell=True)
+
+
+def copy_to_clipboard(text: str) -> None:
+    """
+    粘贴文本至 Windows 剪贴板。
+    """
+    cmd = ["clip"]
+    run_subprocess(cmd, text=True, input=text)
+
+
+

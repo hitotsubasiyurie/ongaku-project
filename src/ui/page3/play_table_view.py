@@ -131,9 +131,6 @@ class PlayTableItemModel(CustomTableItemModel):
         if role != Qt.ItemDataRole.EditRole:
             return False
 
-        # 转字符串
-        value = str(value)
-
         # 更新数据
         i, j = self.kanban_ij[self.layout_ps[row]]
         old_hash = hash(self.theme_kanban.album_kanbans[i].album)
@@ -180,6 +177,7 @@ class PlayTableItemModel(CustomTableItemModel):
                 else:
                     t, pat = obj, None
                 data = self._get_data(Qt.ItemDataRole.EditRole, c, i, j)
+                data = str(data)
                 # 全字包含 或 正则匹配
                 if not (t.lower() in data.lower() or (pat and pat.search(data, re.IGNORECASE))):
                     is_match = False

@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import webbrowser
 from pathlib import Path
@@ -7,21 +6,21 @@ from typing import Callable, Optional
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShortcut
-from PySide6.QtWidgets import QGridLayout, QLineEdit, QMessageBox, QWidget
+from PySide6.QtWidgets import QGridLayout, QLineEdit, QWidget
 
-from src.cli.common import tracks_assignment, analyze_track
-from src.core.basemodels import Album
-from src.core.constants import AUDIO_EXTS
 from src.core.i18n import MESSAGE
 from src.core.kanban import ThemeKanban, track_stemnames
 from src.core.settings import settings
-from src.external import open_in_explorer
+from src.core.constants import AUDIO_EXTS, PILLOW_IMG_EXTS
+from src.external import open_in_explorer, copy_to_clipboard
 from src.ui.common import with_busy_cursor
-from src.ui.notifier import show_toast_msg
+from src.ui.notifier import show_toast_msg, show_confirm_msg
 from src.ui.page2.album_table_view import AlbumTableView
 from src.ui.page2.cover_label import CoverLabel
 from src.ui.page2.link_combo_box import LinkComboBox
 from src.ui.page2.track_table_view import TrackTableView
+from src.ui.features.put_away_resource import put_away_cover_file, put_away_track_file, \
+    put_away_track_files
 
 
 class Page2Widget(QWidget):
@@ -120,59 +119,6 @@ class Page2Widget(QWidget):
         self.track_table_view.item_model.reset_album_kanban(None)
         self.album_table_view.hightlight_row(0)
 
-    # 内部方法
-
-    def _putaway_cover_file(self, src: Path, dst_dir: Path) -> bool:
-        dst_dir.mkdir(parents=True, exist_ok=True)
-        ext = src.suffix.lower()
-        dst = dst_dir / ("cover"+ext)
-        shutil.copy2(src, dst)
-        return True
-
-    def _putaway_track_file(self, src: Path, dst_dir: Path, album: Album, trackidx: int) -> bool:
-        dst_dir.mkdir(parents=True, exist_ok=True)
-        ext = src.suffix.lower()
-        dst = dst_dir / (track_stemnames(album)[trackidx]+ext)
-        shutil.move(src, dst)
-        return True
-
-    def _putaway_track_files(self, src_files: list[Path], dst_dir: Path, album: Album) -> bool:
-        dst_dir.mkdir(parents=True, exist_ok=True)
-
-        src_tracks = list(map(analyze_track, src_files))
-        row_ind, col_ind, aver_similarity, _ = tracks_assignment(src_tracks, album.tracks)
-
-        dst_names = track_stemnames(album)
-        _map: dict[Path, Path] = {src_files[r]: (dst_dir / (dst_names[c] + src_files[r].suffix.lower())) 
-                                  for r, c in zip(row_ind, col_ind)}
-
-        text = f"""
-Directory:\t\t{src_files[0].parent.name}
-Album:\t\t{album.album}
-Average Similarity:\t{aver_similarity:.02f}
-"""
-        text += "\n"*2 + "\n".join(f"    {k.name}\n->  {v.name}\n" for k, v in _map.items())
-        accept = self._ask_for_confirm("Check Again", text)
-        
-        if not accept:
-            return False
-        
-        [shutil.move(src, dst) for src, dst in _map.items()]
-        return True
-
-    def _ask_for_confirm(self, title: str, text: str, on_yes_clicked: Callable = None, 
-                            on_no_clicked: Callable = None) -> bool:
-        """弹出确认对话框"""
-        check_msg = TextEditMessageBox(title, text, parent=self)
-        check_msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        # 设置默认按钮为 NO
-        check_msg.setDefaultButton(QMessageBox.StandardButton.No)
-        on_yes_clicked and check_msg.button(QMessageBox.StandardButton.Yes).clicked.connect(on_yes_clicked)
-        on_no_clicked and check_msg.button(QMessageBox.StandardButton.No).clicked.connect(on_no_clicked)
-        # 阻塞
-        accept = check_msg.exec() == QMessageBox.StandardButton.Yes
-        return accept
-
     # 事件动作
 
     @with_busy_cursor
@@ -180,15 +126,9 @@ Average Similarity:\t{aver_similarity:.02f}
         if not self.cover_label.album_kanban:
             return
 
-        cover = self.cover_label.album_kanban.cover_filename
-        if cover:
-            if not self._ask_for_confirm("Check Again", "Replace cover?"):
-                return
-            os.unlink(cover)
-
         os.makedirs(self.cover_label.album_kanban.album_dir, exist_ok=True)
         Path(self.cover_label.album_kanban.album_dir, "cover.png").write_bytes(data)
-        self.cover_label.album_kanban.__post_init__()
+        self.cover_label.album_kanban.refresh()
         self.album_table_view.viewport().update()
         self.cover_label.set_album_kanban(self.cover_label.album_kanban)
 
@@ -213,7 +153,7 @@ Average Similarity:\t{aver_similarity:.02f}
         ps = self.track_table_view.get_selected_ps()
         filenames = track_stemnames(self.track_table_view.item_model.album_kanban.album)
         text = "\n".join(filenames[p] for p in ps)
-        subprocess.run("clip", text=True, input=text)
+        copy_to_clipboard(text)
 
     def _action_edit(self) -> None:
         """打开 主题 元数据文件"""
@@ -231,7 +171,7 @@ Average Similarity:\t{aver_similarity:.02f}
         if any(self.theme_kanban.album_kanbans[p].album_res_state for p in ps):
             show_toast_msg("Albums with resources cannot be deleted.", 2)
             return
-        if not self._ask_for_confirm("Check Again", f"Delete {len(ps)} albums?"):
+        if not show_confirm_msg(f"Delete {len(ps)} albums?"):
             return
         self.theme_kanban.album_kanbans = [ak for i, ak in enumerate(self.theme_kanban.album_kanbans) 
                                            if i not in ps]
@@ -256,8 +196,8 @@ Average Similarity:\t{aver_similarity:.02f}
         if not self.theme_kanban:
             return
         
-        sources = settings.cover_search_engine_sources
-        country = settings.cover_search_engine_country
+        sources = settings.ui_cov_sources
+        country = settings.ui_cov_country
 
         ps = self.album_table_view.get_selected_ps()
         for p in ps:
@@ -267,54 +207,57 @@ Average Similarity:\t{aver_similarity:.02f}
             url = f"https://covers.musichoarders.xyz/?sources={sources}&country={country}&album={album}"
             webbrowser.open(url)
 
-    def _on_paths_dropped(self, dropped_strs: list[str]) -> None:
+    @with_busy_cursor
+    def _on_paths_dropped(self, paths: list[str]) -> None:
         ps = self.album_table_view.get_selected_ps()
         # album view 至少 选中一个
         if not ps:
             return
 
-        dropped_paths = list(map(Path, dropped_strs))
+        paths: list[Path] = list(map(Path, paths))
         albums = [self.theme_kanban.album_kanbans[p].album for p in ps]
         album_dirs = list(map(Path, [self.theme_kanban.album_kanbans[p].album_dir for p in ps]))
 
         # 选中多个 album item ，拖入多个文件夹，路径数量必须等于 album item 选中数
-        if all(p.is_dir() for p in dropped_paths) and len(dropped_paths) == len(ps):
-            for p, d, a in zip(dropped_paths, album_dirs, albums):
+        if all(p.is_dir() for p in paths) and len(paths) == len(ps):
+            # 按顺序匹配 album item 和文件夹
+            for p, d, a in zip(paths, album_dirs, albums):
                 src_files = [f for f in p.rglob("*") if f.suffix.lower() in AUDIO_EXTS]
                 # 音频文件数量必须等于 tracks 数量
                 if len(src_files) != len(a.tracks):
                     continue
-                self._putaway_track_files(src_files, d, a)
+                put_away_track_files(src_files, d, a)
             # 更新视图
-            [self.theme_kanban.album_kanbans[p].__post_init__() for p in ps]
+            [self.theme_kanban.album_kanbans[p].refresh() for p in ps]
             self.album_table_view.viewport().update()
             return
 
-        exts = set(p.suffix.lower() for p in dropped_paths)
+        exts = set(p.suffix.lower() for p in paths)
         # 选中多个 album item ，拖入多个图片
-        if exts.issubset(IMG_EXTS):
+        if exts.issubset(PILLOW_IMG_EXTS):
             # 路径数量等于 album view 选中数时
-            if len(dropped_paths) == len(ps):
-                [self._putaway_cover_file(*args) for args in zip(dropped_paths, album_dirs)]
+            if len(paths) == len(ps):
+                [put_away_cover_file(*args) for args in zip(paths, album_dirs)]
             # 路径数量为一个时
-            elif len(dropped_paths) == 1:
-                [self._putaway_cover_file(dropped_paths[0], d) for d in album_dirs]
+            elif len(paths) == 1:
+                [put_away_cover_file(paths[0], d) for d in album_dirs]
             # 更新视图
-            [self.theme_kanban.album_kanbans[p].__post_init__() for p in ps]
+            [self.theme_kanban.album_kanbans[p].refresh() for p in ps]
             self.album_table_view.viewport().update()
             self.cover_label.set_album_kanban(self.theme_kanban.album_kanbans[ps[0]])
             return
-        
+
         # 选中一个 album item ，选中多个 track item ，拖入多个音频文件
         if exts.issubset(AUDIO_EXTS) and len(ps) == 1:
             # 路径数量为一个时
-            if len(dropped_paths) == 1:
+            if len(paths) == 1:
                 trackidx = self.track_table_view.selectedIndexes()[0].row()
-                [self._putaway_track_file(p, d, albums[0], trackidx) for p, d in zip(dropped_paths, album_dirs)]
+                [put_away_track_file(p, d, albums[0], trackidx) for p, d in zip(paths, album_dirs)]
             # 路径数量为多个时
             else:
-                self._putaway_track_files(dropped_paths, album_dirs[0], albums[0])
-            self.theme_kanban.album_kanbans[ps[0]].__post_init__()
+                put_away_track_files(paths, album_dirs[0], albums[0])
+            # 更新视图
+            self.theme_kanban.album_kanbans[ps[0]].refresh()
             self.album_table_view.viewport().update()
             self.track_table_view.viewport().update()
 

@@ -13,6 +13,7 @@ from src.core.i18n import MESSAGE
 from src.core.kanban import AlbumKanban, MetadataState
 from src.ui.common import with_busy_cursor
 from src.ui.notifier import show_toast_msg
+from src.utils import convert_to_png
 
 OPACITY_CYCLE = itertools.cycle([0.2, 1, 0])
 
@@ -185,9 +186,11 @@ class CoverLabel(QLabel):
             return
         
         img = QGuiApplication.clipboard().image()
-        if not img.isNull():
-            ba = QByteArray()
-            buffer = QBuffer(ba)
-            buffer.open(QBuffer.OpenModeFlag.WriteOnly)
-            img.save(buffer, "PNG")
-            self.image_pasted.emit(bytes(ba))
+        if img.isNull():
+            return
+        img.bits()
+        ba = QByteArray()
+        buffer = QBuffer(ba)
+        buffer.open(QBuffer.OpenModeFlag.WriteOnly)
+        img.save(buffer, "PNG")
+        self.image_pasted.emit(bytes(ba))

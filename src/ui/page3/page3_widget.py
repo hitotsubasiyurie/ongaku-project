@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.i18n import MESSAGE
 from src.core.kanban import ThemeKanban
+from src.core.basemodels import TrackMark
 from src.external import convert_audio_bytes_to_wav
 from src.ui.common import with_busy_cursor
 from src.ui.notifier import show_toast_msg
@@ -65,9 +66,9 @@ class Page3Widget(QWidget):
         # play_table_view 双击
         self.play_table_view.doubleClicked.connect(self._on_track_table_double_clicked)
         # play_table_view 右键菜单动作
-        self.play_table_view.favourite_selected.connect(lambda: self._set_track_mark([], "1", force=True))
-        self.play_table_view.unfavourite_selected.connect(lambda: self._set_track_mark([], "0", force=True))
-        self.play_table_view.clear_selected.connect(lambda: self._set_track_mark([], "", force=True))
+        self.play_table_view.favourite_selected.connect(lambda: self._set_track_mark([], TrackMark.FAVOURITE, force=True))
+        self.play_table_view.unfavourite_selected.connect(lambda: self._set_track_mark([], TrackMark.LISTENED, force=True))
+        self.play_table_view.clear_selected.connect(lambda: self._set_track_mark([], TrackMark.UNKNOWN, force=True))
         # play_table_view 编辑
         self.play_table_view.item_model.dataChanged.connect(self._save_timer.start)
         # 播放器事件
@@ -85,8 +86,8 @@ class Page3Widget(QWidget):
             QShortcut(key, self, activated=self._play_selected)
         QShortcut(QKeySequence("Alt+Up"), self, activated=lambda: self._search_no_mark_ix(-1))
         QShortcut(QKeySequence("Alt+Down"), self, activated=lambda: self._search_no_mark_ix(1))
-        QShortcut(QKeySequence("-"), self, activated=lambda: [self._set_track_mark([], "0", force=True), self.play_table_view.hightlight_row(self._index_below_selected().row())])
-        QShortcut(QKeySequence("+"), self, activated=lambda: [self._set_track_mark([], "1", force=True), self.play_table_view.hightlight_row(self._index_below_selected().row())])
+        QShortcut(QKeySequence("-"), self, activated=lambda: [self._set_track_mark([], TrackMark.LISTENED, force=True), self.play_table_view.hightlight_row(self._index_below_selected().row())])
+        QShortcut(QKeySequence("+"), self, activated=lambda: [self._set_track_mark([], TrackMark.FAVOURITE, force=True), self.play_table_view.hightlight_row(self._index_below_selected().row())])
         QShortcut(Qt.Key.Key_Escape, self, activated=
                   lambda: [x.clear() for x in [self.title_field, self.artist_field, self.album_field, self.date_field, self.mark_field]])
         QShortcut(Qt.Key.Key_Period, self, activated=lambda: self.play_table_view.hightlight_row(self.play_table_view.item_model.locate_playing_row()))
@@ -116,14 +117,14 @@ class Page3Widget(QWidget):
 
     # 内部方法
 
-    def _set_track_mark(self, rows: list[int] = [], mark: str = "", force: bool = False) -> None:
+    def _set_track_mark(self, rows: list[int] = [], mark: TrackMark = TrackMark.UNKNOWN, force: bool = False) -> None:
         if rows:
             model_indexs = [self.play_table_view.item_model.createIndex(r, 5) for r in rows]
         else:
             model_indexs = list(ix for ix in self.play_table_view.selectedIndexes() if ix.column() == 5)
         
         for ix in model_indexs:
-            if self.play_table_view.item_model.data(ix, Qt.ItemDataRole.EditRole) and not force:
+            if self.play_table_view.item_model.data(ix, Qt.ItemDataRole.EditRole) != TrackMark.UNKNOWN and not force:
                 continue
             self.play_table_view.item_model.setData(ix, mark, Qt.ItemDataRole.EditRole)
 
@@ -145,7 +146,7 @@ class Page3Widget(QWidget):
         self.play_table_view.item_model.playing_ij = (i, j)
         self.play_table_view.verticalHeader().viewport().update()
         # 更新 track mark
-        self._set_track_mark([row], "0", force=False)
+        self._set_track_mark([row], TrackMark.LISTENED, force=False)
         # 播放
         data = self.theme_kanban.album_kanbans[i].read_path_bytes(self.theme_kanban.album_kanbans[i].track_paths[j])
         self.music_player_bar.set_media_data(convert_audio_bytes_to_wav(data))

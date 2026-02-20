@@ -12,12 +12,20 @@ from src.core.basemodels import Album, TrackMark
 from src.utils import legalize_filename, dump_toml
 
 
+# 项目 接受的音频格式
+AUDIO_EXTS = {".mp3", ".flac"}
+# 项目 接受的图像格式
+IMG_EXT = ".png"
+# 项目 的 归档格式
+ARCHIVE_EXT = ".rar"
+
 # 专辑文件名主干
 ALBUM_STEMNAME = "[{catalognumber}] [{date}] {album} [{trackcounts}]"
 # 音轨文件名主干
 TRACK_STEMNAME = "{tracknumber}. {title}"
 # 封面文件名
 COVER_NAME = "cover.png"
+
 
 def album_stemname(album: Album) -> str:
     """

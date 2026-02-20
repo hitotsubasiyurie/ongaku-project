@@ -77,7 +77,7 @@ class TrackTableItemModel(CustomTableItemModel):
             return Qt.AlignmentFlag.AlignLeft
 
         if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Vertical:
-            if self.album_kanban.album.tracks[self.layout_ps[section]].mark == "1":
+            if self.album_kanban.album.tracks[self.layout_ps[section]].mark == TrackMark.FAVOURITE:
                 return f"🤍"
 
         return super().headerData(section, orientation, role)

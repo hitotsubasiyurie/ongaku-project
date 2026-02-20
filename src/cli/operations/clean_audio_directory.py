@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 from src.cli.common import easy_linput
-from src.core.constants import AUDIO_EXTS
+from src.core.storage import AUDIO_EXTS
 from src.core.i18n import MESSAGE
 from src.core.logger import lprint
 

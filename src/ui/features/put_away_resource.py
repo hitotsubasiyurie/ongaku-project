@@ -13,12 +13,14 @@ def put_away_cover_file(src: Path, dst_dir: Path) -> bool:
     dst = dst_dir / COVER_NAME
     dst.write_bytes(convert_to_png(src.read_bytes()))
 
+
 def put_away_track_file(src: Path, dst_dir: Path, album: Album, trackidx: int) -> bool:
     dst_dir.mkdir(parents=True, exist_ok=True)
     ext = src.suffix.lower()
     dst = dst_dir / (track_stemnames(album)[trackidx]+ext)
     shutil.move(src, dst)
     return True
+
 
 def put_away_track_files(src_files: list[Path], dst_dir: Path, album: Album) -> bool:
     dst_dir.mkdir(parents=True, exist_ok=True)

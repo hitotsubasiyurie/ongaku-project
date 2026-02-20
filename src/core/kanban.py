@@ -1,125 +1,21 @@
-import hashlib
 import os
-import pickle
-from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from enum import IntEnum, IntFlag
 from functools import cached_property
 from pathlib import Path
-from threading import Lock
-from typing import Callable, Any
 
 from attrs import define, field
-from pympler import asizeof
 
 from src.core.basemodels import Album, TrackMark
-from src.core.constants import IMG_EXT, ARCHIVE_EXT
-from src.core.settings import settings
-from src.external import rar_list, rar_read, rar_stats, show_audio_stream_info
+from src.core.storage import ARCHIVE_EXT
+from src.core.cache import with_cache
+from src.external import rar_list, rar_read, rar_stats
 from src.core.storage import album_stemname, track_stemnames, dump_albums_to_toml, load_albums_from_toml, \
     COVER_NAME
 
 
-################################################################################
-### 缓存
-################################################################################
-
-
-class FunctionCallCache:
-    """函数调用缓存"""
-
-    _CACHE_LOCK = Lock()
-    _CACHE_FILE = Path(settings.temp_directory, "function_call_cache")
-    _CACHE: OrderedDict = None
-    # 缓存 大小 MiB
-    _MAX_SIZE = 50 * 1024 * 1024
-
-    @staticmethod
-    def load() -> None:
-        """
-        加载函数调用缓存。
-        """
-        try:
-            FunctionCallCache._CACHE = pickle.loads(FunctionCallCache._CACHE_FILE.read_bytes())
-        except Exception:
-            FunctionCallCache._CACHE = OrderedDict()
-
-    @staticmethod
-    def save() -> None:
-        """
-        保存函数调用缓存。
-        """
-        with FunctionCallCache._CACHE_LOCK:
-            items = list(FunctionCallCache._CACHE.items())
-
-        total_size = 0
-        keep_from = len(items)
-
-        for i in range(len(items) - 1, -1, -1):
-            total_size += asizeof.asizeof(items[i][1])
-            if total_size > FunctionCallCache._MAX_SIZE:
-                break
-            keep_from = i
-
-        with FunctionCallCache._CACHE_LOCK:
-            FunctionCallCache._CACHE = OrderedDict(items[keep_from:])
-            FunctionCallCache._CACHE_FILE.write_bytes(pickle.dumps(FunctionCallCache._CACHE))
-
-    @staticmethod
-    def rar_list(dstrar: str) -> list[str]:
-        return FunctionCallCache._with_cache_call(rar_list, dstrar, related_file=dstrar)
-
-    @staticmethod
-    def rar_stats(dstrar: str) -> dict[str, os.stat_result]:
-        return FunctionCallCache._with_cache_call(rar_stats, dstrar, related_file=dstrar)
-
-    @staticmethod
-    def show_audio_stream_info(filepath: str) -> dict:
-        return FunctionCallCache._with_cache_call(show_audio_stream_info, filepath, related_file=filepath)
-
-    @staticmethod
-    def show_rar_audio_stream_info(dstrar: str, filename: str) -> dict:
-        func = lambda x, y: show_audio_stream_info(rar_read(x, y))
-        func.__name__ = "show_rar_audio_stream_info"
-        return FunctionCallCache._with_cache_call(func, dstrar, filename, related_file=dstrar)
-
-    @staticmethod
-    def _with_cache_call(func: Callable, *args, related_file: str = "") -> Any:
-        """
-        :param related_file: 关联的文件
-        """
-        if related_file:
-            stat = os.stat(related_file)
-            key = FunctionCallCache._make_key((func.__name__, related_file, stat.st_mtime, stat.st_size) + args, {}, False)
-        else:
-            key = FunctionCallCache._make_key((func.__name__, ) + args, {}, False)
-
-        with FunctionCallCache._CACHE_LOCK:
-            val = FunctionCallCache._CACHE.get(key)
-            if val is not None:
-                FunctionCallCache._CACHE.move_to_end(key)
-                return val
-
-        val = func(*args)
-
-        with FunctionCallCache._CACHE_LOCK:
-            FunctionCallCache._CACHE[key] = val
-            FunctionCallCache._CACHE.move_to_end(key)
-
-        return val
-
-    def _make_key(*args) -> str:
-        key = ":".join(str(a) for a in args)
-        return hashlib.md5(key.encode()).hexdigest()
-
-
-# 加载 缓存
-FunctionCallCache.load()
-
-
-################################################################################
-### 看板
-################################################################################
+cached_rar_list = lambda dstrar: with_cache(rar_list, os.path.abspath(dstrar), related_file=os.path.abspath(dstrar))
+cached_rar_stats = lambda dstrar: with_cache(rar_stats, os.path.abspath(dstrar), related_file=os.path.abspath(dstrar))
 
 
 class ResourceState(IntEnum):
@@ -175,7 +71,7 @@ class AlbumKanban:
         """
         if Path(self.album_dir, COVER_NAME).is_file():
             return self.album_dir, COVER_NAME
-        if os.path.isfile(self.album_archive) and COVER_NAME in FunctionCallCache.rar_list(self.album_archive):
+        if os.path.isfile(self.album_archive) and COVER_NAME in cached_rar_list(self.album_archive):
             return self.album_archive, COVER_NAME
         return self.album_dir, COVER_NAME
 
@@ -191,7 +87,7 @@ class AlbumKanban:
         stem2path = {n: (self.album_dir, n) for n in stemnames}
 
         if os.path.isfile(self.album_archive):
-            stem2path.update({Path(n).stem: (self.album_archive, n) for n in FunctionCallCache.rar_list(self.album_archive)})
+            stem2path.update({Path(n).stem: (self.album_archive, n) for n in cached_rar_list(self.album_archive)})
         if os.path.isdir(self.album_dir):
             stem2path.update({Path(n).stem: (self.album_dir, n) for n in os.listdir(self.album_dir)})
 
@@ -217,6 +113,12 @@ class AlbumKanban:
             s |= MetadataState.COVER_EXIST
 
         return s
+
+    @cached_property
+    def track_metadata_states(self) -> tuple[MetadataState, ...]:
+        """音轨元数据状态列表"""
+        no_artist = MetadataState.ALL_EXIST & ~MetadataState.ARTIST_EXIST
+        return tuple((MetadataState.ALL_EXIST if t.artist else no_artist) for t in self.album.tracks)
 
     @cached_property
     def track_resource_states(self) -> tuple[ResourceState, ...]:
@@ -246,7 +148,7 @@ class AlbumKanban:
     @cached_property
     def track_stat_results(self) -> tuple[os.stat_result | None, ...]:
         """音轨文件属性列表"""
-        arch_stats = FunctionCallCache.rar_stats(self.album_archive) if os.path.isfile(self.album_archive) else {}
+        arch_stats = cached_rar_stats(self.album_archive) if os.path.isfile(self.album_archive) else {}
         dir_stats = {p.name: p.stat() for p in Path(self.album_dir).iterdir()} if os.path.isdir(self.album_dir) else {}
         return tuple(arch_stats.get(p[1]) if p[0] == self.album_archive else dir_stats.get(p[1]) for p in self.track_paths)
 
@@ -254,7 +156,7 @@ class AlbumKanban:
     def cover_stat_result(self) -> os.stat_result | None:
         """封面文件属性"""
         if self.cover_path[0] == self.album_archive:
-            return FunctionCallCache.rar_stats(self.album_archive)[self.cover_path[1]]
+            return cached_rar_stats(self.album_archive)[self.cover_path[1]]
         p = Path(*self.cover_path)
         return p.stat() if p.is_file() else None
 
@@ -373,9 +275,6 @@ class Kanban:
         # 默认 max_workers = cpu_count + 4
         with ThreadPoolExecutor() as executor:
             self.theme_kanbans = tuple(executor.map(ThemeKanban, mdfs, paths))
-        
-        # 保存函数调用缓存
-        FunctionCallCache.save()
 
     @cached_property
     def collecting_progress(self) -> tuple[int, int]:

@@ -1,13 +1,11 @@
-import pickle
-import uuid
 from collections import Counter
-from pathlib import Path
 
 import requests
+from diskcache.core import full_name, args_to_key
 
 from src.core.basemodels import Album, Disc
 from src.core.logger import logger
-from src.core.settings import settings
+from src.core.cache import request_cache
 from src.utils import retry, RateLimiter
 
 
@@ -21,16 +19,12 @@ class Scraper:
     _REQUEST_RETRY_TIMES = 10
     # 请求 重试间隔 5 秒
     _REQUEST_RETRY_DELAY = 5
-    # 请求 缓存 位置
-    _REQUEST_CACHE_PATH = Path(settings.temp_directory, "request_cache")
     # 请求 请求头
     _REQUEST_HEADERS = None
 
     def __init__(self) -> None:
         self.__rate_limiter = RateLimiter(self._REQUEST_INTERVAL)
         self.__request_get = retry(self._REQUEST_RETRY_TIMES, self._REQUEST_RETRY_DELAY)(self.__rate_limiter(requests.get))
-        # 创建 缓存目录
-        not self._REQUEST_CACHE_PATH.is_dir() and self._REQUEST_CACHE_PATH.mkdir(parents=True)
 
     @staticmethod
     def split_multi_disc_album(catnos: list[str], date: str, album_title: str, discs: list[Disc], link: str) -> list[Album]:
@@ -68,7 +62,7 @@ class Scraper:
             albums = [Album(catalognumber=", ".join(catnos), date=date, album=f"{album_title} {d.disc}", 
                             tracks=d.tracks, links=[link])
                         for d in discs]
-        
+
         # 处理同名专辑
         _count = Counter([a.album for a in albums])
         for i, a in enumerate(albums):
@@ -82,13 +76,14 @@ class Scraper:
         """
         带缓存的 request.get 。
         """
-        cache = Path(self._REQUEST_CACHE_PATH, str(uuid.uuid5(uuid.NAMESPACE_URL, name=url)))
-        if cache.exists():
-            logger.debug(f"In cache. {url}")
-            return pickle.loads(cache.read_bytes())
-        resp = self.__request_get(url, **kwargs, timeout=self._REQUEST_TIMEOUT, headers=self._REQUEST_HEADERS)
-        cache.write_bytes(pickle.dumps(resp))
-        return resp
+        base = (full_name(self.__request_get),)
+        key = args_to_key(base, (url, ), kwargs, False, ())
+        result = request_cache.get(key)
+        if result is None:
+            result = self.__request_get(url, timeout=self._REQUEST_TIMEOUT, headers=self._REQUEST_HEADERS, **kwargs)
+            request_cache.set(key, result)
+
+        return result
 
 
 

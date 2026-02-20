@@ -1,8 +1,7 @@
 import os
-import subprocess
 import webbrowser
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShortcut
@@ -11,7 +10,8 @@ from PySide6.QtWidgets import QGridLayout, QLineEdit, QWidget
 from src.core.i18n import MESSAGE
 from src.core.kanban import ThemeKanban, track_stemnames
 from src.core.settings import settings
-from src.core.constants import AUDIO_EXTS, PILLOW_IMG_EXTS
+from src.core.storage import COVER_NAME, AUDIO_EXTS
+from src.utils import convert_to_png, PILLOW_IMG_EXTS
 from src.external import open_in_explorer, copy_to_clipboard
 from src.ui.common import with_busy_cursor
 from src.ui.notifier import show_toast_msg, show_confirm_msg
@@ -127,7 +127,7 @@ class Page2Widget(QWidget):
             return
 
         os.makedirs(self.cover_label.album_kanban.album_dir, exist_ok=True)
-        Path(self.cover_label.album_kanban.album_dir, "cover.png").write_bytes(data)
+        Path(self.cover_label.album_kanban.album_dir, COVER_NAME).write_bytes(convert_to_png(data))
         self.cover_label.album_kanban.refresh()
         self.album_table_view.viewport().update()
         self.cover_label.set_album_kanban(self.cover_label.album_kanban)
@@ -156,13 +156,17 @@ class Page2Widget(QWidget):
         copy_to_clipboard(text)
 
     def _action_edit(self) -> None:
-        """打开 主题 元数据文件"""
+        """
+        打开 主题 元数据文件。
+        """
         if not self.theme_kanban:
             return
         os.startfile(self.theme_kanban.theme_metadata_file)
 
     def _action_delete(self) -> None:
-        """删除所选 album"""
+        """
+        删除所选 album 。
+        """
         if not self.theme_kanban:
             return
         ps = self.album_table_view.get_selected_ps()

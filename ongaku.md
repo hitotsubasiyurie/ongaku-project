@@ -2573,3 +2573,37 @@ spotify API 不可用？
 
 -----------------------------【todo】评分界面增加定位按钮，长方形 展示 播放歌曲 标题
 -----------------------------【todo】track mark 搜索
+
+健康检查（封面大小检查，专辑标题长度检查）-> 集成ui ——》 导出功能
+
+## 2026.02.19
+
+-----------------------------【todo】request 缓存和函数缓存代码可以统一
+
+交互式程序文本输出的设计。
+文本的输出一行一行的。以块为概念
+一个进度条是一个块。一个函数可以负责一个进度条。如 build_cache
+
+-----------------------------【todo】run_subprocess 应该用 text=true 控制日志吗
+
+## 2026.02.20
+
+diskcache 库
+与内存 dict 的速度比较，dict 明显更快，DiskCache 慢 1–2 个数量级。dict：纯内存哈希表，纳秒级访问，DiskCache：基于 SQLite + 文件系统 + 缓存策略，微秒–毫秒级
+会不会导致频繁写盘。SQLite WAL 模式，顺序追加写。
+线程安全且进程安全
+
+网络 request 请求和函数调用的缓存应该放在一起吗
+网络请求的响应值是很大的，每次响应都在数十 KB 级。不应该放在一起
+
+There are *two main ways* of using requests-cache:
+Sessions: (recommended) Use CachedSession to send your requests
+----- Patching: Globally patch requests using install_cache()
+
+requests-cache patch 方法相当于替换了 request.get 
+不适合速率限制，我在调用前还需要查询是否在缓存中
+
+
+
+
+

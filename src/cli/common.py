@@ -10,7 +10,7 @@ from scipy.optimize import linear_sum_assignment
 from tqdm import tqdm
 
 from src.core.basemodels import Album, Track
-from src.core.constants import AUDIO_EXTS
+from src.core.storage import AUDIO_EXTS
 from src.core.logger import linput, lprint, logger
 from src.utils import read_audio_tags
 

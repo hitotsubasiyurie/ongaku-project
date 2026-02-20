@@ -11,7 +11,7 @@ from src.core.logger import logger
 
 
 def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-                   check: bool = True, text: bool = False, **kwargs
+                   check: bool = True, encoding: str = None, **kwargs
                    ) -> subprocess.CompletedProcess:
     """
     封装 subprocess.run 。
@@ -41,9 +41,9 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
 
     try:
         process = subprocess.run(cmd, stdout=stdout, stderr=stderr, check=check, 
-                                 text=text, startupinfo=info, **kwargs)
+                                 encoding=encoding, startupinfo=info, **kwargs)
     except subprocess.CalledProcessError as e:
-        if text:
+        if encoding:
             logger.debug(f"stdout: {e.stdout}")
             logger.debug(f"stderr: {e.stderr}")
         logger.error(f"Failed to run cmd. {cmd}", exc_info=1)
@@ -57,18 +57,23 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
 
 ################################################################################
 ### FFMpeg
+### https://www.ffmpeg.org/documentation.html
 ################################################################################
 
-def decode_audio_to_pcm(audio_path: str) -> bytes:
+def decode_audio_bytes_to_pcm(audio_data: bytes) -> bytes:
     """
     解码音频为裸 PCM 数据。
 
     -f s16le    signed 16-bit little-endian PCM
     """
-    logger.info(f"Decode audio to pcm. {audio_path}")
+    if not audio_data:
+        logger.info(f"Empty audio data.")
+        return b""
+
+    logger.info(f"Decode audio data to pcm. {len(audio_data)} bytes")
     ffmpeg_path = os.path.abspath(os.path.join("bin", "ffmpeg.exe"))
-    cmd = [ffmpeg_path, "-i", audio_path, "-f", "s16le", "-"]
-    process = run_subprocess(cmd)
+    cmd = [ffmpeg_path, "-i", "pipe:0", "-f", "s16le", "-"]
+    process = run_subprocess(cmd, input=audio_data)
     return process.stdout
 
 
@@ -97,27 +102,54 @@ def show_audio_stream_info(audio_input: Union[str, bytes]) -> dict:
         raise TypeError(f"audio_input is not str or bytes. {type(audio_input)}")
     if not audio_input:
         raise ValueError(f"Empty audio_input.")
-    
+
     is_path = isinstance(audio_input, str)
     logger.info(f"Show audio stream info. {audio_input if is_path else ''}")
     ffprobe_path = os.path.abspath(os.path.join("bin", "ffprobe.exe"))
     if is_path:
         cmd = [ffprobe_path, "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a", audio_input]
-        process = run_subprocess(cmd, text=True)
+        process = run_subprocess(cmd)
     else:
         cmd = [ffprobe_path, "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a"]
         process = run_subprocess(cmd, input=audio_input)
     return json.loads(process.stdout)
 
 
+def calculate_audio_md5(audio_input: Union[str, bytes]) -> str:
+    """
+    计算音频流 md5。
+
+    :param audio_input: str 类型的音频文件路径，或者 bytes 类型的音频字节数据
+    """
+    if not isinstance(audio_input, (str, bytes)):
+        raise TypeError(f"audio_input is not str or bytes. {type(audio_input)}")
+    if not audio_input:
+        raise ValueError(f"Empty audio_input.")
+
+    is_path = isinstance(audio_input, str)
+    logger.info(f"Calculate audio md5. {audio_input if is_path else ''}")
+    ffmpeg_path = os.path.abspath(os.path.join("bin", "ffmpeg.exe"))
+    if is_path:
+        cmd = [ffmpeg_path, "-i", audio_input, "-map", "0:a", "-c", "copy", "-f", "md5", "-"]
+        process = run_subprocess(cmd)
+    else:
+        cmd = [ffmpeg_path, "-i", "pipe:0", "-map", "0:a", "-c", "copy", "-f", "md5", "-"]
+        process = run_subprocess(cmd, input=audio_input)
+    return process.stdout.decode("utf-8")
+
+
 ################################################################################
 ### PNGQuant
+### https://pngquant.org/
 ################################################################################
 
-def compress_image(img_path: str) -> None:
-    logger.info(f"Compress image. {img_path}")
+def compress_png_file(png_path: str) -> None:
+    """
+    原位置压缩 png 文件。
+    """
+    logger.info(f"Compress png. {png_path}")
     pngquant_path = os.path.abspath(os.path.join("bin", "pngquant.exe"))
-    cmd = [pngquant_path, "--force", "--output", img_path, "--", img_path]
+    cmd = [pngquant_path, "--force", "--output", png_path, "--", png_path]
     run_subprocess(cmd)
 
 
@@ -214,7 +246,7 @@ def rar_list(dstrar: str) -> list[str]:
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
     cmd = [rar_path, "lb", "-scf", dstrar]
-    process = run_subprocess(cmd, text=True, encoding="utf-8")
+    process = run_subprocess(cmd, encoding="utf-8")
     files = [l for l in process.stdout.split("\n") if l]
     logger.debug(f"files: {files}")
     return files
@@ -281,7 +313,7 @@ def rar_stats(dstrar: str) -> dict[str, os.stat_result]:
 
     rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
     cmd = [rar_path, "lt", "-scf", dstrar]
-    process = run_subprocess(cmd, text=True, encoding="utf-8")
+    process = run_subprocess(cmd, encoding="utf-8")
 
     _dict = {}
     for s in process.stdout.split("\n\n"):
@@ -319,6 +351,7 @@ def rar_extract(dstrar: str, filename: str, savedir: str) -> None:
 
 ################################################################################
 ### PostgreSQL
+### https://www.postgresql.org/docs/current/index.html
 ################################################################################
 
 def init_pgdata(pgdata: str) -> None:
@@ -339,7 +372,7 @@ def init_pgdata(pgdata: str) -> None:
     initdb_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "initdb.exe"))
     cmd = [initdb_exe, "--auth=trust", "--encoding=UTF8", "--no-locale", "--nosync", 
            "--username=postgres", "-D", pgdata]
-    run_subprocess(cmd, text=True)
+    run_subprocess(cmd, encoding="utf-8")
 
 
 def pg_ctl_start(pgdata: str) -> None:
@@ -355,7 +388,7 @@ def pg_ctl_start(pgdata: str) -> None:
 
     pg_ctl_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_ctl.exe"))
     cmd = [pg_ctl_exe, "--silent", "-D", pgdata, "start"]
-    run_subprocess(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+    run_subprocess(cmd, encoding="utf-8")
 
 
 def pg_ctl_stop(pgdata: str) -> None:
@@ -371,7 +404,7 @@ def pg_ctl_stop(pgdata: str) -> None:
 
     pg_ctl_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_ctl.exe"))
     cmd = [pg_ctl_exe, "--silent", "-D", pgdata, "stop"]
-    run_subprocess(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+    run_subprocess(cmd, encoding="utf-8")
 
 
 def pg_dump_database(dbname: str, dmpfile: str) -> None:
@@ -389,11 +422,12 @@ def pg_dump_database(dbname: str, dmpfile: str) -> None:
 
     pg_dump_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_dump.exe"))
     cmd = [pg_dump_exe, "-Upostgres", "-Fc", "-f", dmpfile, dbname]
-    run_subprocess(cmd, text=True)
+    run_subprocess(cmd, encoding="utf-8")
 
 
 ################################################################################
 ### Windows
+### https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/windows-commands
 ################################################################################
 
 def open_in_explorer(path: str) -> None:
@@ -417,7 +451,17 @@ def copy_to_clipboard(text: str) -> None:
     粘贴文本至 Windows 剪贴板。
     """
     cmd = ["clip"]
-    run_subprocess(cmd, text=True, input=text)
+    run_subprocess(cmd, encoding="utf-8", input=text)
 
+
+################################################################################
+### 衍生
+################################################################################
+
+def calculate_rar_audio_md5(dstrar: str, filename: str) -> str:
+    """
+    计算压缩包内的音频流 md5。
+    """
+    return calculate_audio_md5(rar_read(dstrar, filename))
 
 

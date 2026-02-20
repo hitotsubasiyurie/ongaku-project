@@ -1,5 +1,5 @@
 """
-与项目无关的，外部工具函数
+与项目无关的，基于标准库或第三方库的函数封装
 """
 
 import mimetypes
@@ -11,7 +11,6 @@ from typing import Callable, Mapping, Any
 from io import BytesIO
 
 from PIL import Image
-
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import ID3, APIC, PictureType
 from mutagen.mp3 import EasyMP3, MP3
@@ -172,7 +171,7 @@ def read_audio_tags(audio: str, standard: bool = True) -> dict[str, str]:
 
 
 def write_audio_tags(audio: str, 
-                     cover: str = "",
+                     cover: bytes = b"",
                      catalognumber: str = "", date: str = "", album: str = "",
                      tracknumber: str = "", title: str = "", artist: str = "") -> None:
     """
@@ -192,11 +191,11 @@ def write_audio_tags(audio: str,
         if cover:
             pic = Picture()
             pic.type = PictureType.COVER_FRONT
-            pic.mime = mimetypes.guess_type(cover)[0] or "image/jpeg"
-            pic.data = Path(cover).read_bytes()
+            pic.mime = "image/png"
+            pic.data = cover
             flac.clear_pictures()
             flac.add_picture(pic)
-        
+
         flac.save()
 
     elif audio.suffix.lower() == ".mp3":
@@ -207,10 +206,13 @@ def write_audio_tags(audio: str,
         if cover:
             id3 = ID3(audio)
             id3.delall("APIC")
-            mime = mimetypes.guess_type(cover)[0] or "image/jpeg"
-            id3.add(APIC(encoding=3, desc="Cover", mime=mime, type=PictureType.COVER_FRONT, 
-                         data=Path(cover).read_bytes()))
+            id3.add(APIC(encoding=3, desc="Cover", mime="image/png", type=PictureType.COVER_FRONT, 
+                         data=cover))
             id3.save(audio)
+
+
+PILLOW_IMG_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", 
+                   ".tiff", ".webp", ".ico", ".svg", ".raw"}
 
 
 def convert_to_png(data: bytes) -> bytes:

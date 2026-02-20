@@ -18,11 +18,11 @@ _DATE_PATTERN = re.compile(r"^$|^\d{4}$|^\d{4}-\d{2}$|^\d{4}-\d{2}-\d{2}$")
 class TrackMark(IntEnum):
     """音轨标记"""
     # 没有听过
-    UNKNOWN = -1
+    UNKNOWN = 0
     # 听过
-    LISTENED = 0
+    LISTENED = 1
     # 喜爱
-    FAVOURITE = 1
+    FAVOURITE = 2
 
 
 def _convert_string(value: str) -> str:

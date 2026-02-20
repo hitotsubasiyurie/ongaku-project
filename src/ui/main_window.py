@@ -19,7 +19,7 @@ class MainWindow(QWidget):
 
     def setup_ui(self) -> None:
         """初始化 UI"""
-        self.setWindowTitle("KanBan")
+        self.setWindowTitle("Kanban")
         # 字体高度
         fh = self.fontMetrics().height()
 

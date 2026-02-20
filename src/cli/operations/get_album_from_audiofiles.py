@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src.cli.common import analyze_album
 from src.cli.common import easy_linput
-from src.core.constants import AUDIO_EXTS
+from src.core.storage import AUDIO_EXTS
 from src.core.i18n import MESSAGE
 from src.core.kanban import load_albums_from_toml, dump_albums_to_toml
 from src.core.logger import lprint

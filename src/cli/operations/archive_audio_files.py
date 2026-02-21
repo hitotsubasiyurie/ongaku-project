@@ -8,11 +8,10 @@ import rtoml
 from src.cli.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str,
                             track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 from src.core.basemodels import Album
-from src.core.storage import AUDIO_EXTS
 from src.core.i18n import MESSAGE
-from src.core.kanban import load_albums_from_toml, album_stemname, track_stemnames
 from src.core.logger import lprint
 from src.core.settings import settings
+from src.core.storage import AUDIO_EXTS, album_stemname, track_stemnames, load_albums_from_toml
 from src.utils import dump_toml
 
 # 缓存

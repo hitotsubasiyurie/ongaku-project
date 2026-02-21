@@ -8,19 +8,19 @@ from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QGridLayout, QLineEdit, QWidget
 
 from src.core.i18n import MESSAGE
-from src.core.kanban import ThemeKanban, track_stemnames
+from src.core.kanban import ThemeKanban
 from src.core.settings import settings
-from src.core.storage import COVER_NAME, AUDIO_EXTS
-from src.utils import convert_to_png, PILLOW_IMG_EXTS
+from src.core.storage import COVER_NAME, AUDIO_EXTS, track_stemnames
 from src.external import open_in_explorer, copy_to_clipboard
 from src.ui.common import with_busy_cursor
+from src.ui.features.put_away_resource import put_away_cover_file, put_away_track_file, \
+    put_away_track_files
 from src.ui.notifier import show_toast_msg, show_confirm_msg
 from src.ui.page2.album_table_view import AlbumTableView
 from src.ui.page2.cover_label import CoverLabel
 from src.ui.page2.link_combo_box import LinkComboBox
 from src.ui.page2.track_table_view import TrackTableView
-from src.ui.features.put_away_resource import put_away_cover_file, put_away_track_file, \
-    put_away_track_files
+from src.utils import convert_to_png, PILLOW_IMG_EXTS
 
 
 class Page2Widget(QWidget):

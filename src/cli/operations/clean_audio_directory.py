@@ -3,9 +3,9 @@ import shutil
 from pathlib import Path
 
 from src.cli.common import easy_linput
-from src.core.storage import AUDIO_EXTS
 from src.core.i18n import MESSAGE
 from src.core.logger import lprint
+from src.core.storage import AUDIO_EXTS
 
 OPERATION_NAME = MESSAGE.WF_20251204_194010
 

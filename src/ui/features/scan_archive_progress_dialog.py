@@ -6,7 +6,6 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QProgressDialog
 
 from src.core.i18n import MESSAGE
-from src.core.kanban import FunctionCallCache
 from src.core.settings import settings
 
 

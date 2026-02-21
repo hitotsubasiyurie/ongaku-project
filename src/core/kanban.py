@@ -7,12 +7,11 @@ from pathlib import Path
 from attrs import define, field
 
 from src.core.basemodels import Album, TrackMark
-from src.core.storage import ARCHIVE_EXT
 from src.core.cache import with_cache
-from src.external import rar_list, rar_read, rar_stats
+from src.core.storage import ARCHIVE_EXT
 from src.core.storage import album_stemname, track_stemnames, dump_albums_to_toml, load_albums_from_toml, \
     COVER_NAME
-
+from src.external import rar_list, rar_read, rar_stats
 
 cached_rar_list = lambda dstrar: with_cache(rar_list, os.path.abspath(dstrar), related_file=os.path.abspath(dstrar))
 cached_rar_stats = lambda dstrar: with_cache(rar_stats, os.path.abspath(dstrar), related_file=os.path.abspath(dstrar))

@@ -4,9 +4,8 @@ from typing import Callable, Any
 from diskcache import Cache
 from diskcache.core import full_name, args_to_key
 
-from src.core.settings import settings
 from src.core.logger import logger
-
+from src.core.settings import settings
 
 cache = Cache(os.path.join(settings.temp_directory, "cache"), size_limit=50*1024*1024)
 

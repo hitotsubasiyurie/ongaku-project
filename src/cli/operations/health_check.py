@@ -7,13 +7,12 @@ from pathlib import Path
 from tqdm import tqdm
 
 from src.cli.common import easy_linput
+from src.core.cache import with_cache
 from src.core.i18n import MESSAGE
 from src.core.kanban import Kanban
 from src.core.logger import lprint
 from src.core.settings import settings
-from src.core.cache import with_cache
 from src.external import compress_png_file, rar_extract, rar_add, rar_list, rar_stats
-
 
 OPERATION_NAME = MESSAGE.WF_20260128_092700
 

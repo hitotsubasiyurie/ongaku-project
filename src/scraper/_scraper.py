@@ -4,8 +4,8 @@ import requests
 from diskcache.core import full_name, args_to_key
 
 from src.core.basemodels import Album, Disc
-from src.core.logger import logger
 from src.core.cache import request_cache
+from src.core.logger import logger
 from src.utils import retry, RateLimiter
 
 

@@ -2,13 +2,12 @@
 与项目无关的，基于标准库或第三方库的函数封装
 """
 
-import mimetypes
 import time
 from functools import wraps
+from io import BytesIO
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Mapping, Any
-from io import BytesIO
 
 from PIL import Image
 from mutagen.flac import FLAC, Picture

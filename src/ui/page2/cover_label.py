@@ -1,7 +1,6 @@
 import itertools
 from io import BytesIO
 from typing import Optional
-from pathlib import Path
 
 from PIL import Image
 from PySide6.QtCore import Qt, QEvent, QObject, Signal, QByteArray, QBuffer
@@ -13,7 +12,6 @@ from src.core.i18n import MESSAGE
 from src.core.kanban import AlbumKanban, MetadataState
 from src.ui.common import with_busy_cursor
 from src.ui.notifier import show_toast_msg
-from src.utils import convert_to_png
 
 OPACITY_CYCLE = itertools.cycle([0.2, 1, 0])
 

@@ -2603,7 +2603,10 @@ Sessions: (recommended) Use CachedSession to send your requests
 requests-cache patch 方法相当于替换了 request.get 
 不适合速率限制，我在调用前还需要查询是否在缓存中
 
+## 2026.02.21
 
-
+我的软件会被如何使用呢。
+一是我本人，制作元数据文件，搜集物理资源，入库物理资源，逐首歌评分音轨，检查元数据正确性，导出喜欢的音轨。
+而是接受者，下载元数据文件，下载物理资源包，逐首歌评分音轨，导出喜欢的音轨。
 
 

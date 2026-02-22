@@ -121,7 +121,7 @@ def main() -> None:
     filter_trackcount = easy_linput(MESSAGE.WF_20251204_190041, default="Y", return_type=str)  == "Y"
 
     theme_directory = Path(dst_parent, metadata_file.stem)
-    archive_details_file = Path(settings.temp_directory, "archive_details.toml")
+    archive_details_file = Path(settings.TMP_DIRECTORY, "archive_details.toml")
 
     # 存在音频 的目录 认为是专辑目录
     src_dirs = [d for d in src_parent.rglob("*") 

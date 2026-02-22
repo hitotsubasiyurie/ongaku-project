@@ -41,7 +41,7 @@ def get_dirty_files(src: Path, dst: Path) -> list[Path]:
     return dirty
 
 
-def hardlink_copy(src: Path, dst: Path) -> tuple[int, int]:
+def _hardlink_copy(src: Path, dst: Path) -> tuple[int, int]:
     """
     硬链接克隆。
 
@@ -77,7 +77,7 @@ def hardlink_copy(src: Path, dst: Path) -> tuple[int, int]:
 
 # 主函数
 
-def main():
+def hardlink_copy():
     lprint(MESSAGE.WF_20251204_195221)
 
     src = easy_linput(MESSAGE.WF_20251204_195222, return_type=Path)
@@ -92,7 +92,7 @@ def main():
     # 若目标存在，文件类型不同时或是用户选择时，使用新位置克隆
     if dst.exists():
         if src.is_file() != dst.is_file() or not easy_linput(MESSAGE.WF_20251204_195226, default="Y", return_type=str) == "Y":
-            dst = dst_parent / f"{src.name} {datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            dst = dst_parent / f"{src.name}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
     # 若目标存在，删除差异文件
     if dst.exists():
@@ -105,7 +105,7 @@ def main():
 
     st = time.time()
 
-    c1, c2 = hardlink_copy(src, dst)
+    c1, c2 = _hardlink_copy(src, dst)
 
     lprint(MESSAGE.WF_20251204_195225.format(c1, c2, time.time()-st))
 

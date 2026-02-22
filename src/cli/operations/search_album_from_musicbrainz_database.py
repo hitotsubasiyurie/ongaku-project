@@ -19,7 +19,7 @@ def main():
     lprint(MESSAGE.WF_20251204_195521)
 
     # 检查 PGDATA 路径
-    pgdata = Path(settings.temp_directory, "musicbrainz_pgdata")
+    pgdata = Path(settings.TMP_DIRECTORY, "musicbrainz_pgdata")
     if not pgdata.is_dir() or not Path(pgdata, "postgresql.conf").is_file():
         lprint(MESSAGE.WF_20251204_195522.format(pgdata))
         return

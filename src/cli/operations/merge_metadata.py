@@ -54,7 +54,7 @@ def main():
     src_track_infos, dst_track_infos = list(map(abstract_tracks_info, src_albums)), list(map(abstract_tracks_info, dst_albums))
 
     merge_details = []
-    merge_details_file = Path(settings.temp_directory, "merge_details.toml")
+    merge_details_file = Path(settings.TMP_DIRECTORY, "merge_details.toml")
 
     # 生成 merge_details
     row_ind, col_ind, _, sim_matrix = albums_assignment(src_albums, dst_albums, filter_catno, filter_trackcount)

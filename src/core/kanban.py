@@ -13,8 +13,9 @@ from src.core.storage import album_stemname, track_stemnames, dump_albums_to_tom
     COVER_NAME
 from src.external import rar_list, rar_read, rar_stats
 
-cached_rar_list = lambda dstrar: with_cache(rar_list, os.path.abspath(dstrar), related_file=os.path.abspath(dstrar))
-cached_rar_stats = lambda dstrar: with_cache(rar_stats, os.path.abspath(dstrar), related_file=os.path.abspath(dstrar))
+# 缓存方法
+cached_rar_list = lambda dstrar: with_cache(rar_list, os.path.normpath(dstrar), related_file=dstrar)
+cached_rar_stats = lambda dstrar: with_cache(rar_stats, os.path.normpath(dstrar), related_file=dstrar)
 
 
 class ResourceState(IntEnum):

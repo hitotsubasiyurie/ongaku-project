@@ -107,7 +107,7 @@ _ongaku_logger = OngakuLogger()
 logger = _ongaku_logger.logger
 
 # 设置 日志
-logdir = os.path.join(settings.temp_directory, "log")
+logdir = os.path.join(settings.TMP_DIRECTORY, "log")
 os.makedirs(logdir, exist_ok=True)
 _ongaku_logger.set_output(logdir)
 

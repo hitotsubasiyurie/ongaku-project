@@ -19,8 +19,8 @@ OPERATION_NAME = MESSAGE.WF_20251204_195320
 def main():
     lprint(MESSAGE.WF_20251204_195321)
 
-    input_path = easy_linput(MESSAGE.WF_20251204_195322.format(settings.temp_directory), 
-                             default=Path(settings.temp_directory), return_type=Path)
+    input_path = easy_linput(MESSAGE.WF_20251204_195322.format(settings.TMP_DIRECTORY), 
+                             default=Path(settings.TMP_DIRECTORY), return_type=Path)
     input_urls = easy_linput(MESSAGE.WF_20251204_195323, return_type=str)
 
     # 创建目录
@@ -53,7 +53,7 @@ def main():
     # 开始 获取 元数据
 
     # 检查 PGDATA 路径
-    pgdata = Path(settings.temp_directory, "musicbrainz_pgdata")
+    pgdata = Path(settings.TMP_DIRECTORY, "musicbrainz_pgdata")
     if not pgdata.is_dir() or not Path(pgdata, "postgresql.conf").is_file():
         lprint(MESSAGE.WF_20251204_195325.format(pgdata))
         database = None

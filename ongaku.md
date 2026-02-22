@@ -2609,4 +2609,12 @@ requests-cache patch 方法相当于替换了 request.get
 一是我本人，制作元数据文件，搜集物理资源，入库物理资源，逐首歌评分音轨，检查元数据正确性，导出喜欢的音轨。
 而是接受者，下载元数据文件，下载物理资源包，逐首歌评分音轨，导出喜欢的音轨。
 
+```sh
+ffmpeg -i "F:\ongaku-export\Artist\おでんぱ☆スタジオ [Odenpa Studio]\お☆んぱスタジオに気をつけろ!!.mp3" -map 0:v -c copy cover.png && ^
+ffmpeg -loop 1 -framerate 30 -i cover.png -i "F:\ongaku-export\Artist\おでんぱ☆スタジオ [Odenpa Studio]\お☆んぱスタジオに気をつけろ!!.mp3" ^
+-c:v libx264 -preset veryfast -tune stillimage -pix_fmt yuv420p ^
+-c:a copy -shortest "D:\新建文件夹\1.mkv"
 
+
+
+```

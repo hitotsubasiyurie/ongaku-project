@@ -10,7 +10,7 @@ OPERATION_NAME = MESSAGE.WF_20251204_194320
 
 # 主函数
 
-def main():
+def remove_files():
 
     lprint(MESSAGE.WF_20251204_194321)
 
@@ -30,4 +30,6 @@ def main():
         shutil.rmtree(given_path)
     
     lprint(MESSAGE.WF_20251204_194325.format(time.time() - st))
+
+
 

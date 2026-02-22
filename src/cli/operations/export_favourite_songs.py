@@ -15,20 +15,30 @@ from src.core.kanban import Kanban, MetadataState, ResourceState
 from src.core.logger import lprint, logger
 from src.core.settings import settings
 from src.core.storage import AUDIO_EXTS
-from src.external import rar_list, rar_stats, calculate_audio_md5, calculate_rar_audio_md5
+from src.external import calculate_audio_md5, calculate_rar_audio_md5
 from src.utils import write_audio_tags, read_audio_tags, read_audio_cover
 
 OPERATION_NAME = MESSAGE.WF_20251204_194420
 
 
-cached_rar_list = lambda dstrar: with_cache(rar_list, os.path.abspath(dstrar), related_file=os.path.abspath(dstrar))
-cached_rar_stats = lambda dstrar: with_cache(rar_stats, os.path.abspath(dstrar), related_file=os.path.abspath(dstrar))
-cached_calculate_audio_md5 = lambda path: with_cache(calculate_audio_md5, os.path.abspath(path), related_file=os.path.abspath(path))
-cached_calculate_rar_audio_md5 = lambda dstrar, filename: with_cache(calculate_rar_audio_md5, os.path.abspath(dstrar), filename, related_file=os.path.abspath(dstrar))
+# 缓存方法
+cached_calculate_audio_md5 = lambda audio: with_cache(calculate_audio_md5, os.path.normpath(audio), related_file=audio)
+cached_calculate_rar_audio_md5 = lambda dstrar, filename: with_cache(calculate_rar_audio_md5, os.path.normpath(dstrar), filename, related_file=dstrar)
+
+_get_audio_cover_size = lambda audio: len(read_audio_cover(audio))
+_get_audio_cover_size.__name__ = "_get_audio_cover_size"
+cached_get_audio_cover_size = lambda audio: with_cache(_get_audio_cover_size, os.path.normpath(audio), related_file=audio)
+
+_read_audio_st_tags = lambda audio: tuple(read_audio_tags(audio, standard=True).values())
+_read_audio_st_tags.__name__ = "_read_audio_st_tags"
+cached_read_audio_st_tags = lambda audio: with_cache(_read_audio_st_tags, os.path.normpath(audio), related_file=audio)
 
 
 def build_cache_audio_md5(export_dir: Path, kanban: Kanban) -> None:
-    params = [(cached_calculate_audio_md5, f) for f in export_dir.rglob("*") if f.suffix.lower() in AUDIO_EXTS]
+    params = list(itertools.chain.from_iterable(
+        ((cached_calculate_audio_md5, f), (cached_get_audio_cover_size, f), (cached_read_audio_st_tags, f)) 
+        for f in export_dir.rglob("*") if f.suffix.lower() in AUDIO_EXTS)
+    )
 
     for ak in itertools.chain.from_iterable(tk.album_kanbans for tk in kanban.theme_kanbans):
         for t, p in zip(ak.album.tracks, ak.track_paths):
@@ -127,11 +137,13 @@ def main() -> None:
         if not easy_linput(MESSAGE.WF_20251204_194429, default="Y", return_type=str)  == "Y":
             return
         [f.unlink() for f in dirty_files]
-        [d.rmdir() for d in reversed(filter(Path.is_dir, export_dir.rglob("*"))) if not os.listdir(d)]
+        [d.rmdir() for d in reversed(list(filter(Path.is_dir, export_dir.rglob("*")))) if not os.listdir(d)]
 
     # 开始导出
     total = sum(1 for tk in kanban.theme_kanbans for ak in tk.album_kanbans for t in ak.album.tracks if t.mark == TrackMark.FAVOURITE)
-    current = 0
+    pbar = tqdm(total=total, desc=MESSAGE.WF_20251204_194420, miniters=1)
+
+    xprint = lambda s: [logger.info(s), tqdm.write(s)]
 
     for i, tk in enumerate(kanban.theme_kanbans):
         theme_export_dir = export_dir / os.path.relpath(tk.theme_resource_dir, kanban.resource_dir)
@@ -146,7 +158,7 @@ def main() -> None:
                 if track.mark != TrackMark.FAVOURITE:
                     continue
 
-                current += 1
+                pbar.update()
 
                 src_path = ak.track_paths[k]
                 # 去掉轨道号前缀 "2. 風への誓い.mp3" -> "風への誓い.mp3"
@@ -162,7 +174,7 @@ def main() -> None:
                     exported_dst.write_bytes(ak.read_path_bytes(src_path))
                     write_audio_tags(exported_dst, ak.read_path_bytes(ak.cover_path), album.catalognumber, album.date, album.album, 
                                      str(track.tracknumber), track.title, track.artist)
-                    lprint(MESSAGE.WF_20251204_194423.format(current, total, exported_dst))
+                    xprint(MESSAGE.WF_20251204_194423.format(exported_dst))
                     continue
 
                 if exported_dst not in (short_dst_path, long_dst_path):
@@ -172,20 +184,15 @@ def main() -> None:
 
                 # 元数据不一致或者封面不一致时
                 src_tags = (album.catalognumber, album.date, album.album, str(track.tracknumber), track.title, track.artist)
-                dst_tags = tuple(read_audio_tags(exported_dst, standard=True).values())
-                if any((v1 and v1 != v2) for v1, v2 in zip(src_tags, dst_tags)) or len(read_audio_cover(exported_dst)) != len(ak.read_path_bytes(ak.cover_path)):
+                dst_tags = cached_read_audio_st_tags(exported_dst)
+                if any((v1 and v1 != v2) for v1, v2 in zip(src_tags, dst_tags)) or cached_get_audio_cover_size(exported_dst) != ak.cover_stat_result.st_size:
                     logger.info(f"Metadata are not the same. {src_tags} {dst_tags}")
                     write_audio_tags(exported_dst, ak.read_path_bytes(ak.cover_path), album.catalognumber, album.date, album.album, 
                                      str(track.tracknumber), track.title, track.artist)
-                    lprint(MESSAGE.WF_20251204_194425.format(current, total, exported_dst))
+                    xprint(MESSAGE.WF_20251204_194425.format(exported_dst))
                     continue
 
-                # 已导出时
-                lprint(MESSAGE.WF_20251204_194424.format(current, total, exported_dst))
-
+    pbar.close()
     lprint(MESSAGE.WF_20251204_194432)
-
-
-main()
 
 

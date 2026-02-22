@@ -8,6 +8,7 @@ import tempfile
 from typing import Union
 
 from src.core.logger import logger
+from src.core.settings import settings
 
 
 def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
@@ -60,6 +61,10 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
 ### https://www.ffmpeg.org/documentation.html
 ################################################################################
 
+FFMPEG_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "ffmpeg", "ffmpeg.exe"))
+FFPROBE_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "ffmpeg", "ffprobe.exe"))
+
+
 def decode_audio_bytes_to_pcm(audio_data: bytes) -> bytes:
     """
     解码音频为裸 PCM 数据。
@@ -71,8 +76,7 @@ def decode_audio_bytes_to_pcm(audio_data: bytes) -> bytes:
         return b""
 
     logger.info(f"Decode audio data to pcm. {len(audio_data)} bytes")
-    ffmpeg_path = os.path.abspath(os.path.join("bin", "ffmpeg.exe"))
-    cmd = [ffmpeg_path, "-i", "pipe:0", "-f", "s16le", "-"]
+    cmd = [FFMPEG_PATH, "-i", "pipe:0", "-f", "s16le", "-"]
     process = run_subprocess(cmd, input=audio_data)
     return process.stdout
 
@@ -86,8 +90,7 @@ def convert_audio_bytes_to_wav(audio_data: bytes) -> bytes:
         return b""
     
     logger.info(f"Convert audio data to wav data. {len(audio_data)} bytes")
-    ffmpeg_path = os.path.abspath(os.path.join("bin", "ffmpeg.exe"))
-    cmd = [ffmpeg_path, "-i", "pipe:0", "-f", "wav", "-"]
+    cmd = [FFMPEG_PATH, "-i", "pipe:0", "-f", "wav", "-"]
     process = run_subprocess(cmd, input=audio_data)
     return process.stdout
 
@@ -105,12 +108,11 @@ def show_audio_stream_info(audio_input: Union[str, bytes]) -> dict:
 
     is_path = isinstance(audio_input, str)
     logger.info(f"Show audio stream info. {audio_input if is_path else ''}")
-    ffprobe_path = os.path.abspath(os.path.join("bin", "ffprobe.exe"))
     if is_path:
-        cmd = [ffprobe_path, "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a", audio_input]
+        cmd = [FFPROBE_PATH, "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a", audio_input]
         process = run_subprocess(cmd)
     else:
-        cmd = [ffprobe_path, "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a"]
+        cmd = [FFPROBE_PATH, "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-select_streams", "a"]
         process = run_subprocess(cmd, input=audio_input)
     return json.loads(process.stdout)
 
@@ -128,12 +130,11 @@ def calculate_audio_md5(audio_input: Union[str, bytes]) -> str:
 
     is_path = isinstance(audio_input, str)
     logger.info(f"Calculate audio md5. {audio_input if is_path else ''}")
-    ffmpeg_path = os.path.abspath(os.path.join("bin", "ffmpeg.exe"))
     if is_path:
-        cmd = [ffmpeg_path, "-i", audio_input, "-map", "0:a", "-c", "copy", "-f", "md5", "-"]
+        cmd = [FFMPEG_PATH, "-i", audio_input, "-map", "0:a", "-c", "copy", "-f", "md5", "-"]
         process = run_subprocess(cmd)
     else:
-        cmd = [ffmpeg_path, "-i", "pipe:0", "-map", "0:a", "-c", "copy", "-f", "md5", "-"]
+        cmd = [FFMPEG_PATH, "-i", "pipe:0", "-map", "0:a", "-c", "copy", "-f", "md5", "-"]
         process = run_subprocess(cmd, input=audio_input)
     return process.stdout.decode("utf-8")
 
@@ -143,19 +144,24 @@ def calculate_audio_md5(audio_input: Union[str, bytes]) -> str:
 ### https://pngquant.org/
 ################################################################################
 
+PNGQUANT_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "pngquant", "pngquant.exe"))
+
+
 def compress_png_file(png_path: str) -> None:
     """
     原位置压缩 png 文件。
     """
     logger.info(f"Compress png. {png_path}")
-    pngquant_path = os.path.abspath(os.path.join("bin", "pngquant.exe"))
-    cmd = [pngquant_path, "--force", "--output", png_path, "--", png_path]
+    cmd = [PNGQUANT_PATH, "--force", "--output", png_path, "--", png_path]
     run_subprocess(cmd)
 
 
 ################################################################################
 ### WinRAR
 ################################################################################
+
+RAR_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "WinRAR", "Rar.exe"))
+
 
 def rar_archive(dstrar: str, srcdir: str) -> None:
     """
@@ -182,8 +188,7 @@ def rar_archive(dstrar: str, srcdir: str) -> None:
     srcdir, dstrar = os.path.abspath(srcdir), os.path.abspath(dstrar)
     logger.info(f"Archive to rar. {srcdir} -> {dstrar}")
 
-    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-m0", "-r", "-rr5", "-qo+", "-scf", "-s-", "-ts"] + 
+    cmd = ([RAR_PATH, "a", "-@", "-ams", "-cfg-", "-m0", "-r", "-rr5", "-qo+", "-scf", "-s-", "-ts"] + 
            [dstrar, "*"])
     run_subprocess(cmd, cwd=srcdir)
 
@@ -204,8 +209,7 @@ def rar_add(dstrar: str, srcfiles: list[str]) -> None:
     srcfiles, dstrar = list(map(os.path.abspath, srcfiles)), os.path.abspath(dstrar)
     logger.info(f"Add to rar. {srcfiles} -> {dstrar}")
 
-    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "a", "-@", "-ams", "-cfg-", "-ep", "-m0", "-rr5", "-qo+", "-scf", "-s-", "-ts"] + 
+    cmd = ([RAR_PATH, "a", "-@", "-ams", "-cfg-", "-ep", "-m0", "-rr5", "-qo+", "-scf", "-s-", "-ts"] + 
            [dstrar] + srcfiles)
     run_subprocess(cmd)
 
@@ -226,8 +230,7 @@ def rar_rename(dstrar: str, oldnames: list[str], newnames: list[str]) -> None:
     dstrar = os.path.abspath(dstrar)
     logger.info(f"Rename rar files. {dstrar} {oldnames} -> {newnames}")
 
-    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = [rar_path, "rn", dstrar, *list(itertools.chain.from_iterable(zip(oldnames, newnames)))]
+    cmd = [RAR_PATH, "rn", dstrar, *list(itertools.chain.from_iterable(zip(oldnames, newnames)))]
     run_subprocess(cmd)
 
 
@@ -244,8 +247,7 @@ def rar_list(dstrar: str) -> list[str]:
     dstrar = os.path.abspath(dstrar)
     logger.info(f"List rar files. {dstrar}")
 
-    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = [rar_path, "lb", "-scf", dstrar]
+    cmd = [RAR_PATH, "lb", "-scf", dstrar]
     process = run_subprocess(cmd, encoding="utf-8")
     files = [l for l in process.stdout.split("\n") if l]
     logger.debug(f"files: {files}")
@@ -267,8 +269,7 @@ def rar_read(dstrar: str, filename: str) -> bytes:
     if not filename:
         return b""
 
-    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "p", dstrar, filename])
+    cmd = ([RAR_PATH, "p", dstrar, filename])
     process = run_subprocess(cmd)
     return process.stdout
 
@@ -288,8 +289,7 @@ def rar_delete(dstrar: str, filename: str) -> None:
     if not filename:
         return
 
-    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "d", dstrar, filename])
+    cmd = ([RAR_PATH, "d", dstrar, filename])
     run_subprocess(cmd)
 
 
@@ -311,8 +311,7 @@ def rar_stats(dstrar: str) -> dict[str, os.stat_result]:
     dstrar = os.path.abspath(dstrar)
     logger.info(f"Stat rar file. {dstrar}")
 
-    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = [rar_path, "lt", "-scf", dstrar]
+    cmd = [RAR_PATH, "lt", "-scf", dstrar]
     process = run_subprocess(cmd, encoding="utf-8")
 
     _dict = {}
@@ -344,8 +343,7 @@ def rar_extract(dstrar: str, filename: str, savedir: str) -> None:
     if not filename:
         return
 
-    rar_path = os.path.abspath(os.path.join("bin", "WinRAR", "Rar.exe"))
-    cmd = ([rar_path, "e", dstrar, filename, savedir])
+    cmd = ([RAR_PATH, "e", dstrar, filename, savedir])
     run_subprocess(cmd)
 
 
@@ -353,6 +351,11 @@ def rar_extract(dstrar: str, filename: str, savedir: str) -> None:
 ### PostgreSQL
 ### https://www.postgresql.org/docs/current/index.html
 ################################################################################
+
+INITDB_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "pgsql", "bin", "initdb.exe"))
+PGCTL_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "pgsql", "bin", "pg_ctl.exe"))
+PGDUMP_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "pgsql", "bin", "pg_dump.exe"))
+
 
 def init_pgdata(pgdata: str) -> None:
     """
@@ -369,8 +372,7 @@ def init_pgdata(pgdata: str) -> None:
     pgdata = os.path.abspath(pgdata)
     logger.info(f"Init pgdata. {pgdata}")
 
-    initdb_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "initdb.exe"))
-    cmd = [initdb_exe, "--auth=trust", "--encoding=UTF8", "--no-locale", "--nosync", 
+    cmd = [INITDB_PATH, "--auth=trust", "--encoding=UTF8", "--no-locale", "--nosync", 
            "--username=postgres", "-D", pgdata]
     run_subprocess(cmd, encoding="utf-8")
 
@@ -386,8 +388,7 @@ def pg_ctl_start(pgdata: str) -> None:
     pgdata = os.path.abspath(pgdata)
     logger.info(f"Start postgres. {pgdata}")
 
-    pg_ctl_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_ctl.exe"))
-    cmd = [pg_ctl_exe, "--silent", "-D", pgdata, "start"]
+    cmd = [PGCTL_PATH, "--silent", "-D", pgdata, "start"]
     run_subprocess(cmd, encoding="utf-8")
 
 
@@ -402,8 +403,7 @@ def pg_ctl_stop(pgdata: str) -> None:
     pgdata = os.path.abspath(pgdata)
     logger.info(f"Stop postgres. {pgdata}")
 
-    pg_ctl_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_ctl.exe"))
-    cmd = [pg_ctl_exe, "--silent", "-D", pgdata, "stop"]
+    cmd = [PGCTL_PATH, "--silent", "-D", pgdata, "stop"]
     run_subprocess(cmd, encoding="utf-8")
 
 
@@ -420,8 +420,7 @@ def pg_dump_database(dbname: str, dmpfile: str) -> None:
     dmpfile = os.path.abspath(dmpfile)
     logger.info(f"pg_dump database. {dbname} {dmpfile}")
 
-    pg_dump_exe = os.path.abspath(os.path.join("bin", "pgsql", "bin", "pg_dump.exe"))
-    cmd = [pg_dump_exe, "-Upostgres", "-Fc", "-f", dmpfile, dbname]
+    cmd = [PGDUMP_PATH, "-Upostgres", "-Fc", "-f", dmpfile, dbname]
     run_subprocess(cmd, encoding="utf-8")
 
 

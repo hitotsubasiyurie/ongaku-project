@@ -18,8 +18,8 @@ OPERATION_NAME = MESSAGE.WF_20251204_194820
 def main():
     lprint(MESSAGE.WF_20251204_194821)
 
-    input_path = easy_linput(MESSAGE.WF_20251204_194822.format(settings.temp_directory), 
-                             default=Path(settings.temp_directory), return_type=Path)
+    input_path = easy_linput(MESSAGE.WF_20251204_194822.format(settings.TMP_DIRECTORY), 
+                             default=Path(settings.TMP_DIRECTORY), return_type=Path)
     input_urls = easy_linput(MESSAGE.WF_20251204_194823, return_type=str)
 
     # 创建目录

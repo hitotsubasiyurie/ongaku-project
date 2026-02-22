@@ -62,7 +62,7 @@ def main():
 
     recordings = {r["id"]: r for r in map(orjson.loads, read_musicbrainz_tar_dump(recording_tar))}
 
-    pgdata = os.path.join(settings.temp_directory, "musicbrainz_pgdata")
+    pgdata = os.path.join(settings.TMP_DIRECTORY, "musicbrainz_pgdata")
     if os.path.isdir(pgdata):
         if easy_linput(MESSAGE.WF_20251204_194123, default="N") == "Y":
             shutil.rmtree(pgdata)
@@ -110,7 +110,7 @@ def main():
 
     # 备份数据库
     lprint(MESSAGE.WF_20251204_194128)
-    dmpfile = os.path.join(settings.temp_directory, "musicbrainz.dmp")
+    dmpfile = os.path.join(settings.TMP_DIRECTORY, "musicbrainz.dmp")
     pg_dump_database("musicbrainz", dmpfile)
     lprint(MESSAGE.WF_20251204_194127.format(dmpfile))
 

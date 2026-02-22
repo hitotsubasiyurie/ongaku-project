@@ -8,10 +8,10 @@ from src.core.basemodels import TrackMark
 from src.core.i18n import MESSAGE
 from src.core.kanban import ThemeKanban
 from src.external import convert_audio_bytes_to_wav
-from src.ui.common import with_busy_cursor
-from src.ui.notifier import show_toast_msg
-from src.ui.page3.music_player_bar import MusicPlayerBar
-from src.ui.page3.play_table_view import PlayTableView
+from src.gui.common import with_busy_cursor
+from src.gui.notifier import show_toast_msg
+from src.gui.page3.music_player_bar import MusicPlayerBar
+from src.gui.page3.play_table_view import PlayTableView
 
 
 class Page3Widget(QWidget):

@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QWidget, QSlider, QLabel, QPushButton, QHBoxLayou
 
 from src.core.i18n import MESSAGE
 from src.core.settings import settings
-from src.ui.color_theme import BUTTON_QSS
+from src.gui.color_theme import BUTTON_QSS
 
 
 class ClickableSlider(QSlider):

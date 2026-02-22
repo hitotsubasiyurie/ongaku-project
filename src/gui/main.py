@@ -17,10 +17,10 @@ from PySide6.QtCore import Qt
 
 from src.core.settings import settings
 from src.core.kanban import Kanban
-from src.ui.notifier import init_notifier
-from src.ui.features.scan_archive_progress_dialog import scan_archive
-from src.ui.main_window import MainWindow
-from src.ui.color_theme import current_theme
+from src.gui.notifier import init_notifier
+from src.gui.features.scan_archive_progress_dialog import scan_archive
+from src.gui.main_window import MainWindow
+from src.gui.color_theme import current_theme
 
 
 if __name__ == "__main__":

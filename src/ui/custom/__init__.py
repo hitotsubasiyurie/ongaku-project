@@ -1,1 +1,0 @@
-from src.ui.custom.custom_table_item_model import CustomTableItemModel

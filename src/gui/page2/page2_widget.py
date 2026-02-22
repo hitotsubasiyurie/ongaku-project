@@ -12,14 +12,14 @@ from src.core.kanban import ThemeKanban
 from src.core.settings import settings
 from src.core.storage import COVER_NAME, AUDIO_EXTS, track_stemnames
 from src.external import open_in_explorer, copy_to_clipboard
-from src.ui.common import with_busy_cursor
-from src.ui.features.put_away_resource import put_away_cover_file, put_away_track_file, \
+from src.gui.common import with_busy_cursor
+from src.gui.features.put_away_resource import put_away_cover_file, put_away_track_file, \
     put_away_track_files
-from src.ui.notifier import show_toast_msg, show_confirm_msg
-from src.ui.page2.album_table_view import AlbumTableView
-from src.ui.page2.cover_label import CoverLabel
-from src.ui.page2.link_combo_box import LinkComboBox
-from src.ui.page2.track_table_view import TrackTableView
+from src.gui.notifier import show_toast_msg, show_confirm_msg
+from src.gui.page2.album_table_view import AlbumTableView
+from src.gui.page2.cover_label import CoverLabel
+from src.gui.page2.link_combo_box import LinkComboBox
+from src.gui.page2.track_table_view import TrackTableView
 from src.utils import convert_to_png, PILLOW_IMG_EXTS
 
 

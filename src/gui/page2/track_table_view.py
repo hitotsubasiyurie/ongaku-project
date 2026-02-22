@@ -9,9 +9,9 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
 from src.core.basemodels import TrackMark
 from src.core.i18n import MESSAGE
 from src.core.kanban import AlbumKanban
-from src.ui.color_theme import current_theme
-from src.ui.custom.custom_table_item_model import CustomTableItemModel
-from src.ui.page2.album_table_view import AlbumStateItemDelegate
+from src.gui.color_theme import current_theme
+from src.gui.custom.custom_table_item_model import CustomTableItemModel
+from src.gui.page2.album_table_view import AlbumStateItemDelegate
 
 
 class TrackTableItemModel(CustomTableItemModel):

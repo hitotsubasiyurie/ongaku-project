@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.i18n import MESSAGE
 from src.core.kanban import Kanban
-from src.ui.page1.theme_table_view import ThemeTableView
+from src.gui.page1.theme_table_view import ThemeTableView
 
 
 class Page1Widget(QWidget):

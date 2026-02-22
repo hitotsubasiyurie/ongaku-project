@@ -11,8 +11,8 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
 from src.core.i18n import MESSAGE
 from src.core.kanban import Kanban
 from src.core.settings import settings
-from src.ui.color_theme import current_theme
-from src.ui.custom import CustomTableItemModel
+from src.gui.color_theme import current_theme
+from src.gui.custom import CustomTableItemModel
 
 
 class ThemeTableItemModel(CustomTableItemModel):

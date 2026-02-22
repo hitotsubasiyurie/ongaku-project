@@ -2,9 +2,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import rtoml
-from attrs import fields
 
-from src.core.settings import update_settings_comments
+from src.core.settings import settings, update_settings_comments
 
 
 def _load_toml(p: Path) -> dict:
@@ -19,5 +18,6 @@ _data = {
 
 MESSAGE = SimpleNamespace(**_data)
 
+# 更新配置文件中的注释说明至对应语言版本
 update_settings_comments(MESSAGE)
 

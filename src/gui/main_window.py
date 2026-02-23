@@ -4,9 +4,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QIcon
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QStackedWidget
 
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import Kanban
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.gui.color_theme import BUTTON_QSS
 from src.gui.common import with_busy_cursor
 from src.gui.notifier import show_toast_msg
@@ -38,13 +38,13 @@ class MainWindow(QWidget):
         self.page3 = Page3Widget()
         self.stack.addWidget(self.page3)
 
-        self.page_prev_btn = QPushButton(QIcon(f"./assets/{settings.ui_color_theme}/page_prev.png"), "", parent=self)
-        self.page_prev_btn.setToolTip(MESSAGE.UI_20260101_112220)
+        self.page_prev_btn = QPushButton(QIcon(f"./assets/{g_settings.ui_color_theme}/page_prev.png"), "", parent=self)
+        self.page_prev_btn.setToolTip(g_message.UI_20260101_112220)
         self.page_prev_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_prev_btn.setIconSize(self.page_prev_btn.size())
 
-        self.page_next_btn = QPushButton(QIcon(f"./assets/{settings.ui_color_theme}/page_next.png"), "", parent=self)
-        self.page_next_btn.setToolTip(MESSAGE.UI_20260101_112221)
+        self.page_next_btn = QPushButton(QIcon(f"./assets/{g_settings.ui_color_theme}/page_next.png"), "", parent=self)
+        self.page_next_btn.setToolTip(g_message.UI_20260101_112221)
         self.page_next_btn.setFixedSize(fh*1.5, fh*1.5)
         self.page_next_btn.setIconSize(self.page_next_btn.size())
 
@@ -77,7 +77,7 @@ class MainWindow(QWidget):
         self.page1.set_kanban(kanban)
         self.page2.set_theme_kanban(None)
         self.page3.set_theme_kanban(None)
-        show_toast_msg(MESSAGE.UI_20251201_110005.format(kanban.collecting_progress[0], kanban.marking_progress[0]))
+        show_toast_msg(g_message.UI_20251201_110005.format(kanban.collecting_progress[0], kanban.marking_progress[0]))
         self._change_page(0)
 
     # 重写方法

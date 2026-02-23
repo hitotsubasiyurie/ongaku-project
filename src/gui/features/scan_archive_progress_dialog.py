@@ -5,8 +5,8 @@ from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QProgressDialog
 
-from src.core.i18n import MESSAGE
-from src.core.settings import settings
+from src.core.i18n import g_message
+from src.core.settings import g_settings
 
 
 class ScanArchiveProgressDialog(QProgressDialog):
@@ -16,8 +16,8 @@ class ScanArchiveProgressDialog(QProgressDialog):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.setWindowTitle(MESSAGE.UI_20260103_120010)
-        self.setCancelButtonText(MESSAGE.UI_20251231_180011)
+        self.setWindowTitle(g_message.UI_20260103_120010)
+        self.setCancelButtonText(g_message.UI_20251231_180011)
         self.setMinimum(0)
         self.setValue(0)
         self.setMinimumDuration(0)
@@ -55,7 +55,7 @@ def scan_archive() -> bool:
     """ 
     :return: 是否扫描成功
     """
-    rar_files = list(map(os.path.abspath, Path(settings.resource_directory).rglob("*.rar")))
+    rar_files = list(map(os.path.abspath, Path(g_settings.resource_directory).rglob("*.rar")))
     if not rar_files:
         return True
 

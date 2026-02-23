@@ -8,7 +8,7 @@ import tempfile
 from typing import Union
 
 from src.core.logger import logger
-from src.core.settings import settings
+from src.core.settings import g_settings
 
 
 def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
@@ -61,8 +61,8 @@ def run_subprocess(cmd: list[str], stdout=subprocess.PIPE, stderr=subprocess.PIP
 ### https://www.ffmpeg.org/documentation.html
 ################################################################################
 
-FFMPEG_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "ffmpeg", "ffmpeg.exe"))
-FFPROBE_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "ffmpeg", "ffprobe.exe"))
+FFMPEG_PATH = os.path.abspath(os.path.join(g_settings.BIN_DIRECTORY, "ffmpeg", "ffmpeg.exe"))
+FFPROBE_PATH = os.path.abspath(os.path.join(g_settings.BIN_DIRECTORY, "ffmpeg", "ffprobe.exe"))
 
 
 def decode_audio_bytes_to_pcm(audio_data: bytes) -> bytes:
@@ -144,7 +144,7 @@ def calculate_audio_md5(audio_input: Union[str, bytes]) -> str:
 ### https://pngquant.org/
 ################################################################################
 
-PNGQUANT_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "pngquant", "pngquant.exe"))
+PNGQUANT_PATH = os.path.abspath(os.path.join(g_settings.BIN_DIRECTORY, "pngquant", "pngquant.exe"))
 
 
 def compress_png_file(png_path: str) -> None:
@@ -160,7 +160,7 @@ def compress_png_file(png_path: str) -> None:
 ### WinRAR
 ################################################################################
 
-RAR_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "WinRAR", "Rar.exe"))
+RAR_PATH = os.path.abspath(os.path.join(g_settings.BIN_DIRECTORY, "WinRAR", "Rar.exe"))
 
 
 def rar_archive(dstrar: str, srcdir: str) -> None:
@@ -352,9 +352,9 @@ def rar_extract(dstrar: str, filename: str, savedir: str) -> None:
 ### https://www.postgresql.org/docs/current/index.html
 ################################################################################
 
-INITDB_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "pgsql", "bin", "initdb.exe"))
-PGCTL_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "pgsql", "bin", "pg_ctl.exe"))
-PGDUMP_PATH = os.path.abspath(os.path.join(settings.BIN_DIRECTORY, "pgsql", "bin", "pg_dump.exe"))
+INITDB_PATH = os.path.abspath(os.path.join(g_settings.BIN_DIRECTORY, "pgsql", "bin", "initdb.exe"))
+PGCTL_PATH = os.path.abspath(os.path.join(g_settings.BIN_DIRECTORY, "pgsql", "bin", "pg_ctl.exe"))
+PGDUMP_PATH = os.path.abspath(os.path.join(g_settings.BIN_DIRECTORY, "pgsql", "bin", "pg_dump.exe"))
 
 
 def init_pgdata(pgdata: str) -> None:

@@ -5,7 +5,7 @@ from PySide6.QtCore import (Qt, Signal)
 from PySide6.QtGui import (QWheelEvent, )
 from PySide6.QtWidgets import (QWidget, QComboBox, )
 
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import AlbumKanban
 
 
@@ -49,7 +49,7 @@ class LinkComboBox(QComboBox):
         self.clear()
         self.addItems(links)
         self.lineEdit().clear()
-        self.lineEdit().setPlaceholderText(MESSAGE.UI_20251231_180009.format(len(links)))
+        self.lineEdit().setPlaceholderText(g_message.UI_20251231_180009.format(len(links)))
 
     # 事件动作
 

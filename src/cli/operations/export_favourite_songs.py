@@ -10,15 +10,15 @@ from src.cli.common import easy_linput
 from src.cli.operations.health_check import main as health_check
 from src.core.basemodels import Album, Track, TrackMark
 from src.core.cache import with_cache
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import Kanban, MetadataState, ResourceState
 from src.core.logger import lprint, logger
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.core.storage import AUDIO_EXTS
 from src.external import calculate_audio_md5, calculate_rar_audio_md5
 from src.utils import write_audio_tags, read_audio_tags, read_audio_cover
 
-OPERATION_NAME = MESSAGE.WF_20251204_194420
+OPERATION_NAME = g_message.WF_20251204_194420
 
 
 # 缓存方法
@@ -48,7 +48,7 @@ def build_cache_audio_md5(export_dir: Path, kanban: Kanban) -> None:
                 (cached_calculate_audio_md5, os.path.join(*p))
             params.append(args)
 
-    pbar = tqdm(total=len(params), desc=MESSAGE.WF_20260219_141601, miniters=1)
+    pbar = tqdm(total=len(params), desc=g_message.WF_20260219_141601, miniters=1)
     executor = ThreadPoolExecutor()
     for args in params:
         future = executor.submit(*args)
@@ -59,7 +59,7 @@ def build_cache_audio_md5(export_dir: Path, kanban: Kanban) -> None:
 
 
 def check_favourites(kanban: Kanban) -> bool:
-    lprint(f"{'-'*4} {MESSAGE.WF_20260128_092704} {'-'*4}")
+    lprint(f"{'-'*4} {g_message.WF_20260128_092704} {'-'*4}")
 
     missing_favs, missing_covers = [], []
 
@@ -70,11 +70,11 @@ def check_favourites(kanban: Kanban) -> bool:
                             if t.mark == TrackMark.FAVOURITE and s == ResourceState.MISSING)
 
     if missing_favs or missing_covers:
-        missing_favs and [lprint(f) for f in missing_favs] and lprint(MESSAGE.WF_20251204_194427)
-        missing_covers and [lprint(f) for f in missing_covers] and lprint(MESSAGE.WF_20251204_194428)
+        missing_favs and [lprint(f) for f in missing_favs] and lprint(g_message.WF_20251204_194427)
+        missing_covers and [lprint(f) for f in missing_covers] and lprint(g_message.WF_20251204_194428)
         return False
     else:
-        lprint(MESSAGE.WF_20260128_092707)
+        lprint(g_message.WF_20260128_092707)
         return True
 
 
@@ -113,13 +113,13 @@ def get_eported_map(export_dir: Path, kanban: Kanban) -> dict[tuple[int, int, in
 # 主函数
 
 def main() -> None:
-    lprint(MESSAGE.WF_20251204_194421)
+    lprint(g_message.WF_20251204_194421)
 
     health_check()
 
-    export_dir = easy_linput(MESSAGE.WF_20251204_194422, return_type=Path)
+    export_dir = easy_linput(g_message.WF_20251204_194422, return_type=Path)
 
-    kanban = Kanban(settings.metadata_directory, settings.resource_directory)
+    kanban = Kanban(g_settings.metadata_directory, g_settings.resource_directory)
 
     if not check_favourites(kanban):
         return
@@ -134,14 +134,14 @@ def main() -> None:
     dirty_files = [f for f in export_dir.rglob("*") if f.is_file() and f not in exported]
     if dirty_files:
         [lprint(str(f)) for f in dirty_files]
-        if not easy_linput(MESSAGE.WF_20251204_194429, default="Y", return_type=str)  == "Y":
+        if not easy_linput(g_message.WF_20251204_194429, default="Y", return_type=str)  == "Y":
             return
         [f.unlink() for f in dirty_files]
         [d.rmdir() for d in reversed(list(filter(Path.is_dir, export_dir.rglob("*")))) if not os.listdir(d)]
 
     # 开始导出
     total = sum(1 for tk in kanban.theme_kanbans for ak in tk.album_kanbans for t in ak.album.tracks if t.mark == TrackMark.FAVOURITE)
-    pbar = tqdm(total=total, desc=MESSAGE.WF_20251204_194420, miniters=1)
+    pbar = tqdm(total=total, desc=g_message.WF_20251204_194420, miniters=1)
 
     xprint = lambda s: [logger.info(s), tqdm.write(s)]
 
@@ -174,7 +174,7 @@ def main() -> None:
                     exported_dst.write_bytes(ak.read_path_bytes(src_path))
                     write_audio_tags(exported_dst, ak.read_path_bytes(ak.cover_path), album.catalognumber, album.date, album.album, 
                                      str(track.tracknumber), track.title, track.artist)
-                    xprint(MESSAGE.WF_20251204_194423.format(exported_dst))
+                    xprint(g_message.WF_20251204_194423.format(exported_dst))
                     continue
 
                 if exported_dst not in (short_dst_path, long_dst_path):
@@ -189,10 +189,10 @@ def main() -> None:
                     logger.info(f"Metadata are not the same. {src_tags} {dst_tags}")
                     write_audio_tags(exported_dst, ak.read_path_bytes(ak.cover_path), album.catalognumber, album.date, album.album, 
                                      str(track.tracknumber), track.title, track.artist)
-                    xprint(MESSAGE.WF_20251204_194425.format(exported_dst))
+                    xprint(g_message.WF_20251204_194425.format(exported_dst))
                     continue
 
     pbar.close()
-    lprint(MESSAGE.WF_20251204_194432)
+    lprint(g_message.WF_20251204_194432)
 
 

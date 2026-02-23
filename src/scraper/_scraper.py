@@ -4,7 +4,7 @@ import requests
 from diskcache.core import full_name, args_to_key
 
 from src.core.basemodels import Album, Disc
-from src.core.cache import request_cache
+from src.core.cache import g_request_cache
 from src.core.logger import logger
 from src.utils import retry, RateLimiter
 
@@ -78,10 +78,10 @@ class Scraper:
         """
         base = (full_name(self.__request_get),)
         key = args_to_key(base, (url, ), kwargs, False, ())
-        result = request_cache.get(key)
+        result = g_request_cache.get(key)
         if result is None:
             result = self.__request_get(url, timeout=self._REQUEST_TIMEOUT, headers=self._REQUEST_HEADERS, **kwargs)
-            request_cache.set(key, result)
+            g_request_cache.set(key, result)
 
         return result
 

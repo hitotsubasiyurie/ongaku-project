@@ -4,20 +4,20 @@ from pathlib import Path
 
 from src.cli.common import analyze_album
 from src.cli.common import easy_linput
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.logger import lprint
 from src.core.storage import AUDIO_EXTS, load_albums_from_toml, dump_albums_to_toml
 
-OPERATION_NAME = MESSAGE.WF_20251204_194620
+OPERATION_NAME = g_message.WF_20251204_194620
 
 
 # 主函数
 
 def main() -> None:
-    lprint(MESSAGE.WF_20251204_194621)
+    lprint(g_message.WF_20251204_194621)
 
-    input_path = easy_linput(MESSAGE.WF_20251204_194622, return_type=Path)
-    resource_directory = easy_linput(MESSAGE.WF_20251204_194623, return_type=Path)
+    input_path = easy_linput(g_message.WF_20251204_194622, return_type=Path)
+    resource_directory = easy_linput(g_message.WF_20251204_194623, return_type=Path)
 
     # 创建目录
     if input_path.is_file():
@@ -37,15 +37,15 @@ def main() -> None:
     albums = list(map(analyze_album, album_dirs))
 
     if not albums:
-        lprint(MESSAGE.WF_20251204_194624)
+        lprint(g_message.WF_20251204_194624)
         return
 
-    if not easy_linput(MESSAGE.WF_20251204_194625.format(len(albums), metadata_file), default="Y", return_type=str)  == "Y":
+    if not easy_linput(g_message.WF_20251204_194625.format(len(albums), metadata_file), default="Y", return_type=str)  == "Y":
         return
 
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.is_file() else []
     dump_albums_to_toml(exist_albums + albums, metadata_file)
-    lprint(MESSAGE.WF_20251204_194626)
+    lprint(g_message.WF_20251204_194626)
 
 
 

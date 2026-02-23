@@ -6,9 +6,9 @@ from PySide6.QtGui import QAction, QBrush, QResizeEvent, QIcon
 from PySide6.QtWidgets import QFrame, QWidget, QTableView, QHeaderView
 
 from src.core.basemodels import TrackMark
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import ThemeKanban, ResourceState
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.gui.color_theme import current_theme
 from src.gui.custom.custom_table_item_model import CustomTableItemModel
 
@@ -27,8 +27,8 @@ class PlayTableItemModel(CustomTableItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers: list[str] = [MESSAGE.UI_20260101_112211, MESSAGE.UI_20260101_112210, MESSAGE.UI_20260101_112212, 
-                                   MESSAGE.UI_20260101_112207, MESSAGE.UI_20260101_112209, MESSAGE.UI_20260101_112206]
+        self.headers: list[str] = [g_message.UI_20260101_112211, g_message.UI_20260101_112210, g_message.UI_20260101_112212, 
+                                   g_message.UI_20260101_112207, g_message.UI_20260101_112209, g_message.UI_20260101_112206]
 
         self.theme_kanban: Optional[ThemeKanban] = None
 
@@ -108,7 +108,7 @@ class PlayTableItemModel(CustomTableItemModel):
         # 列表头 播放中 仅展示装饰图标
         if orientation == Qt.Orientation.Vertical and self.layout_ps and self.kanban_ij[self.layout_ps[section]] == self.playing_ij:
             if role == Qt.ItemDataRole.DecorationRole:
-                return QIcon(f"./assets/{settings.ui_color_theme}/locate.png")
+                return QIcon(f"./assets/{g_settings.ui_color_theme}/locate.png")
             else:
                 return
         
@@ -221,13 +221,13 @@ class PlayTableView(QTableView):
     def setup_context_menu(self) -> None:
         """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction(MESSAGE.UI_20260101_112232, self)
+        action = QAction(g_message.UI_20260101_112232, self)
         action.triggered.connect(self.unfavourite_selected.emit)
         self.addAction(action)
-        action = QAction(MESSAGE.UI_20260101_112233, self)
+        action = QAction(g_message.UI_20260101_112233, self)
         action.triggered.connect(self.favourite_selected.emit)
         self.addAction(action)
-        action = QAction(MESSAGE.UI_20260101_112234, self)
+        action = QAction(g_message.UI_20260101_112234, self)
         action.triggered.connect(self.clear_selected.emit)
         self.addAction(action)
 

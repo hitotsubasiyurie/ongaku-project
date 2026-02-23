@@ -4,23 +4,23 @@ from pathlib import Path
 from tqdm import tqdm
 
 from src.cli.common import easy_linput
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.logger import logger, lprint
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.scraper import DoujinMusicInfoScraper
 
-OPERATION_NAME = MESSAGE.WF_20251204_194820
+OPERATION_NAME = g_message.WF_20251204_194820
 
 
 # 主函数
 
 def main():
-    lprint(MESSAGE.WF_20251204_194821)
+    lprint(g_message.WF_20251204_194821)
 
-    input_path = easy_linput(MESSAGE.WF_20251204_194822.format(settings.TMP_DIRECTORY), 
-                             default=Path(settings.TMP_DIRECTORY), return_type=Path)
-    input_urls = easy_linput(MESSAGE.WF_20251204_194823, return_type=str)
+    input_path = easy_linput(g_message.WF_20251204_194822.format(g_settings.TMP_DIRECTORY), 
+                             default=Path(g_settings.TMP_DIRECTORY), return_type=Path)
+    input_urls = easy_linput(g_message.WF_20251204_194823, return_type=str)
 
     # 创建目录
     if input_path.is_file():
@@ -42,7 +42,7 @@ def main():
             circle_id = url.split("/")[-1]
             cd_ids.extend(scraper.get_cd_ids_from_circle(circle_id))
         else:
-            lprint(MESSAGE.WF_20251204_194824)
+            lprint(g_message.WF_20251204_194824)
             return
     
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
@@ -68,4 +68,4 @@ def main():
     
     dump_albums_to_toml(exist_albums + new_albums, metadata_file)
     
-    lprint(MESSAGE.WF_20251204_194825.format(len(new_albums), metadata_file))
+    lprint(g_message.WF_20251204_194825.format(len(new_albums), metadata_file))

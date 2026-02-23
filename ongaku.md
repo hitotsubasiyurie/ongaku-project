@@ -2631,4 +2631,40 @@ ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 2. 把 CLI 当作一种外部工具命令，GUI 调用 CLI 可执行文件
 3. RPC 服务化，无论是 CLI 工具、PySide 界面还是 Web 网页，都通过网络协议与后端逻辑通信
 
+像是 postgresql ，输入仅通过命令参数传入，输出由专门的函数管理如 write_stderr, psvprintf 等
+是的，输入和输出并不是同一回事。
+输入最终都是作为逻辑函数的参数传入，而输出，只要有个管道放着就行
+
+yield 和 .send()
+
+## 2026.02.23
+
+def delete_dirty_files:
+    dirty_files = search(...)
+    if dirty_files:
+        delete = yield xxx
+        if not delete:
+            return false
+    return true
+
+例如上述的 删除脏文件 函数，其实需要用户输入的只有确认的那一步。为什么一定要用户确认呢
+
+1. 使用 yield 和 .send() 来控制。不优雅
+2. 拆开两个方法，get_dirty_files 和删除方法
+
+在 Linux/Unix 系统中，标准输出 (stdout) 和 标准错误 (stderr) 是分离的。
+print() 默认输出至 stdout (fd 1): 用于输出程序的实际结果。tqdm 默认输出至 stderr (fd 2): 用于输出进度信息、日志或调试信息。进度条属于“元数据”，不属于程序最终产出的数据。
+logging 模块	stderr	默认的 StreamHandler 指向 stderr。因为日志通常被视为运行时的状态监控。
+sys.traceback	stderr	当程序崩溃时，Python 打印的报错堆栈信息全部走 stderr。
+warnings 模块	stderr	代码发出的警告信息。
+argparse (帮助信息)	stdout	当你输入 -h 时，帮助文档输出到 stdout。
+argparse (参数错误)	stderr	当你参数输错时，报错信息输出到 stderr。
+数据走 stdout，状态走 stderr
+
+在默认情况下，stdout是行缓冲的，他的输出会放在一个buffer里面，只有到换行的时候，才会输出到屏幕。而stderr是无缓冲的，会直接输出。
+
+\r（回车符）在终端里能让光标回到行首实现“覆盖”，但在普通文本编辑器（如 Notepad, VS Code）里，它通常被渲染为一个不可见的控制字符或简单的换行。
+tqdm 检查 file.isatty()。如果是终端 (TTY): 启用 \r 动态刷新。如果是管道或文件: 它通常会退化为更简单的输出模式
+
+QLabel.setText() 的全量覆盖特性刚好掩盖了 \r 的处理问题
 

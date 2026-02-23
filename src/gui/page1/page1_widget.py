@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QModelIndex, Signal
 from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import Kanban
 from src.gui.page1.theme_table_view import ThemeTableView
 
@@ -21,7 +21,7 @@ class Page1Widget(QWidget):
         grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.name_field = QLineEdit()
-        self.name_field.setPlaceholderText(MESSAGE.UI_20251231_170000)
+        self.name_field.setPlaceholderText(g_message.UI_20251231_170000)
         grid_layout.addWidget(self.name_field, 0, 1, 1, 1)
 
         self.theme_table_view = ThemeTableView()

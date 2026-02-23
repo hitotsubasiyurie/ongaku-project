@@ -59,19 +59,22 @@ class _Settings:
         return converter.structure(data, cls)
 
 
-def update_settings_comments(MESSAGE) -> None:
+g_settings = _Settings.load()
+
+
+def update_settings_comments(g_message) -> None:
     set2comment = {
-        _Settings.log_level.__name__: MESSAGE.SET_20260131_090300,
-        _Settings.language.__name__: MESSAGE.SET_20260131_090301,
+        _Settings.log_level.__name__: g_message.SET_20260131_090300,
+        _Settings.language.__name__: g_message.SET_20260131_090301,
 
-        _Settings.metadata_directory.__name__: MESSAGE.SET_20260131_090303,
-        _Settings.resource_directory.__name__: MESSAGE.SET_20260131_090304,
+        _Settings.metadata_directory.__name__: g_message.SET_20260131_090303,
+        _Settings.resource_directory.__name__: g_message.SET_20260131_090304,
 
-        _Settings.ui_color_theme.__name__: MESSAGE.SET_20260131_090306,
-        _Settings.ui_font_size.__name__: MESSAGE.SET_20260131_090307,
-        _Settings.ui_font_family.__name__: MESSAGE.SET_20260131_090308,
-        _Settings.ui_cov_sources.__name__: MESSAGE.SET_20260131_090310,
-        _Settings.ui_cov_country.__name__: MESSAGE.SET_20260131_090310,
+        _Settings.ui_color_theme.__name__: g_message.SET_20260131_090306,
+        _Settings.ui_font_size.__name__: g_message.SET_20260131_090307,
+        _Settings.ui_font_family.__name__: g_message.SET_20260131_090308,
+        _Settings.ui_cov_sources.__name__: g_message.SET_20260131_090310,
+        _Settings.ui_cov_country.__name__: g_message.SET_20260131_090310,
     }
     # 序列化
     lines = []
@@ -81,7 +84,7 @@ def update_settings_comments(MESSAGE) -> None:
         comment = set2comment.get(name)
         if comment:
             lines.append("# " + comment.replace("\n", "\n# "))
-        toml_str = dump_toml({name: getattr(settings, name)}).strip()
+        toml_str = dump_toml({name: getattr(g_settings, name)}).strip()
         lines.append(toml_str)
         lines.append("")
 
@@ -90,6 +93,3 @@ def update_settings_comments(MESSAGE) -> None:
     # 有差异时写入
     if not SETTINGS_FILE.is_file() or text != SETTINGS_FILE.read_text(encoding="utf-8"):
         SETTINGS_FILE.write_text(text, encoding="utf-8")
-
-
-settings = _Settings.load()

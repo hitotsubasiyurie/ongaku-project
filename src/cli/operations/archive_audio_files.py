@@ -8,9 +8,9 @@ import rtoml
 from src.cli.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str,
                             track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 from src.core.basemodels import Album
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.logger import lprint
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.core.storage import AUDIO_EXTS, album_stemname, track_stemnames, load_albums_from_toml
 from src.utils import dump_toml
 
@@ -18,7 +18,7 @@ from src.utils import dump_toml
 analyze_album = functools.cache(analyze_album)
 
 
-OPERATION_NAME = MESSAGE.WF_20251204_190036
+OPERATION_NAME = g_message.WF_20251204_190036
 
 
 # 业务函数
@@ -113,15 +113,15 @@ def apply_archive_detail(detail: dict, is_replace_same: bool) -> None:
 # 主函数
 
 def main() -> None:
-    lprint(MESSAGE.WF_20251204_190037)
+    lprint(g_message.WF_20251204_190037)
 
-    metadata_file = easy_linput(MESSAGE.WF_20251204_190038, return_type=Path)
-    src_parent = easy_linput(MESSAGE.WF_20251204_190039, return_type=Path)
-    dst_parent = easy_linput(MESSAGE.WF_20251204_190040, return_type=Path)
-    filter_trackcount = easy_linput(MESSAGE.WF_20251204_190041, default="Y", return_type=str)  == "Y"
+    metadata_file = easy_linput(g_message.WF_20251204_190038, return_type=Path)
+    src_parent = easy_linput(g_message.WF_20251204_190039, return_type=Path)
+    dst_parent = easy_linput(g_message.WF_20251204_190040, return_type=Path)
+    filter_trackcount = easy_linput(g_message.WF_20251204_190041, default="Y", return_type=str)  == "Y"
 
     theme_directory = Path(dst_parent, metadata_file.stem)
-    archive_details_file = Path(settings.TMP_DIRECTORY, "archive_details.toml")
+    archive_details_file = Path(g_settings.TMP_DIRECTORY, "archive_details.toml")
 
     # 存在音频 的目录 认为是专辑目录
     src_dirs = [d for d in src_parent.rglob("*") 
@@ -143,19 +143,19 @@ def main() -> None:
     dump_toml({str(i+1): d for i, d in enumerate(archive_details)}, archive_details_file)
 
     # 等待用户编辑 archive_details
-    lprint(MESSAGE.WF_20251204_190042.format(archive_details_file))
-    if not easy_linput(MESSAGE.WF_20251204_190043, default="N", return_type=str)  == "Y":
+    lprint(g_message.WF_20251204_190042.format(archive_details_file))
+    if not easy_linput(g_message.WF_20251204_190043, default="N", return_type=str)  == "Y":
         return
     
     # 应用 archive_details
     archive_details = list(rtoml.loads(archive_details_file.read_text(encoding="utf-8")).values())
 
-    is_replace_same = easy_linput(MESSAGE.WF_20251204_190044, default="N", return_type=str)  == "Y"
+    is_replace_same = easy_linput(g_message.WF_20251204_190044, default="N", return_type=str)  == "Y"
 
     for d in archive_details:
         apply_archive_detail(d, is_replace_same)
 
-    lprint(MESSAGE.WF_20251204_190045)
+    lprint(g_message.WF_20251204_190045)
 
 
 

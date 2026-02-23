@@ -5,7 +5,7 @@ from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QWidget, QGridLayout, QLineEdit
 
 from src.core.basemodels import TrackMark
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import ThemeKanban
 from src.external import convert_audio_bytes_to_wav
 from src.gui.common import with_busy_cursor
@@ -24,23 +24,23 @@ class Page3Widget(QWidget):
         grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.title_field = QLineEdit()
-        self.title_field.setPlaceholderText(MESSAGE.UI_20251231_180005)
+        self.title_field.setPlaceholderText(g_message.UI_20251231_180005)
         grid_layout.addWidget(self.title_field, 0, 1, 1, 1)
 
         self.artist_field = QLineEdit()
-        self.artist_field.setPlaceholderText(MESSAGE.UI_20251231_180006)
+        self.artist_field.setPlaceholderText(g_message.UI_20251231_180006)
         grid_layout.addWidget(self.artist_field, 0, 2, 1, 1)
 
         self.album_field = QLineEdit()
-        self.album_field.setPlaceholderText(MESSAGE.UI_20251231_180007)
+        self.album_field.setPlaceholderText(g_message.UI_20251231_180007)
         grid_layout.addWidget(self.album_field, 0, 3, 1, 1)
 
         self.date_field = QLineEdit()
-        self.date_field.setPlaceholderText(MESSAGE.UI_20251231_180003)
+        self.date_field.setPlaceholderText(g_message.UI_20251231_180003)
         grid_layout.addWidget(self.date_field, 0, 4, 1, 1)
 
         self.mark_field = QLineEdit()
-        self.mark_field.setPlaceholderText(MESSAGE.UI_20251231_180008)
+        self.mark_field.setPlaceholderText(g_message.UI_20251231_180008)
         grid_layout.addWidget(self.mark_field, 0, 5, 1, 1)
 
         self.play_table_view = PlayTableView()
@@ -101,7 +101,7 @@ class Page3Widget(QWidget):
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(5000)
-        self._save_timer.timeout.connect(lambda: [show_toast_msg(MESSAGE.UI_20251231_180010), 
+        self._save_timer.timeout.connect(lambda: [show_toast_msg(g_message.UI_20251231_180010), 
                                                   with_busy_cursor(self.theme_kanban.save_metadata_file)()])
 
         self.setup_ui()

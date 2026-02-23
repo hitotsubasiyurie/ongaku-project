@@ -9,14 +9,14 @@ from tqdm import tqdm
 
 from src.cli.common import easy_linput
 from src.core.basemodels import Album
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.logger import logger, lprint
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.external import pg_ctl_start, pg_ctl_stop, pg_dump_database
 from src.scraper.musicbrainz_database import init_musicbrainz_database, MusicBrainzDatabase
 from src.scraper.musicbrainz_scraper import MusicBrainzScraper
 
-OPERATION_NAME = MESSAGE.WF_20251204_194120
+OPERATION_NAME = g_message.WF_20251204_194120
 
 
 def read_musicbrainz_tar_dump(tar_file: str) -> Generator[str, None, None]:
@@ -47,9 +47,9 @@ def release_to_albums(recordings: dict, release: dict) -> list[Album]:
 
 
 def main():
-    lprint(MESSAGE.WF_20251204_194121)
+    lprint(g_message.WF_20251204_194121)
 
-    parent_directory: Path = easy_linput(MESSAGE.WF_20251204_194122, return_type=Path)
+    parent_directory: Path = easy_linput(g_message.WF_20251204_194122, return_type=Path)
 
     recording_tar, release_tar = parent_directory / "recording.tar.xz", parent_directory / "release.tar.xz"
 
@@ -62,17 +62,17 @@ def main():
 
     recordings = {r["id"]: r for r in map(orjson.loads, read_musicbrainz_tar_dump(recording_tar))}
 
-    pgdata = os.path.join(settings.TMP_DIRECTORY, "musicbrainz_pgdata")
+    pgdata = os.path.join(g_settings.TMP_DIRECTORY, "musicbrainz_pgdata")
     if os.path.isdir(pgdata):
-        if easy_linput(MESSAGE.WF_20251204_194123, default="N") == "Y":
+        if easy_linput(g_message.WF_20251204_194123, default="N") == "Y":
             shutil.rmtree(pgdata)
 
     # 初始化数据目录
     init_musicbrainz_database(pgdata)
-    lprint(MESSAGE.WF_20251204_194124)
+    lprint(g_message.WF_20251204_194124)
 
     pg_ctl_start(pgdata)
-    lprint(MESSAGE.WF_20251204_194125)
+    lprint(g_message.WF_20251204_194125)
 
     database = MusicBrainzDatabase()
 
@@ -109,11 +109,11 @@ def main():
     pbar.close()
 
     # 备份数据库
-    lprint(MESSAGE.WF_20251204_194128)
-    dmpfile = os.path.join(settings.TMP_DIRECTORY, "musicbrainz.dmp")
+    lprint(g_message.WF_20251204_194128)
+    dmpfile = os.path.join(g_settings.TMP_DIRECTORY, "musicbrainz.dmp")
     pg_dump_database("musicbrainz", dmpfile)
-    lprint(MESSAGE.WF_20251204_194127.format(dmpfile))
+    lprint(g_message.WF_20251204_194127.format(dmpfile))
 
     pg_ctl_stop(pgdata)
-    lprint(MESSAGE.WF_20251204_194126)
+    lprint(g_message.WF_20251204_194126)
 

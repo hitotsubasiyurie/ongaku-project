@@ -3,10 +3,10 @@ import os
 from pathlib import Path
 
 from src.cli.common import easy_linput
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.logger import lprint
 
-OPERATION_NAME = MESSAGE.WF_20251204_194720
+OPERATION_NAME = g_message.WF_20251204_194720
 
 
 TEXT_ENCODINGS = ["ascii", "big5", "big5hkscs", "cp037", "cp273", "cp424", "cp437", "cp500", "cp720", "cp737", "cp775", 
@@ -28,12 +28,12 @@ ENCODINGS = PREFERRED_ENCODINGS + list(set(TEXT_ENCODINGS) - set(PREFERRED_ENCOD
 
 
 def main():
-    lprint(MESSAGE.WF_20251204_194721)
+    lprint(g_message.WF_20251204_194721)
 
-    directory = easy_linput(MESSAGE.WF_20251204_194722, return_type=Path)
-    suffixs_str = easy_linput(MESSAGE.WF_20251204_194723, default=".cue", return_type=str)
+    directory = easy_linput(g_message.WF_20251204_194722, return_type=Path)
+    suffixs_str = easy_linput(g_message.WF_20251204_194723, default=".cue", return_type=str)
     accept_suffixs = set(map(str.lower, map(str.strip, suffixs_str.split(","))))
-    result_prefix = easy_linput(MESSAGE.WF_20251204_194724, default="__recoded_utf_8__", return_type=str)
+    result_prefix = easy_linput(g_message.WF_20251204_194724, default="__recoded_utf_8__", return_type=str)
 
     # 待处理文件
     files = [f for f in Path(directory).rglob("*") 
@@ -59,7 +59,7 @@ def main():
             print("-"*64)
             print(f"{j}/{max_j} {ENCODINGS[j]}")
             print(f"{i}/{max_i} {files[i]}")
-            print(MESSAGE.WF_20251204_194725)
+            print(g_message.WF_20251204_194725)
         except Exception:
             j = max(0, min(j + dir_j, max_j))
             if (dir_j == -1 and j != 0) or (dir_j == 1 and j != max_j):

@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.core.kanban import Kanban
 from src.gui.notifier import init_notifier
 from src.gui.features.scan_archive_progress_dialog import scan_archive
@@ -32,8 +32,8 @@ if __name__ == "__main__":
 
     # 设置字体
     font = app.font()
-    settings.ui_font_size and font.setPointSize(settings.ui_font_size)
-    settings.ui_font_family and font.setFamily(settings.ui_font_family)
+    g_settings.ui_font_size and font.setPointSize(g_settings.ui_font_size)
+    g_settings.ui_font_family and font.setFamily(g_settings.ui_font_family)
     app.setFont(font)
 
     # 扫描 专辑归档 生成缓存
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # 加载看板
     QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-    kanban = Kanban(settings.metadata_directory, settings.resource_directory)
+    kanban = Kanban(g_settings.metadata_directory, g_settings.resource_directory)
     main_window.set_kanban(kanban)
     QApplication.restoreOverrideCursor()
 

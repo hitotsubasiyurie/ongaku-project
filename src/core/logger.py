@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TextIO, Callable
 
-from src.core.settings import settings
+from src.core.settings import g_settings
 
 
 class CompressedRotatingFileHandler(RotatingFileHandler):
@@ -92,6 +92,7 @@ class OngakuLogger:
             self.logger.removeHandler(h)
             h.close()
 
+        # 输出至文件或 sys.stderr
         if self.outfile:
             handler = CompressedRotatingFileHandler(self.outfile, mode="a", encoding="utf-8", 
                                                     maxBytes=OngakuLogger.MAX_LOG_FILE_SIZE)
@@ -107,12 +108,12 @@ _ongaku_logger = OngakuLogger()
 logger = _ongaku_logger.logger
 
 # 设置 日志
-logdir = os.path.join(settings.TMP_DIRECTORY, "log")
+logdir = os.path.join(g_settings.TMP_DIRECTORY, "log")
 os.makedirs(logdir, exist_ok=True)
 _ongaku_logger.set_output(logdir)
 
 _LOG_LEVEL_MAP = {1: logging.DEBUG, 2: logging.INFO, 3: logging.WARNING, 4: logging.ERROR, 5: logging.FATAL}
-logger.setLevel(_LOG_LEVEL_MAP.get(settings.log_level, 2))
+logger.setLevel(_LOG_LEVEL_MAP.get(g_settings.log_level, 2))
 
 
 ################################################################################

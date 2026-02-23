@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QHeaderView, QAbstractItemView, QStyle)
 
 from src.core.basemodels import TrackMark
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import AlbumKanban
 from src.gui.color_theme import current_theme
 from src.gui.custom.custom_table_item_model import CustomTableItemModel
@@ -22,7 +22,7 @@ class TrackTableItemModel(CustomTableItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers: list[str] = ["S", MESSAGE.UI_20260101_112210]
+        self.headers: list[str] = ["S", g_message.UI_20260101_112210]
 
         self.album_kanban: Optional[AlbumKanban] = None
 
@@ -209,7 +209,7 @@ class TrackTableView(QTableView):
     def setup_context_menu(self) -> None:
         """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction(MESSAGE.UI_20260101_112231, self)
+        action = QAction(g_message.UI_20260101_112231, self)
         action.triggered.connect(self.action_copy_filename_clicked.emit)
         self.addAction(action)
 

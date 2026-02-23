@@ -7,10 +7,10 @@ from pathlib import Path
 from tqdm import tqdm
 
 from src.cli.common import easy_linput
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.logger import lprint
 
-OPERATION_NAME = MESSAGE.WF_20251204_195220
+OPERATION_NAME = g_message.WF_20251204_195220
 
 # 业务函数
 
@@ -78,20 +78,20 @@ def _hardlink_copy(src: Path, dst: Path) -> tuple[int, int]:
 # 主函数
 
 def hardlink_copy():
-    lprint(MESSAGE.WF_20251204_195221)
+    lprint(g_message.WF_20251204_195221)
 
-    src = easy_linput(MESSAGE.WF_20251204_195222, return_type=Path)
-    dst_parent = easy_linput(MESSAGE.WF_20251204_195223, return_type=Path)
+    src = easy_linput(g_message.WF_20251204_195222, return_type=Path)
+    dst_parent = easy_linput(g_message.WF_20251204_195223, return_type=Path)
 
     if not src.exists():
-        lprint(MESSAGE.WF_20251204_195224)
+        lprint(g_message.WF_20251204_195224)
         return
 
     dst = dst_parent / src.name
 
     # 若目标存在，文件类型不同时或是用户选择时，使用新位置克隆
     if dst.exists():
-        if src.is_file() != dst.is_file() or not easy_linput(MESSAGE.WF_20251204_195226, default="Y", return_type=str) == "Y":
+        if src.is_file() != dst.is_file() or not easy_linput(g_message.WF_20251204_195226, default="Y", return_type=str) == "Y":
             dst = dst_parent / f"{src.name}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
     # 若目标存在，删除差异文件
@@ -99,7 +99,7 @@ def hardlink_copy():
         dirty = list(reversed(get_dirty_files(src, dst)))
         if dirty:
             [lprint(p) for p in dirty]
-            if not easy_linput(MESSAGE.WF_20251204_195227, default="Y", return_type=str) == "Y":
+            if not easy_linput(g_message.WF_20251204_195227, default="Y", return_type=str) == "Y":
                 return
             [p.unlink() if p.is_file() else p.rmdir() for p in dirty]
 
@@ -107,6 +107,6 @@ def hardlink_copy():
 
     c1, c2 = _hardlink_copy(src, dst)
 
-    lprint(MESSAGE.WF_20251204_195225.format(c1, c2, time.time()-st))
+    lprint(g_message.WF_20251204_195225.format(c1, c2, time.time()-st))
 
 

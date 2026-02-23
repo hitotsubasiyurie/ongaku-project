@@ -7,9 +7,9 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QGridLayout, QLineEdit, QWidget
 
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import ThemeKanban
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.core.storage import COVER_NAME, AUDIO_EXTS, track_stemnames
 from src.external import open_in_explorer, copy_to_clipboard
 from src.gui.common import with_busy_cursor
@@ -33,19 +33,19 @@ class Page2Widget(QWidget):
         grid_layout.setContentsMargins(0, 0, 0, 0)
 
         self.album_field = QLineEdit()
-        self.album_field.setPlaceholderText(MESSAGE.UI_20251231_180000)
+        self.album_field.setPlaceholderText(g_message.UI_20251231_180000)
         grid_layout.addWidget(self.album_field, 0, 0, 1, 1)
 
         self.catno_field = QLineEdit()
-        self.catno_field.setPlaceholderText(MESSAGE.UI_20251231_180001)
+        self.catno_field.setPlaceholderText(g_message.UI_20251231_180001)
         grid_layout.addWidget(self.catno_field, 0, 1, 1, 1)
 
         self.date_field = QLineEdit()
-        self.date_field.setPlaceholderText(MESSAGE.UI_20251231_180003)
+        self.date_field.setPlaceholderText(g_message.UI_20251231_180003)
         grid_layout.addWidget(self.date_field, 0, 2, 1, 1)
 
         self.track_field = QLineEdit()
-        self.track_field.setPlaceholderText(MESSAGE.UI_20251231_180004)
+        self.track_field.setPlaceholderText(g_message.UI_20251231_180004)
         grid_layout.addWidget(self.track_field, 0, 3, 1, 1)
 
         self.link_box = LinkComboBox()
@@ -103,7 +103,7 @@ class Page2Widget(QWidget):
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(10000)
-        self._save_timer.timeout.connect(lambda: [show_toast_msg(MESSAGE.UI_20251231_180010), 
+        self._save_timer.timeout.connect(lambda: [show_toast_msg(g_message.UI_20251231_180010), 
                                                   with_busy_cursor(self.theme_kanban.save_metadata_file)()])
 
         self.setup_ui()
@@ -200,8 +200,8 @@ class Page2Widget(QWidget):
         if not self.theme_kanban:
             return
         
-        sources = settings.ui_cov_sources
-        country = settings.ui_cov_country
+        sources = g_settings.ui_cov_sources
+        country = g_settings.ui_cov_country
 
         ps = self.album_table_view.get_selected_ps()
         for p in ps:

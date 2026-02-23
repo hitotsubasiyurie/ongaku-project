@@ -1,7 +1,7 @@
 from PySide6.QtGui import QPalette, QColor
 from PySide6.QtWidgets import QApplication
 
-from src.core.settings import settings
+from src.core.settings import g_settings
 
 BUTTON_QSS = """
 QPushButton {{
@@ -88,5 +88,5 @@ class LightTheme:
         app.setPalette(light_palette)
 
 
-current_theme = next((t for t in [DarkTheme, LightTheme] if t.NAME == settings.ui_color_theme), DarkTheme)
+current_theme = next((t for t in [DarkTheme, LightTheme] if t.NAME == g_settings.ui_color_theme), DarkTheme)
 

@@ -8,9 +8,9 @@ from PySide6.QtGui import QPainter, QAction, QPalette, QIcon
 from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptionViewItem, QTableView, QHeaderView,
                                QAbstractItemView)
 
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import Kanban
-from src.core.settings import settings
+from src.core.settings import g_settings
 from src.gui.color_theme import current_theme
 from src.gui.custom import CustomTableItemModel
 
@@ -20,8 +20,8 @@ class ThemeTableItemModel(CustomTableItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers: list[str] = [MESSAGE.UI_20260101_112201, MESSAGE.UI_20260101_112202, MESSAGE.UI_20260101_112203, 
-                                   MESSAGE.UI_20260101_112204, MESSAGE.UI_20260101_112205, MESSAGE.UI_20260101_112206]
+        self.headers: list[str] = [g_message.UI_20260101_112201, g_message.UI_20260101_112202, g_message.UI_20260101_112203, 
+                                   g_message.UI_20260101_112204, g_message.UI_20260101_112205, g_message.UI_20260101_112206]
 
         self.kanban: Optional[Kanban] = None
         # 播放中索引
@@ -83,7 +83,7 @@ class ThemeTableItemModel(CustomTableItemModel):
         # 列表头 播放中 仅展示装饰图标
         if orientation == Qt.Orientation.Vertical and self.layout_ps and self.layout_ps[section] == self.playing_p:
             if role == Qt.ItemDataRole.DecorationRole:
-                return QIcon(f"./assets/{settings.ui_color_theme}/locate.png")
+                return QIcon(f"./assets/{g_settings.ui_color_theme}/locate.png")
             else:
                 return
         
@@ -199,7 +199,7 @@ class ThemeTableView(QTableView):
     def setup_context_menu(self) -> None:
         """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction(MESSAGE.UI_20260101_112226, self)
+        action = QAction(g_message.UI_20260101_112226, self)
         action.triggered.connect(self.action_edit_clicked.emit)
         self.addAction(action)
 

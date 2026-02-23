@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QFrame, QStyledItemDelegate, QWidget, QStyleOptio
                                QAbstractItemView, QStyle)
 
 from src.core.basemodels import TrackMark
-from src.core.i18n import MESSAGE
+from src.core.i18n import g_message
 from src.core.kanban import ResourceState, ThemeKanban
 from src.gui.color_theme import current_theme
 from src.gui.custom.custom_table_item_model import CustomTableItemModel
@@ -21,7 +21,7 @@ class AlbumTableItemModel(CustomTableItemModel):
     def __init__(self, parent: QObject = None) -> None:
         super().__init__(parent)
 
-        self.headers: list[str] = ["S", MESSAGE.UI_20260101_112207, MESSAGE.UI_20260101_112208, MESSAGE.UI_20260101_112209]
+        self.headers: list[str] = ["S", g_message.UI_20260101_112207, g_message.UI_20260101_112208, g_message.UI_20260101_112209]
         
         self.theme_kanban: Optional[ThemeKanban] = None
 
@@ -263,16 +263,16 @@ class AlbumTableView(QTableView):
     def setup_context_menu(self) -> None:
         """初始化 右键菜单"""
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        action = QAction(MESSAGE.UI_20260101_112226, self)
+        action = QAction(g_message.UI_20260101_112226, self)
         action.triggered.connect(self.action_edit_clicked.emit)
         self.addAction(action)
-        action = QAction(MESSAGE.UI_20260101_112227, self)
+        action = QAction(g_message.UI_20260101_112227, self)
         action.triggered.connect(self.action_delete_clicked.emit)
         self.addAction(action)
-        action = QAction(MESSAGE.UI_20260101_112228, self)
+        action = QAction(g_message.UI_20260101_112228, self)
         action.triggered.connect(self.action_locate_clicked.emit)
         self.addAction(action)
-        action = QAction(MESSAGE.UI_20260101_112229, self)
+        action = QAction(g_message.UI_20260101_112229, self)
         action.triggered.connect(self.action_search_cover_clicked.emit)
         self.addAction(action)
 

@@ -3,10 +3,9 @@ from pathlib import Path
 
 import rtoml
 
-from src.cli.common import album_to_unique_str, albums_assignment, abstract_tracks_info
-from src.cli.common import easy_linput
+from cli.operations.common import album_to_unique_str, albums_assignment, abstract_tracks_info
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput
 from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.utils import dump_toml
@@ -23,7 +22,7 @@ DST_TRACKS = "DST_TRACKS"
 
 
 def main():
-    lprint(g_message.WF_20251204_195021)
+    cprint(g_message.WF_20251204_195021)
 
     file_str = easy_linput(g_message.WF_20251204_195022, return_type=str)
     metadata_files = list(map(Path, [s.strip().strip("'\"") for s in file_str.split("|")]))
@@ -32,7 +31,7 @@ def main():
     dst_ky = easy_linput(g_message.WF_20251204_195024, default="", return_type=str)
 
     if not src_ky and not dst_ky:
-        lprint(g_message.WF_20251204_195025)
+        cprint(g_message.WF_20251204_195025)
         return
 
     filter_catno = easy_linput(g_message.WF_20251204_195026, default="N", return_type=str) == "Y"
@@ -72,7 +71,7 @@ def main():
     dump_toml({str(i+1): d for i, d in enumerate(merge_details)}, merge_details_file)
 
     # 用户编辑 merge_details
-    lprint(g_message.WF_20251204_195028.format(merge_details_file))
+    cprint(g_message.WF_20251204_195028.format(merge_details_file))
     if not easy_linput(g_message.WF_20251204_195029, default="N", return_type=str)  == "Y":
         return
 
@@ -81,7 +80,7 @@ def main():
 
     replace_mask = easy_linput(g_message.WF_20251204_195030)
     if not len(replace_mask) == 4 and set(replace_mask).issubset({"0", "1"}):
-        lprint(g_message.WF_20251204_195031)
+        cprint(g_message.WF_20251204_195031)
         return
     
     replace_blank = easy_linput(g_message.WF_20251204_195032, default="Y", return_type=str)  == "Y"
@@ -92,7 +91,7 @@ def main():
 
         # 检查编辑
         if d[SRC_ALBUM] != src_unique_strs[row] or d[DST_ALBUM] != dst_unique_strs[col]:
-            lprint(g_message.WF_20251204_195033)
+            cprint(g_message.WF_20251204_195033)
             return
         
         if not d[IS_APPLY]:
@@ -112,5 +111,5 @@ def main():
         albums = list(itertools.filterfalse(remove_srcs.__contains__, albums))
         dump_albums_to_toml(albums, file)
 
-    lprint(g_message.WF_20251204_195034)
+    cprint(g_message.WF_20251204_195034)
 

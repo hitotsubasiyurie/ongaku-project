@@ -11,8 +11,8 @@ def _load_toml(p: Path) -> dict:
 
 
 _data = {
-    **_load_toml(Path("langs", "en.toml")),
-    **_load_toml(Path("langs", f"{g_settings.language}.toml"))
+    **_load_toml(Path("locales", "en.toml")),
+    **_load_toml(Path("locales", f"{g_settings.language}.toml"))
 }
 
 

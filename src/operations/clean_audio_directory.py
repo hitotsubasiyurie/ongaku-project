@@ -2,9 +2,8 @@ import itertools
 import shutil
 from pathlib import Path
 
-from src.cli.common import easy_linput
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput
 from src.core.storage import AUDIO_EXTS
 
 OPERATION_NAME = g_message.WF_20251204_194010
@@ -18,5 +17,5 @@ def main() -> None:
         if not list(itertools.chain.from_iterable(d.rglob(f"*{ext}") for ext in AUDIO_EXTS)):
             shutil.rmtree(d)
 
-    lprint(g_message.WF_20251204_194012)
+    cprint(g_message.WF_20251204_194012)
 

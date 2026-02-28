@@ -6,13 +6,13 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from src.cli.common import easy_linput
 from src.cli.operations.health_check import main as health_check
 from src.core.basemodels import Album, Track, TrackMark
 from src.core.cache import with_cache
 from src.core.i18n import g_message
 from src.core.kanban import Kanban, MetadataState, ResourceState
-from src.core.logger import lprint, logger
+from src.core.logger import logger
+from src.core.console import cinput, cprint, easy_linput
 from src.core.settings import g_settings
 from src.core.storage import AUDIO_EXTS
 from src.external import calculate_audio_md5, calculate_rar_audio_md5
@@ -59,7 +59,7 @@ def build_cache_audio_md5(export_dir: Path, kanban: Kanban) -> None:
 
 
 def check_favourites(kanban: Kanban) -> bool:
-    lprint(f"{'-'*4} {g_message.WF_20260128_092704} {'-'*4}")
+    cprint(f"{'-'*4} {g_message.WF_20260128_092704} {'-'*4}")
 
     missing_favs, missing_covers = [], []
 
@@ -70,11 +70,11 @@ def check_favourites(kanban: Kanban) -> bool:
                             if t.mark == TrackMark.FAVOURITE and s == ResourceState.MISSING)
 
     if missing_favs or missing_covers:
-        missing_favs and [lprint(f) for f in missing_favs] and lprint(g_message.WF_20251204_194427)
-        missing_covers and [lprint(f) for f in missing_covers] and lprint(g_message.WF_20251204_194428)
+        missing_favs and [cprint(f) for f in missing_favs] and cprint(g_message.WF_20251204_194427)
+        missing_covers and [cprint(f) for f in missing_covers] and cprint(g_message.WF_20251204_194428)
         return False
     else:
-        lprint(g_message.WF_20260128_092707)
+        cprint(g_message.WF_20260128_092707)
         return True
 
 
@@ -113,7 +113,7 @@ def get_eported_map(export_dir: Path, kanban: Kanban) -> dict[tuple[int, int, in
 # 主函数
 
 def main() -> None:
-    lprint(g_message.WF_20251204_194421)
+    cprint(g_message.WF_20251204_194421)
 
     health_check()
 
@@ -133,7 +133,7 @@ def main() -> None:
     exported = set(exported_map.values())
     dirty_files = [f for f in export_dir.rglob("*") if f.is_file() and f not in exported]
     if dirty_files:
-        [lprint(str(f)) for f in dirty_files]
+        [cprint(str(f)) for f in dirty_files]
         if not easy_linput(g_message.WF_20251204_194429, default="Y", return_type=str)  == "Y":
             return
         [f.unlink() for f in dirty_files]
@@ -193,6 +193,6 @@ def main() -> None:
                     continue
 
     pbar.close()
-    lprint(g_message.WF_20251204_194432)
+    cprint(g_message.WF_20251204_194432)
 
 

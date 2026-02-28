@@ -7,7 +7,7 @@ from datetime import datetime
 from functools import wraps
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import TextIO, Callable
+from typing import Callable
 
 from src.core.settings import g_settings
 
@@ -119,28 +119,6 @@ logger.setLevel(_LOG_LEVEL_MAP.get(g_settings.log_level, 2))
 ################################################################################
 ### logger 工具函数
 ################################################################################
-
-
-def lprint(*values: object, sep: str | None = " ", end: str | None = "\n", 
-            file: TextIO | None = None, flush: bool = False) -> None:
-    """
-    print 函数，在调用之前先将内容原样写入日志文件。
-    """
-    s = sep.join(str(a) for a in values) + end
-    logger.debug(s, extra={WithRawFormatter.IN_RAW_KEY: True})
-
-    print(*values, sep=sep, end=end, file=file, flush=flush)
-
-
-def linput(prompt: object  = "") -> str:
-    """
-    input 函数，在调用之后将提示和输入原样写入日志文件。
-    """
-    s = input(prompt)
-    logger.debug(prompt + s + "\n", extra={WithRawFormatter.IN_RAW_KEY: True})
-
-    return s
-
 
 def logger_watched(level: int) -> Callable:
     """

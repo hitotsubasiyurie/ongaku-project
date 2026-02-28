@@ -5,11 +5,11 @@ from pathlib import Path
 
 import rtoml
 
-from src.cli.common import (easy_linput, analyze_album, analyze_track, album_to_unique_str,
+from cli.operations.common import (analyze_album, analyze_track, album_to_unique_str,
                             track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 from src.core.basemodels import Album
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput
 from src.core.settings import g_settings
 from src.core.storage import AUDIO_EXTS, album_stemname, track_stemnames, load_albums_from_toml
 from src.utils import dump_toml
@@ -113,7 +113,7 @@ def apply_archive_detail(detail: dict, is_replace_same: bool) -> None:
 # 主函数
 
 def main() -> None:
-    lprint(g_message.WF_20251204_190037)
+    cprint(g_message.WF_20251204_190037)
 
     metadata_file = easy_linput(g_message.WF_20251204_190038, return_type=Path)
     src_parent = easy_linput(g_message.WF_20251204_190039, return_type=Path)
@@ -143,7 +143,7 @@ def main() -> None:
     dump_toml({str(i+1): d for i, d in enumerate(archive_details)}, archive_details_file)
 
     # 等待用户编辑 archive_details
-    lprint(g_message.WF_20251204_190042.format(archive_details_file))
+    cprint(g_message.WF_20251204_190042.format(archive_details_file))
     if not easy_linput(g_message.WF_20251204_190043, default="N", return_type=str)  == "Y":
         return
     
@@ -155,7 +155,7 @@ def main() -> None:
     for d in archive_details:
         apply_archive_detail(d, is_replace_same)
 
-    lprint(g_message.WF_20251204_190045)
+    cprint(g_message.WF_20251204_190045)
 
 
 

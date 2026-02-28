@@ -2,9 +2,8 @@ import msvcrt
 import os
 from pathlib import Path
 
-from src.cli.common import easy_linput
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput
 
 OPERATION_NAME = g_message.WF_20251204_194720
 
@@ -28,7 +27,7 @@ ENCODINGS = PREFERRED_ENCODINGS + list(set(TEXT_ENCODINGS) - set(PREFERRED_ENCOD
 
 
 def main():
-    lprint(g_message.WF_20251204_194721)
+    cprint(g_message.WF_20251204_194721)
 
     directory = easy_linput(g_message.WF_20251204_194722, return_type=Path)
     suffixs_str = easy_linput(g_message.WF_20251204_194723, default=".cue", return_type=str)

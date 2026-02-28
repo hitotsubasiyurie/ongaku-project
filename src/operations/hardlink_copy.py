@@ -6,9 +6,8 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from src.cli.common import easy_linput
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput
 
 OPERATION_NAME = g_message.WF_20251204_195220
 
@@ -78,13 +77,13 @@ def _hardlink_copy(src: Path, dst: Path) -> tuple[int, int]:
 # 主函数
 
 def hardlink_copy():
-    lprint(g_message.WF_20251204_195221)
+    cprint(g_message.WF_20251204_195221)
 
     src = easy_linput(g_message.WF_20251204_195222, return_type=Path)
     dst_parent = easy_linput(g_message.WF_20251204_195223, return_type=Path)
 
     if not src.exists():
-        lprint(g_message.WF_20251204_195224)
+        cprint(g_message.WF_20251204_195224)
         return
 
     dst = dst_parent / src.name
@@ -98,7 +97,7 @@ def hardlink_copy():
     if dst.exists():
         dirty = list(reversed(get_dirty_files(src, dst)))
         if dirty:
-            [lprint(p) for p in dirty]
+            [cprint(p) for p in dirty]
             if not easy_linput(g_message.WF_20251204_195227, default="Y", return_type=str) == "Y":
                 return
             [p.unlink() if p.is_file() else p.rmdir() for p in dirty]
@@ -107,6 +106,7 @@ def hardlink_copy():
 
     c1, c2 = _hardlink_copy(src, dst)
 
-    lprint(g_message.WF_20251204_195225.format(c1, c2, time.time()-st))
+    cprint(g_message.WF_20251204_195225.format(c1, c2, time.time()-st))
+
 
 

@@ -5,7 +5,7 @@ import orjson
 import psycopg
 from psycopg.rows import tuple_row
 
-from src.cli.common import abstract_tracks_info
+from cli.operations.common import abstract_tracks_info
 from src.core.basemodels import Album
 from src.core.exception import OngakuException
 from src.core.logger import logger

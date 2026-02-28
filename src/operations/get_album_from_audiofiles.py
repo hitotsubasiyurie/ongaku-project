@@ -2,10 +2,9 @@ import itertools
 from datetime import datetime
 from pathlib import Path
 
-from src.cli.common import analyze_album
-from src.cli.common import easy_linput
+from cli.operations.common import analyze_album
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput
 from src.core.storage import AUDIO_EXTS, load_albums_from_toml, dump_albums_to_toml
 
 OPERATION_NAME = g_message.WF_20251204_194620
@@ -14,7 +13,7 @@ OPERATION_NAME = g_message.WF_20251204_194620
 # 主函数
 
 def main() -> None:
-    lprint(g_message.WF_20251204_194621)
+    cprint(g_message.WF_20251204_194621)
 
     input_path = easy_linput(g_message.WF_20251204_194622, return_type=Path)
     resource_directory = easy_linput(g_message.WF_20251204_194623, return_type=Path)
@@ -37,7 +36,7 @@ def main() -> None:
     albums = list(map(analyze_album, album_dirs))
 
     if not albums:
-        lprint(g_message.WF_20251204_194624)
+        cprint(g_message.WF_20251204_194624)
         return
 
     if not easy_linput(g_message.WF_20251204_194625.format(len(albums), metadata_file), default="Y", return_type=str)  == "Y":
@@ -45,7 +44,7 @@ def main() -> None:
 
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.is_file() else []
     dump_albums_to_toml(exist_albums + albums, metadata_file)
-    lprint(g_message.WF_20251204_194626)
+    cprint(g_message.WF_20251204_194626)
 
 
 

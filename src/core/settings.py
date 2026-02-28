@@ -10,7 +10,7 @@ from src.utils import dump_toml
 SETTINGS_FILE = Path("settings.toml")
 
 _LOG_LEVELS = (1, 2, 3, 4, 5)
-_LANGUAGES = ("en", "zh_cn", "ja", "ko")
+_LANGUAGES = ("en", "zh-CN", "ja", "ko")
 _COLOR_THEMES = ("dark", "light")
 
 
@@ -22,7 +22,7 @@ class _Settings:
     BIN_DIRECTORY = os.path.abspath("bin")
 
     log_level: int = field(default=2, validator=validators.in_(_LOG_LEVELS))
-    language: str = field(default="zh_cn", validator=validators.in_(_LANGUAGES))
+    language: str = field(default="en", validator=validators.in_(_LANGUAGES))
 
     metadata_directory: str = field(default=r"D:\ongaku-metadata", converter=os.path.abspath)
     resource_directory: str = field(default=r"D:\ongaku-resource", converter=os.path.abspath)

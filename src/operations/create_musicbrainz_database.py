@@ -7,10 +7,10 @@ from typing import Generator
 import orjson
 from tqdm import tqdm
 
-from src.cli.common import easy_linput
 from src.core.basemodels import Album
 from src.core.i18n import g_message
-from src.core.logger import logger, lprint
+from src.core.logger import logger
+from src.core.console import cinput, cprint, easy_linput
 from src.core.settings import g_settings
 from src.external import pg_ctl_start, pg_ctl_stop, pg_dump_database
 from src.scraper.musicbrainz_database import init_musicbrainz_database, MusicBrainzDatabase
@@ -47,7 +47,7 @@ def release_to_albums(recordings: dict, release: dict) -> list[Album]:
 
 
 def main():
-    lprint(g_message.WF_20251204_194121)
+    cprint(g_message.WF_20251204_194121)
 
     parent_directory: Path = easy_linput(g_message.WF_20251204_194122, return_type=Path)
 
@@ -69,10 +69,10 @@ def main():
 
     # 初始化数据目录
     init_musicbrainz_database(pgdata)
-    lprint(g_message.WF_20251204_194124)
+    cprint(g_message.WF_20251204_194124)
 
     pg_ctl_start(pgdata)
-    lprint(g_message.WF_20251204_194125)
+    cprint(g_message.WF_20251204_194125)
 
     database = MusicBrainzDatabase()
 
@@ -109,11 +109,11 @@ def main():
     pbar.close()
 
     # 备份数据库
-    lprint(g_message.WF_20251204_194128)
+    cprint(g_message.WF_20251204_194128)
     dmpfile = os.path.join(g_settings.TMP_DIRECTORY, "musicbrainz.dmp")
     pg_dump_database("musicbrainz", dmpfile)
-    lprint(g_message.WF_20251204_194127.format(dmpfile))
+    cprint(g_message.WF_20251204_194127.format(dmpfile))
 
     pg_ctl_stop(pgdata)
-    lprint(g_message.WF_20251204_194126)
+    cprint(g_message.WF_20251204_194126)
 

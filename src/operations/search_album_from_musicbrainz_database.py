@@ -3,10 +3,9 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from src.cli.common import abstract_tracks_info
-from src.cli.common import easy_linput
+from cli.operations.common import abstract_tracks_info
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput
 from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.scraper.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
@@ -16,14 +15,14 @@ OPERATION_NAME = g_message.WF_20251204_195520
 # 主函数
 
 def main():
-    lprint(g_message.WF_20251204_195521)
+    cprint(g_message.WF_20251204_195521)
 
     # 检查 PGDATA 路径
     pgdata = Path(g_settings.TMP_DIRECTORY, "musicbrainz_pgdata")
     if not pgdata.is_dir() or not Path(pgdata, "postgresql.conf").is_file():
-        lprint(g_message.WF_20251204_195522.format(pgdata))
+        cprint(g_message.WF_20251204_195522.format(pgdata))
         return
-    lprint(g_message.WF_20251204_195523.format(pgdata))
+    cprint(g_message.WF_20251204_195523.format(pgdata))
     
     metadata_file = easy_linput(g_message.WF_20251204_195524, return_type=Path)
     filter_masks = easy_linput(g_message.WF_20251204_195525, default="1000, 0101", return_type=str)
@@ -33,7 +32,7 @@ def main():
     result_file = metadata_file.parent / f"musicbrainz_database-{datetime.now().strftime("%Y%m%d-%H%M%S")}.toml"
 
     pg_ctl_start(pgdata)
-    lprint(g_message.WF_20251204_195528)
+    cprint(g_message.WF_20251204_195528)
 
     database = MusicBrainzDatabase()
 
@@ -68,10 +67,10 @@ def main():
     
     dump_albums_to_toml(result_albums, result_file)
 
-    lprint(g_message.WF_20251204_195529.format(len(result_albums), result_file))
+    cprint(g_message.WF_20251204_195529.format(len(result_albums), result_file))
 
     pg_ctl_stop(pgdata)
-    lprint(g_message.WF_20251204_195530)
+    cprint(g_message.WF_20251204_195530)
 
 
 

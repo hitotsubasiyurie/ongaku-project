@@ -2,9 +2,8 @@ import shutil
 import time
 from pathlib import Path
 
-from src.cli.common import easy_linput
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput
 
 OPERATION_NAME = g_message.WF_20251204_194320
 
@@ -12,12 +11,12 @@ OPERATION_NAME = g_message.WF_20251204_194320
 
 def remove_files():
 
-    lprint(g_message.WF_20251204_194321)
+    cprint(g_message.WF_20251204_194321)
 
     given_path = easy_linput(g_message.WF_20251204_194322, return_type=Path)
 
     if not given_path.exists():
-        lprint(g_message.WF_20251204_194323)
+        cprint(g_message.WF_20251204_194323)
         return
     
     if not easy_linput(g_message.WF_20251204_194324, default="N", return_type=str)  == "Y":
@@ -29,7 +28,7 @@ def remove_files():
     else:
         shutil.rmtree(given_path)
     
-    lprint(g_message.WF_20251204_194325.format(time.time() - st))
+    cprint(g_message.WF_20251204_194325.format(time.time() - st))
 
 
 

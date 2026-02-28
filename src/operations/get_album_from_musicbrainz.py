@@ -3,9 +3,9 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from src.cli.common import easy_linput
 from src.core.i18n import g_message
-from src.core.logger import logger, lprint
+from src.core.logger import logger
+from src.core.console import cinput, cprint, easy_linput
 from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.scraper import MusicBrainzScraper
@@ -17,7 +17,7 @@ OPERATION_NAME = g_message.WF_20251204_195320
 # 主函数
 
 def main():
-    lprint(g_message.WF_20251204_195321)
+    cprint(g_message.WF_20251204_195321)
 
     input_path = easy_linput(g_message.WF_20251204_195322.format(g_settings.TMP_DIRECTORY), 
                              default=Path(g_settings.TMP_DIRECTORY), return_type=Path)
@@ -41,7 +41,7 @@ def main():
             r_ids.extend([r["id"] for r in resp["releases"]])
             [r_ids.extend(scraper.get_album_ids_from_release_group(rg["id"])) for rg in resp["release-groups"]]
         else:
-            lprint(g_message.WF_20251204_195324)
+            cprint(g_message.WF_20251204_195324)
             return
     
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.exists() else []
@@ -55,11 +55,11 @@ def main():
     # 检查 PGDATA 路径
     pgdata = Path(g_settings.TMP_DIRECTORY, "musicbrainz_pgdata")
     if not pgdata.is_dir() or not Path(pgdata, "postgresql.conf").is_file():
-        lprint(g_message.WF_20251204_195325.format(pgdata))
+        cprint(g_message.WF_20251204_195325.format(pgdata))
         database = None
     else:
-        lprint(g_message.WF_20251204_195326.format(pgdata))
-        lprint(g_message.WF_20251204_195328)
+        cprint(g_message.WF_20251204_195326.format(pgdata))
+        cprint(g_message.WF_20251204_195328)
         pg_ctl_start(pgdata)
         database = MusicBrainzDatabase()
 
@@ -82,10 +82,10 @@ def main():
     
     dump_albums_to_toml(exist_albums + new_albums, metadata_file)
     
-    lprint(g_message.WF_20251204_195327.format(len(new_albums), metadata_file))
+    cprint(g_message.WF_20251204_195327.format(len(new_albums), metadata_file))
 
     if database:
-        lprint(g_message.WF_20251204_195329)
+        cprint(g_message.WF_20251204_195329)
         pg_ctl_stop(pgdata)
 
 

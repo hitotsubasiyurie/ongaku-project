@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 from src.core.i18n import g_message
-from src.core.logger import lprint
+from src.core.console import cinput, cprint
 from src.core.settings import g_settings
 from src.core.kanban import Kanban
 from src.external import rar_archive, rar_add
@@ -39,11 +39,10 @@ def archive_resource() -> None:
             else:
                 rar_archive(ak.album_archive, ak.album_dir)
             shutil.rmtree(ak.album_dir)
-            lprint(g_message.WF_20251221_202003.format(current, total, ak.album_dir, ak.album_archive))
+            cprint(g_message.WF_20251221_202003.format(current, total, ak.album_dir, ak.album_archive))
 
         # 清理 空的 主题目录
         if os.path.isdir(tk.theme_resource_dir) and not os.listdir(tk.theme_resource_dir):
             os.rmdir(tk.theme_resource_dir)
-
 
 

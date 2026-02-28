@@ -6,11 +6,10 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from src.cli.common import easy_linput
 from src.core.cache import with_cache
 from src.core.i18n import g_message
 from src.core.kanban import Kanban, cached_rar_list, cached_rar_stats
-from src.core.logger import lprint
+from src.core.console import cinput, cprint, easy_linput, g_stdout
 from src.core.settings import g_settings
 from src.external import compress_png_file, rar_extract, rar_add
 
@@ -24,7 +23,7 @@ def build_cache_rar() -> None:
     if not rar_files:
         return
 
-    pbar = tqdm(total=len(rar_files), desc=g_message.WF_20260128_092703, miniters=1)
+    pbar = tqdm(total=len(rar_files), desc=g_message.WF_20260128_092703, file=g_stdout, miniters=1)
     executor = ThreadPoolExecutor()
     for f in rar_files:
         future = executor.submit(lambda f = f: [cached_rar_list(f), cached_rar_stats(f)])
@@ -35,7 +34,7 @@ def build_cache_rar() -> None:
 
 
 def check_cover_size(kanban: Kanban) -> bool:
-    lprint(f"{'-'*4} {g_message.WF_20260128_092705} {'-'*4}")
+    cprint(f"{'-'*4} {g_message.WF_20260128_092705} {'-'*4}")
 
     _list = []
     for ak in itertools.chain.from_iterable(tk.album_kanbans for tk in kanban.theme_kanbans):
@@ -46,13 +45,13 @@ def check_cover_size(kanban: Kanban) -> bool:
         _list.append(ak.cover_path)
 
     if not _list:
-        lprint(g_message.WF_20260128_092709)
+        cprint(g_message.WF_20260128_092709)
         return True
 
-    [lprint(os.path.join(parent, name)) for parent, name in _list]
-    lprint(g_message.WF_20260128_092706)
+    [cprint(os.path.join(parent, name)) for parent, name in _list]
+    cprint(g_message.WF_20260128_092706)
     if not easy_linput(g_message.WF_20260128_092708, default="Y") == "Y":
-        lprint(g_message.WF_20260128_092711)
+        cprint(g_message.WF_20260128_092711)
         return False
 
     pbar = tqdm(total=len(_list), miniters=1)
@@ -70,12 +69,12 @@ def check_cover_size(kanban: Kanban) -> bool:
             compress_png_file(cover)
             rar_add(p[0], [cover])
 
-    lprint(g_message.WF_20260128_092710)
-    lprint(g_message.WF_20260128_092709)
+    cprint(g_message.WF_20260128_092710)
+    cprint(g_message.WF_20260128_092709)
 
 
 def check_dirty_file(kanban: Kanban) -> bool:
-    lprint(f"{'-'*4} {g_message.WF_20260128_092712} {'-'*4}")
+    cprint(f"{'-'*4} {g_message.WF_20260128_092712} {'-'*4}")
 
     aset = list(Path(g_settings.resource_directory).rglob("*"))
     aset.extend(os.path.join(p, n) for p in Path(g_settings.resource_directory).rglob("*.rar") for n in cached_rar_list(p))
@@ -92,17 +91,17 @@ def check_dirty_file(kanban: Kanban) -> bool:
 
     dirty = [p for p in (aset - bset) if len(p) >= min_len]
     if not dirty:
-        lprint(g_message.WF_20260128_092714)
+        cprint(g_message.WF_20260128_092714)
         return
 
-    [lprint(p) for p in dirty]
-    lprint(g_message.WF_20260128_092713)
+    [cprint(p) for p in dirty]
+    cprint(g_message.WF_20260128_092713)
 
 
 # 主函数
 
-def main() -> None:
-    lprint(g_message.WF_20260128_092700)
+def health_check() -> None:
+    cprint(g_message.WF_20260128_092700)
     kanban = Kanban(g_settings.metadata_directory, g_settings.resource_directory)
 
     build_cache_rar()

@@ -15,7 +15,7 @@ from src.external import open_in_explorer, copy_to_clipboard
 from src.gui.common import with_busy_cursor
 from src.gui.features.put_away_resource import put_away_cover_file, put_away_track_file, \
     put_away_track_files
-from src.gui.notifier import show_toast_msg, show_confirm_msg
+from gui.notify import show_toast_msg, show_confirm_msg
 from src.gui.page2.album_table_view import AlbumTableView
 from src.gui.page2.cover_label import CoverLabel
 from src.gui.page2.link_combo_box import LinkComboBox

@@ -15,7 +15,7 @@ else:
 from src.core.settings import g_settings
 from src.operations.common import loop_for_actions
 from src.operations import OPERATIONS
-from src.core.console import easy_linput, cprint
+from src.core.console import easy_cinput, cprint
 from src.core.logger import logger
 
 
@@ -23,7 +23,7 @@ def loop_for_actions(message2action: dict[str, Callable]) -> None:
     messages, actions = list(message2action.keys()), list(message2action.values())
     while True:
         cprint("\n".join(f"{i+1}. {m}" for i, m in enumerate(messages)) + "\n")
-        number = easy_linput("?: ", return_type=int)
+        number = easy_cinput("?: ", return_type=int)
         cprint()
 
         if not (0 <= number - 1 <= len(messages)):

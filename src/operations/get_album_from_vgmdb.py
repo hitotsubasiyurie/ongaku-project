@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from src.core.i18n import g_message
 from src.core.logger import logger
-from src.core.console import cinput, cprint, easy_linput
+from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.scraper import VGMdbScraper
@@ -16,9 +16,9 @@ OPERATION_NAME = g_message.WF_20251204_194920
 def main():
     cprint(g_message.WF_20251204_194921)
 
-    input_path = easy_linput(g_message.WF_20251204_194922.format(g_settings.TMP_DIRECTORY), 
+    input_path = easy_cinput(g_message.WF_20251204_194922.format(g_settings.TMP_DIRECTORY), 
                              default=Path(g_settings.TMP_DIRECTORY), return_type=Path)
-    input_urls = easy_linput(g_message.WF_20251204_194923, return_type=str)
+    input_urls = easy_cinput(g_message.WF_20251204_194923, return_type=str)
 
     # 创建目录
     if input_path.is_file():

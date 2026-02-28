@@ -12,7 +12,7 @@ from src.core.cache import with_cache
 from src.core.i18n import g_message
 from src.core.kanban import Kanban, MetadataState, ResourceState
 from src.core.logger import logger
-from src.core.console import cinput, cprint, easy_linput
+from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
 from src.core.storage import AUDIO_EXTS
 from src.external import calculate_audio_md5, calculate_rar_audio_md5
@@ -117,7 +117,7 @@ def main() -> None:
 
     health_check()
 
-    export_dir = easy_linput(g_message.WF_20251204_194422, return_type=Path)
+    export_dir = easy_cinput(g_message.WF_20251204_194422, return_type=Path)
 
     kanban = Kanban(g_settings.metadata_directory, g_settings.resource_directory)
 
@@ -134,7 +134,7 @@ def main() -> None:
     dirty_files = [f for f in export_dir.rglob("*") if f.is_file() and f not in exported]
     if dirty_files:
         [cprint(str(f)) for f in dirty_files]
-        if not easy_linput(g_message.WF_20251204_194429, default="Y", return_type=str)  == "Y":
+        if not easy_cinput(g_message.WF_20251204_194429, default="Y", return_type=str)  == "Y":
             return
         [f.unlink() for f in dirty_files]
         [d.rmdir() for d in reversed(list(filter(Path.is_dir, export_dir.rglob("*")))) if not os.listdir(d)]

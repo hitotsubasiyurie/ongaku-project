@@ -9,7 +9,7 @@ from cli.operations.common import (analyze_album, analyze_track, album_to_unique
                             track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 from src.core.basemodels import Album
 from src.core.i18n import g_message
-from src.core.console import cinput, cprint, easy_linput
+from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
 from src.core.storage import AUDIO_EXTS, album_stemname, track_stemnames, load_albums_from_toml
 from src.utils import dump_toml
@@ -115,10 +115,10 @@ def apply_archive_detail(detail: dict, is_replace_same: bool) -> None:
 def main() -> None:
     cprint(g_message.WF_20251204_190037)
 
-    metadata_file = easy_linput(g_message.WF_20251204_190038, return_type=Path)
-    src_parent = easy_linput(g_message.WF_20251204_190039, return_type=Path)
-    dst_parent = easy_linput(g_message.WF_20251204_190040, return_type=Path)
-    filter_trackcount = easy_linput(g_message.WF_20251204_190041, default="Y", return_type=str)  == "Y"
+    metadata_file = easy_cinput(g_message.WF_20251204_190038, return_type=Path)
+    src_parent = easy_cinput(g_message.WF_20251204_190039, return_type=Path)
+    dst_parent = easy_cinput(g_message.WF_20251204_190040, return_type=Path)
+    filter_trackcount = easy_cinput(g_message.WF_20251204_190041, default="Y", return_type=str)  == "Y"
 
     theme_directory = Path(dst_parent, metadata_file.stem)
     archive_details_file = Path(g_settings.TMP_DIRECTORY, "archive_details.toml")
@@ -144,13 +144,13 @@ def main() -> None:
 
     # 等待用户编辑 archive_details
     cprint(g_message.WF_20251204_190042.format(archive_details_file))
-    if not easy_linput(g_message.WF_20251204_190043, default="N", return_type=str)  == "Y":
+    if not easy_cinput(g_message.WF_20251204_190043, default="N", return_type=str)  == "Y":
         return
     
     # 应用 archive_details
     archive_details = list(rtoml.loads(archive_details_file.read_text(encoding="utf-8")).values())
 
-    is_replace_same = easy_linput(g_message.WF_20251204_190044, default="N", return_type=str)  == "Y"
+    is_replace_same = easy_cinput(g_message.WF_20251204_190044, default="N", return_type=str)  == "Y"
 
     for d in archive_details:
         apply_archive_detail(d, is_replace_same)

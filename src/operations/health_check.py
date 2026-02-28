@@ -9,7 +9,7 @@ from tqdm import tqdm
 from src.core.cache import with_cache
 from src.core.i18n import g_message
 from src.core.kanban import Kanban, cached_rar_list, cached_rar_stats
-from src.core.console import cinput, cprint, easy_linput, g_stdout
+from src.core.console import cinput, cprint, easy_cinput, g_stdout
 from src.core.settings import g_settings
 from src.external import compress_png_file, rar_extract, rar_add
 
@@ -50,7 +50,7 @@ def check_cover_size(kanban: Kanban) -> bool:
 
     [cprint(os.path.join(parent, name)) for parent, name in _list]
     cprint(g_message.WF_20260128_092706)
-    if not easy_linput(g_message.WF_20260128_092708, default="Y") == "Y":
+    if not easy_cinput(g_message.WF_20260128_092708, default="Y") == "Y":
         cprint(g_message.WF_20260128_092711)
         return False
 

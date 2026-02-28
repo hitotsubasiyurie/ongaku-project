@@ -4,7 +4,7 @@ from pathlib import Path
 
 from cli.operations.common import analyze_album
 from src.core.i18n import g_message
-from src.core.console import cinput, cprint, easy_linput
+from src.core.console import cinput, cprint, easy_cinput
 from src.core.storage import AUDIO_EXTS, load_albums_from_toml, dump_albums_to_toml
 
 OPERATION_NAME = g_message.WF_20251204_194620
@@ -15,8 +15,8 @@ OPERATION_NAME = g_message.WF_20251204_194620
 def main() -> None:
     cprint(g_message.WF_20251204_194621)
 
-    input_path = easy_linput(g_message.WF_20251204_194622, return_type=Path)
-    resource_directory = easy_linput(g_message.WF_20251204_194623, return_type=Path)
+    input_path = easy_cinput(g_message.WF_20251204_194622, return_type=Path)
+    resource_directory = easy_cinput(g_message.WF_20251204_194623, return_type=Path)
 
     # 创建目录
     if input_path.is_file():
@@ -39,7 +39,7 @@ def main() -> None:
         cprint(g_message.WF_20251204_194624)
         return
 
-    if not easy_linput(g_message.WF_20251204_194625.format(len(albums), metadata_file), default="Y", return_type=str)  == "Y":
+    if not easy_cinput(g_message.WF_20251204_194625.format(len(albums), metadata_file), default="Y", return_type=str)  == "Y":
         return
 
     exist_albums = load_albums_from_toml(metadata_file) if metadata_file.is_file() else []

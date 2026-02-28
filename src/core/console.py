@@ -72,7 +72,7 @@ def cinput(prompt: str = "") -> str:
 _T = TypeVar("T")
 
 
-def easy_linput(prompt: str = "", default: Any = None, return_type: Type[_T] = str) -> _T:
+def easy_cinput(prompt: str = "", default: Any = None, return_type: Type[_T] = str) -> _T:
     """
     :param default: 默认为 None 时，会循环提示输入
     :param return_type: 返回结果类型

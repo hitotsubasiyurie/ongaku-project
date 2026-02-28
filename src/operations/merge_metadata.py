@@ -5,7 +5,7 @@ import rtoml
 
 from cli.operations.common import album_to_unique_str, albums_assignment, abstract_tracks_info
 from src.core.i18n import g_message
-from src.core.console import cinput, cprint, easy_linput
+from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.utils import dump_toml
@@ -24,18 +24,18 @@ DST_TRACKS = "DST_TRACKS"
 def main():
     cprint(g_message.WF_20251204_195021)
 
-    file_str = easy_linput(g_message.WF_20251204_195022, return_type=str)
+    file_str = easy_cinput(g_message.WF_20251204_195022, return_type=str)
     metadata_files = list(map(Path, [s.strip().strip("'\"") for s in file_str.split("|")]))
 
-    src_ky = easy_linput(g_message.WF_20251204_195023, default="", return_type=str)
-    dst_ky = easy_linput(g_message.WF_20251204_195024, default="", return_type=str)
+    src_ky = easy_cinput(g_message.WF_20251204_195023, default="", return_type=str)
+    dst_ky = easy_cinput(g_message.WF_20251204_195024, default="", return_type=str)
 
     if not src_ky and not dst_ky:
         cprint(g_message.WF_20251204_195025)
         return
 
-    filter_catno = easy_linput(g_message.WF_20251204_195026, default="N", return_type=str) == "Y"
-    filter_trackcount = easy_linput(g_message.WF_20251204_195027, default="Y", return_type=str) == "Y"
+    filter_catno = easy_cinput(g_message.WF_20251204_195026, default="N", return_type=str) == "Y"
+    filter_trackcount = easy_cinput(g_message.WF_20251204_195027, default="Y", return_type=str) == "Y"
 
     files_albums = list(map(load_albums_from_toml, metadata_files))
 
@@ -72,18 +72,18 @@ def main():
 
     # 用户编辑 merge_details
     cprint(g_message.WF_20251204_195028.format(merge_details_file))
-    if not easy_linput(g_message.WF_20251204_195029, default="N", return_type=str)  == "Y":
+    if not easy_cinput(g_message.WF_20251204_195029, default="N", return_type=str)  == "Y":
         return
 
     # 应用 merge_details
     merge_details = list(rtoml.loads(merge_details_file.read_text(encoding="utf-8")).values())
 
-    replace_mask = easy_linput(g_message.WF_20251204_195030)
+    replace_mask = easy_cinput(g_message.WF_20251204_195030)
     if not len(replace_mask) == 4 and set(replace_mask).issubset({"0", "1"}):
         cprint(g_message.WF_20251204_195031)
         return
     
-    replace_blank = easy_linput(g_message.WF_20251204_195032, default="Y", return_type=str)  == "Y"
+    replace_blank = easy_cinput(g_message.WF_20251204_195032, default="Y", return_type=str)  == "Y"
 
     remove_srcs = set()
 

@@ -2,8 +2,8 @@ import shutil
 import time
 from pathlib import Path
 
+from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
-from src.core.console import cinput, cprint, easy_cinput
 
 OPERATION_NAME = g_message.WF_20251204_194320
 

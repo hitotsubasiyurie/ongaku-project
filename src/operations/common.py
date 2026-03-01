@@ -1,7 +1,6 @@
 import itertools
 import re
 from pathlib import Path
-from typing import Any, Type, Callable, TypeVar
 
 import orjson
 from numpy import asarray
@@ -10,8 +9,6 @@ from scipy.optimize import linear_sum_assignment
 from tqdm import tqdm
 
 from src.core.basemodels import Album, Track
-from src.core.logger import logger
-from src.core.console import cinput, cprint
 from src.core.storage import AUDIO_EXTS
 from src.utils import read_audio_tags
 

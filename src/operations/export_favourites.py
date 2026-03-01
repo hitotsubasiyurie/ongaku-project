@@ -6,16 +6,16 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from src.operations.health_check import health_check
 from src.core.basemodels import Album, Track, TrackMark
 from src.core.cache import with_cache
+from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
 from src.core.kanban import Kanban, MetadataState, ResourceState
 from src.core.logger import logger
-from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
 from src.core.storage import AUDIO_EXTS
 from src.external import calculate_audio_md5, calculate_rar_audio_md5
+from src.operations.health_check import health_check
 from src.utils import write_audio_tags, read_audio_tags, read_audio_cover
 
 OPERATION_NAME = g_message.WF_20251204_194420

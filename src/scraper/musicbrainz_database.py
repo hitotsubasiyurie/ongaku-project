@@ -5,11 +5,11 @@ import orjson
 import psycopg
 from psycopg.rows import tuple_row
 
-from src.operations.common import abstract_tracks_info
 from src.core.basemodels import Album
 from src.core.exception import OngakuException
 from src.core.logger import logger
 from src.external import init_pgdata, pg_ctl_start, pg_ctl_stop
+from src.operations.common import abstract_tracks_info
 
 CREATE_DATABASE_SQL = "CREATE DATABASE musicbrainz;"
 

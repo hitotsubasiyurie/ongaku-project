@@ -3,11 +3,11 @@ from pathlib import Path
 
 import rtoml
 
-from src.operations.common import album_to_unique_str, albums_assignment, abstract_tracks_info
+from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
-from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
+from src.operations.common import album_to_unique_str, albums_assignment, abstract_tracks_info
 from src.utils import dump_toml
 
 OPERATION_NAME = g_message.WF_20251204_195020

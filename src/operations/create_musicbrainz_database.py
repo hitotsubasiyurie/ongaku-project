@@ -8,9 +8,9 @@ import orjson
 from tqdm import tqdm
 
 from src.core.basemodels import Album
+from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
 from src.core.logger import logger
-from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
 from src.external import pg_ctl_start, pg_ctl_stop, pg_dump_database
 from src.scraper.musicbrainz_database import init_musicbrainz_database, MusicBrainzDatabase

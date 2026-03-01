@@ -3,9 +3,9 @@ from pathlib import Path
 
 from tqdm import tqdm
 
+from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
 from src.core.logger import logger
-from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.scraper import VGMdbScraper

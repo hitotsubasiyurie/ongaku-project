@@ -1,11 +1,11 @@
 import sys
 import threading
 from collections import deque
-from typing import Callable, Any, TypeVar
+from typing import Callable, TypeVar
 
-from PySide6.QtCore import QObject, Signal, Qt, QEventLoop
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QPlainTextEdit, QLineEdit, QPushButton, 
-                               QLabel, QHBoxLayout, QApplication)
+from PySide6.QtCore import QObject, Signal, QEventLoop
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QPlainTextEdit, QLineEdit, QPushButton,
+                               QHBoxLayout, QApplication)
 
 _T = TypeVar("T")
 

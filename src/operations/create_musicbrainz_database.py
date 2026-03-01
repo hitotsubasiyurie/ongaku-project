@@ -46,7 +46,7 @@ def release_to_albums(recordings: dict, release: dict) -> list[Album]:
     return albums
 
 
-def main():
+def create_musicbrainz_database():
     cprint(g_message.WF_20251204_194121)
 
     parent_directory: Path = easy_cinput(g_message.WF_20251204_194122, return_type=Path)

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import rtoml
 
-from cli.operations.common import album_to_unique_str, albums_assignment, abstract_tracks_info
+from src.operations.common import album_to_unique_str, albums_assignment, abstract_tracks_info
 from src.core.i18n import g_message
 from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
@@ -21,7 +21,7 @@ SRC_TRACKS = "SRC_TRACKS"
 DST_TRACKS = "DST_TRACKS"
 
 
-def main():
+def merge_metadata():
     cprint(g_message.WF_20251204_195021)
 
     file_str = easy_cinput(g_message.WF_20251204_195022, return_type=str)

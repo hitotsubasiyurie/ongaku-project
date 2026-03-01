@@ -17,13 +17,17 @@ from PySide6.QtCore import Qt
 
 from src.core.settings import g_settings
 from src.core.kanban import Kanban
-from gui.notify import init_notifier
-from src.gui.features.scan_archive_progress_dialog import scan_archive
+from src.gui.notify import init_notifier
 from src.gui.main_window import MainWindow
 from src.gui.color_theme import current_theme
+from src.operations.health_check import health_check
 
 
 if __name__ == "__main__":
+
+    # 健康检查
+    health_check()
+
     app = QApplication([])
     app.setWindowIcon(QIcon("./assets/icon.png"))
 
@@ -35,11 +39,6 @@ if __name__ == "__main__":
     g_settings.ui_font_size and font.setPointSize(g_settings.ui_font_size)
     g_settings.ui_font_family and font.setFamily(g_settings.ui_font_family)
     app.setFont(font)
-
-    # 扫描 专辑归档 生成缓存
-    if not scan_archive():
-        app.quit()
-        sys.exit(0)
 
     # 主窗口
     main_window = MainWindow()

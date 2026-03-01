@@ -3,7 +3,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from cli.operations.common import abstract_tracks_info
+from src.operations.common import abstract_tracks_info
 from src.core.i18n import g_message
 from src.core.console import cinput, cprint, easy_cinput
 from src.core.settings import g_settings
@@ -14,7 +14,7 @@ OPERATION_NAME = g_message.WF_20251204_195520
 
 # 主函数
 
-def main():
+def search_album_from_musicbrainz_database():
     cprint(g_message.WF_20251204_195521)
 
     # 检查 PGDATA 路径

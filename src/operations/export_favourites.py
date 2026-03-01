@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from src.cli.operations.health_check import main as health_check
+from src.operations.health_check import health_check
 from src.core.basemodels import Album, Track, TrackMark
 from src.core.cache import with_cache
 from src.core.i18n import g_message
@@ -112,7 +112,7 @@ def get_eported_map(export_dir: Path, kanban: Kanban) -> dict[tuple[int, int, in
 
 # 主函数
 
-def main() -> None:
+def export_favourites() -> None:
     cprint(g_message.WF_20251204_194421)
 
     health_check()

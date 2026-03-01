@@ -5,7 +5,7 @@ from pathlib import Path
 
 import rtoml
 
-from cli.operations.common import (analyze_album, analyze_track, album_to_unique_str,
+from src.operations.common import (analyze_album, analyze_track, album_to_unique_str,
                             track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 from src.core.basemodels import Album
 from src.core.i18n import g_message
@@ -110,9 +110,21 @@ def apply_archive_detail(detail: dict, is_replace_same: bool) -> None:
             shutil.move(src, dst)
 
 
+def clean_audio_dir() -> None:
+    parent_dir = easy_cinput(g_message.WF_20251204_194011, return_type=Path)
+
+    # 从下往上 删除 没有子孙音频文件的 目录
+    for d in reversed(list(filter(Path.is_dir, parent_dir.rglob("*")))):
+        if not list(itertools.chain.from_iterable(d.rglob(f"*{ext}") for ext in AUDIO_EXTS)):
+            shutil.rmtree(d)
+
+    cprint(g_message.WF_20251204_194012)
+
+
+
 # 主函数
 
-def main() -> None:
+def shelve_audios() -> None:
     cprint(g_message.WF_20251204_190037)
 
     metadata_file = easy_cinput(g_message.WF_20251204_190038, return_type=Path)

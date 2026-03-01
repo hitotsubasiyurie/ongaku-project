@@ -26,7 +26,7 @@ PREFERRED_ENCODINGS = ["utf_8_sig", "utf_8", "shift_jis", "shift_jis_2004", "big
 ENCODINGS = PREFERRED_ENCODINGS + list(set(TEXT_ENCODINGS) - set(PREFERRED_ENCODINGS))
 
 
-def main():
+def recode():
     cprint(g_message.WF_20251204_194721)
 
     directory = easy_cinput(g_message.WF_20251204_194722, return_type=Path)

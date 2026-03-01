@@ -4,7 +4,7 @@ from pathlib import Path
 from src.operations.common import tracks_assignment, analyze_track
 from src.core.basemodels import Album
 from src.core.storage import track_stemnames, COVER_NAME
-from gui.notify import show_confirm_long_msg
+from src.gui.notify import show_confirm_long_msg
 from src.utils import convert_to_png
 
 

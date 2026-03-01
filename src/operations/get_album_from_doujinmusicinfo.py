@@ -15,7 +15,7 @@ OPERATION_NAME = g_message.WF_20251204_194820
 
 # 主函数
 
-def main():
+def get_album_from_doujinmusicinfo():
     cprint(g_message.WF_20251204_194821)
 
     input_path = easy_cinput(g_message.WF_20251204_194822.format(g_settings.TMP_DIRECTORY), 

@@ -16,7 +16,7 @@ OPERATION_NAME = g_message.WF_20251204_195320
 
 # 主函数
 
-def main():
+def get_album_from_musicbrainz():
     cprint(g_message.WF_20251204_195321)
 
     input_path = easy_cinput(g_message.WF_20251204_195322.format(g_settings.TMP_DIRECTORY), 

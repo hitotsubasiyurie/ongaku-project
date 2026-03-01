@@ -9,7 +9,7 @@ OPERATION_NAME = g_message.WF_20251204_194320
 
 # 主函数
 
-def remove_files():
+def remove_file():
 
     cprint(g_message.WF_20251204_194321)
 

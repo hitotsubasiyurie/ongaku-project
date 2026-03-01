@@ -13,7 +13,7 @@ from src.scraper import VGMdbScraper
 OPERATION_NAME = g_message.WF_20251204_194920
 
 
-def main():
+def get_album_from_vgmdb():
     cprint(g_message.WF_20251204_194921)
 
     input_path = easy_cinput(g_message.WF_20251204_194922.format(g_settings.TMP_DIRECTORY), 

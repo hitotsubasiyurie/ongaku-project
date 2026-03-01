@@ -13,7 +13,7 @@ OPERATION_NAME = g_message.WF_20251221_202001
 
 # 主函数
 
-def archive_resource() -> None:
+def archive_albums() -> None:
     kanban = Kanban(g_settings.metadata_directory, g_settings.resource_directory)
 
     total = sum(1 for tk in kanban.theme_kanbans for ak in tk.album_kanbans if os.path.isdir(ak.album_dir))

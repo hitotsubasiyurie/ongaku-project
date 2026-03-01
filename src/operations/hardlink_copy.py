@@ -9,7 +9,7 @@ from tqdm import tqdm
 from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
 
-OPERATION_NAME = g_message.WF_20251204_195220
+OPERATION_TITLE = g_message.WF_20251204_195220
 
 # 业务函数
 

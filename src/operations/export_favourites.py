@@ -18,7 +18,7 @@ from src.external import calculate_audio_md5, calculate_rar_audio_md5
 from src.operations.health_check import health_check
 from src.utils import write_audio_tags, read_audio_tags, read_audio_cover
 
-OPERATION_NAME = g_message.WF_20251204_194420
+OPERATION_TITLE = g_message.WF_20251204_194420
 
 
 # 缓存方法

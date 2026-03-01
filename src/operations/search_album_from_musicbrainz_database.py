@@ -10,7 +10,7 @@ from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.operations.common import abstract_tracks_info
 from src.scraper.musicbrainz_database import MusicBrainzDatabase, pg_ctl_start, pg_ctl_stop
 
-OPERATION_NAME = g_message.WF_20251204_195520
+OPERATION_TITLE = g_message.WF_20251204_195520
 
 # 主函数
 

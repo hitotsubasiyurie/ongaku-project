@@ -5,7 +5,7 @@ from pathlib import Path
 from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
 
-OPERATION_NAME = g_message.WF_20251204_194720
+OPERATION_TITLE = g_message.WF_20251204_194720
 
 
 TEXT_ENCODINGS = ["ascii", "big5", "big5hkscs", "cp037", "cp273", "cp424", "cp437", "cp500", "cp720", "cp737", "cp775", 

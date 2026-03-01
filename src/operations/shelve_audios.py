@@ -18,7 +18,7 @@ from src.utils import dump_toml
 analyze_album = functools.cache(analyze_album)
 
 
-OPERATION_NAME = g_message.WF_20251204_190036
+OPERATION_TITLE = g_message.WF_20251204_190036
 
 
 # 业务函数

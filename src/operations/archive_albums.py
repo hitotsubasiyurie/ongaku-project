@@ -8,7 +8,7 @@ from src.core.kanban import Kanban
 from src.core.settings import g_settings
 from src.external import rar_archive, rar_add
 
-OPERATION_NAME = g_message.WF_20251221_202001
+OPERATION_TITLE = g_message.WF_20251221_202001
 
 
 # 主函数

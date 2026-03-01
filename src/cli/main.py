@@ -1,7 +1,6 @@
 import os
 import sys
 from pathlib import Path
-from typing import Callable
 
 executable = Path(sys.argv[0])
 
@@ -13,38 +12,67 @@ else:
     os.chdir(executable.parent)
 
 from src.core.settings import g_settings
-from src.operations.common import loop_for_actions
-from src.operations import OPERATIONS
 from src.core.console import easy_cinput, cprint
 from src.core.logger import logger
 
+title2operation = {}
 
-def loop_for_actions(message2action: dict[str, Callable]) -> None:
-    messages, actions = list(message2action.keys()), list(message2action.values())
+from src.operations.hardlink_copy import OPERATION_TITLE, hardlink_copy
+title2operation[OPERATION_TITLE] = hardlink_copy
+
+from src.operations.remove_file import OPERATION_TITLE, remove_file
+title2operation[OPERATION_TITLE] = remove_file
+
+from src.operations.recode import OPERATION_TITLE, recode
+title2operation[OPERATION_TITLE] = recode
+
+from src.operations.get_album_from_vgmdb import OPERATION_TITLE, get_album_from_vgmdb
+title2operation[OPERATION_TITLE] = get_album_from_vgmdb
+
+from src.operations.get_album_from_musicbrainz import OPERATION_TITLE, get_album_from_musicbrainz
+title2operation[OPERATION_TITLE] = get_album_from_musicbrainz
+
+from src.operations.search_album_from_musicbrainz_database import OPERATION_TITLE, search_album_from_musicbrainz_database
+title2operation[OPERATION_TITLE] = search_album_from_musicbrainz_database
+
+from src.operations.get_album_from_doujinmusicinfo import OPERATION_TITLE, get_album_from_doujinmusicinfo
+title2operation[OPERATION_TITLE] = get_album_from_doujinmusicinfo
+
+from src.operations.merge_metadata import OPERATION_TITLE, merge_metadata
+title2operation[OPERATION_TITLE] = merge_metadata
+
+from src.operations.create_musicbrainz_database import OPERATION_TITLE, create_musicbrainz_database
+title2operation[OPERATION_TITLE] = create_musicbrainz_database
+
+from src.operations.shelve_audios import OPERATION_TITLE, shelve_audios
+title2operation[OPERATION_TITLE] = shelve_audios
+
+from src.operations.export_favourites import OPERATION_TITLE, export_favourites
+title2operation[OPERATION_TITLE] = export_favourites
+
+from src.operations.archive_albums import OPERATION_TITLE, archive_albums
+title2operation[OPERATION_TITLE] = archive_albums
+
+
+if __name__ == "__main__":
+
+    titles, operations = list(title2operation.keys()), list(title2operation.values())
     while True:
-        cprint("\n".join(f"{i+1}. {m}" for i, m in enumerate(messages)) + "\n")
+        cprint("\n".join(f"{i+1}. {m}" for i, m in enumerate(titles)) + "\n")
         number = easy_cinput("?: ", return_type=int)
         cprint()
 
-        if not (0 <= number - 1 <= len(messages)):
+        if not (0 <= number - 1 <= len(titles)):
             continue
 
         try:
-            cprint(f"{'-'*8} {messages[number - 1]} {'-'*8}")
-            func = actions[number - 1]
+            cprint(f"{'-'*8} {titles[number - 1]} {'-'*8}")
+            func = operations[number - 1]
             if not func:
-                return
+                break
             func()
             cprint("-"*32)
         except Exception as e:
             cprint(f"Error: {e}")
             logger.error("", exc_info=1)
 
-
-if __name__ == "__main__":
-
-    # 初始化 目录
-    for p in [g_settings.metadata_directory, g_settings.resource_directory]:
-        os.makedirs(p, exist_ok=True)
-
-    loop_for_actions(OPERATIONS)

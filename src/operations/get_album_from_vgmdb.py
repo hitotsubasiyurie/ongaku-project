@@ -10,7 +10,7 @@ from src.core.settings import g_settings
 from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.scraper import VGMdbScraper
 
-OPERATION_NAME = g_message.WF_20251204_194920
+OPERATION_TITLE = g_message.WF_20251204_194920
 
 
 def get_album_from_vgmdb():

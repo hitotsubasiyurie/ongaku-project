@@ -5,7 +5,7 @@ from pathlib import Path
 from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
 
-OPERATION_NAME = g_message.WF_20251204_194320
+OPERATION_TITLE = g_message.WF_20251204_194320
 
 # 主函数
 

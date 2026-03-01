@@ -10,7 +10,7 @@ from src.core.storage import dump_albums_to_toml, load_albums_from_toml
 from src.operations.common import album_to_unique_str, albums_assignment, abstract_tracks_info
 from src.utils import dump_toml
 
-OPERATION_NAME = g_message.WF_20251204_195020
+OPERATION_TITLE = g_message.WF_20251204_195020
 
 
 IS_APPLY = "IS_APPLY"

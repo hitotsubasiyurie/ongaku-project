@@ -12,7 +12,7 @@ from src.core.kanban import Kanban, cached_rar_list, cached_rar_stats
 from src.core.settings import g_settings
 from src.external import compress_png_file, rar_extract, rar_add
 
-OPERATION_NAME = g_message.WF_20260128_092700
+OPERATION_TITLE = g_message.WF_20260128_092700
 
 
 # 业务函数

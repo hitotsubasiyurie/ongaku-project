@@ -668,10 +668,10 @@ Options:
                         only at this time. Defaults to not present.
 
   Plugin control:
-    --enable-plugins=OPERATION_NAME
+    --enable-plugins=OPERATION_TITLE
                         Enabled plugins. Must be plug-in names. Use '--plugin-
                         list' to query the full list and exit. Default empty.
-    --disable-plugins=OPERATION_NAME
+    --disable-plugins=OPERATION_TITLE
                         Disabled plugins. Must be plug-in names. Use '--
                         plugin-list' to query the full list and exit. Most
                         standard plugins are not a good idea to disable.
@@ -1430,10 +1430,10 @@ Options:
                         only at this time. Defaults to not present.
 
   Plugin control:
-    --enable-plugins=OPERATION_NAME
+    --enable-plugins=OPERATION_TITLE
                         Enabled plugins. Must be plug-in names. Use '--plugin-
                         list' to query the full list and exit. Default empty.
-    --disable-plugins=OPERATION_NAME
+    --disable-plugins=OPERATION_TITLE
                         Disabled plugins. Must be plug-in names. Use '--
                         plugin-list' to query the full list and exit. Most
                         standard plugins are not a good idea to disable.

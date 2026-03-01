@@ -16,7 +16,7 @@ from src.external import pg_ctl_start, pg_ctl_stop, pg_dump_database
 from src.scraper.musicbrainz_database import init_musicbrainz_database, MusicBrainzDatabase
 from src.scraper.musicbrainz_scraper import MusicBrainzScraper
 
-OPERATION_NAME = g_message.WF_20251204_194120
+OPERATION_TITLE = g_message.WF_20251204_194120
 
 
 def read_musicbrainz_tar_dump(tar_file: str) -> Generator[str, None, None]:

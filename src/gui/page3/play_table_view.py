@@ -96,9 +96,13 @@ class PlayTableItemModel(CustomTableItemModel):
             if col in [4, 5]:
                 return Qt.AlignmentFlag.AlignCenter
 
+        if role == Qt.ItemDataRole.DisplayRole and col == 5:
+            mark = self._get_data(col, i, j)
+            return "🤍" if mark == TrackMark.FAVOURITE else str(mark)
+
         # DisplayRole, EditRole
         if role in [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]:
-            return self._get_data(role, col, i, j)
+            return str(self._get_data(col, i, j))
 
         return None
 
@@ -144,8 +148,8 @@ class PlayTableItemModel(CustomTableItemModel):
         elif col == 4:
             self.theme_kanban.album_kanbans[i].album.date = value
         elif col == 5:
-            self.theme_kanban.album_kanbans[i].album.tracks[j].mark = value
-        
+            self.theme_kanban.album_kanbans[i].album.tracks[j].mark = int(value)
+
         if old_hash == hash(self.theme_kanban.album_kanbans[i].album):
             return False
 
@@ -161,14 +165,14 @@ class PlayTableItemModel(CustomTableItemModel):
     def _apply_sort(self) -> None:
         column, order = self.sort_args
         # 忽略大小写，首尾空字符
-        self.layout_ps.sort(key=lambda p: self._get_data(Qt.ItemDataRole.EditRole, column, *self.kanban_ij[p]).lower().strip(), 
+        self.layout_ps.sort(key=lambda p: str(self._get_data(column, *self.kanban_ij[p])).lower().strip(), 
                             reverse=(order == Qt.SortOrder.DescendingOrder))
 
     def _apply_filters(self) -> None:
         self.layout_ps = []
         if not self.theme_kanban:
             return
-        
+
         for p, (i, j) in enumerate(self.kanban_ij):
             is_match = True
             for c, obj in self.filters.items():
@@ -176,20 +180,19 @@ class PlayTableItemModel(CustomTableItemModel):
                     t, pat = obj.pattern, obj
                 else:
                     t, pat = obj, None
-                data = self._get_data(Qt.ItemDataRole.EditRole, c, i, j)
-                data = str(data)
+                data = str(self._get_data(c, i, j))
                 # 全字包含 或 正则匹配
                 if not (t.lower() in data.lower() or (pat and pat.search(data, re.IGNORECASE))):
                     is_match = False
             if is_match:
                 self.layout_ps.append(p)
-        
+
         # 应用排序
         self._apply_sort()
 
     # 内部方法
 
-    def _get_data(self, role: Qt.ItemDataRole, col: int, i: int, j: int) -> str:
+    def _get_data(self, col: int, i: int, j: int) -> Any:
         if col == 0:
             stat = self.theme_kanban.album_kanbans[i].track_stat_results[j]
             size = "{:.2f} MiB".format(stat.st_size / 1024 / 1024) if stat else ""
@@ -203,8 +206,7 @@ class PlayTableItemModel(CustomTableItemModel):
         elif col == 4:
             return self.theme_kanban.album_kanbans[i].album.date
         elif col == 5:
-            mark = self.theme_kanban.album_kanbans[i].album.tracks[j].mark
-            return "🤍" if mark == TrackMark.FAVOURITE and role == Qt.ItemDataRole.DisplayRole else mark
+            return self.theme_kanban.album_kanbans[i].album.tracks[j].mark
 
 
 class PlayTableView(QTableView):

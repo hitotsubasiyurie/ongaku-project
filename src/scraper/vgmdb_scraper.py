@@ -11,7 +11,7 @@ from src.scraper._scraper import Scraper
 
 
 class VGMdbScraper(Scraper):
-    
+
     ROOT_URL = "https://vgmdb.net"
     PRODUCT_PAGE_URL = f"{ROOT_URL}/product/{{}}"
     ARTIST_PAGE_URL = f"{ROOT_URL}/artist/{{}}"

@@ -80,7 +80,9 @@ class Scraper:
         key = args_to_key(base, (url, ), kwargs, False, ())
         result = g_request_cache.get(key)
         if result is None:
-            result = self.__request_get(url, timeout=self._REQUEST_TIMEOUT, headers=self._REQUEST_HEADERS, **kwargs)
+            if "timeout" not in kwargs: kwargs["timeout"] = self._REQUEST_TIMEOUT
+            if "headers" not in kwargs: kwargs["headers"] = self._REQUEST_HEADERS
+            result = self.__request_get(url, **kwargs)
             g_request_cache.set(key, result)
 
         return result

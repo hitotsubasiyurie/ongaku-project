@@ -11,7 +11,6 @@ if executable.suffix == ".py":
 else:
     os.chdir(executable.parent)
 
-from src.core.settings import g_settings
 from src.core.console import easy_cinput, cprint
 from src.core.logger import logger
 

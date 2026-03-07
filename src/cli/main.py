@@ -25,17 +25,11 @@ title2operation[OPERATION_TITLE] = remove_file
 from src.operations.recode import OPERATION_TITLE, recode
 title2operation[OPERATION_TITLE] = recode
 
-from src.operations.get_album_from_vgmdb import OPERATION_TITLE, get_album_from_vgmdb
-title2operation[OPERATION_TITLE] = get_album_from_vgmdb
-
-from src.operations.get_album_from_musicbrainz import OPERATION_TITLE, get_album_from_musicbrainz
-title2operation[OPERATION_TITLE] = get_album_from_musicbrainz
+from src.operations.scrape_metadata import OPERATION_TITLE, scrape_metadata
+title2operation[OPERATION_TITLE] = scrape_metadata
 
 from src.operations.search_album_from_musicbrainz_database import OPERATION_TITLE, search_album_from_musicbrainz_database
 title2operation[OPERATION_TITLE] = search_album_from_musicbrainz_database
-
-from src.operations.get_album_from_doujinmusicinfo import OPERATION_TITLE, get_album_from_doujinmusicinfo
-title2operation[OPERATION_TITLE] = get_album_from_doujinmusicinfo
 
 from src.operations.merge_metadata import OPERATION_TITLE, merge_metadata
 title2operation[OPERATION_TITLE] = merge_metadata
@@ -57,9 +51,8 @@ if __name__ == "__main__":
 
     titles, operations = list(title2operation.keys()), list(title2operation.values())
     while True:
-        cprint("\n".join(f"{i+1}. {m}" for i, m in enumerate(titles)) + "\n")
-        number = easy_cinput("?: ", return_type=int)
-        cprint()
+        prompt = "\n".join(f"{i+1}. {m}" for i, m in enumerate(titles))
+        number = easy_cinput(prompt, return_type=int)
 
         if not (0 <= number - 1 <= len(titles)):
             continue

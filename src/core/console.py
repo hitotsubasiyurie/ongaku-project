@@ -43,7 +43,7 @@ def set_input(stdin: SupportsNoArgReadline[str]) -> None:
     g_stdin = stdin
 
 
-def cprint(obj: object) -> None:
+def cprint(obj: object, end: str | None = "\n") -> None:
     """
     自定义 print 函数。
 
@@ -53,7 +53,7 @@ def cprint(obj: object) -> None:
     """
     s = obj if isinstance(obj, str) else json.dumps(obj, indent=4, ensure_ascii=False)
     logger.debug(s, extra={WithRawFormatter.IN_RAW_KEY: True})
-    print(s, file=g_stdout)
+    print(s, end=end, file=g_stdout)
 
 
 def cinput(prompt: str = "") -> str:
@@ -63,9 +63,9 @@ def cinput(prompt: str = "") -> str:
     1. 从 g_stdin 读取行输入
     2. 将提示和输入原样写入日志
     """
-    prompt and cprint(prompt)
+    prompt and cprint(prompt, end="")
     s = g_stdin.readline().rstrip("\n")
-    logger.debug(prompt + s + "\n", extra={WithRawFormatter.IN_RAW_KEY: True})
+    logger.debug(s + "\n", extra={WithRawFormatter.IN_RAW_KEY: True})
     return s
 
 
@@ -82,7 +82,7 @@ def easy_cinput(prompt: str = "", default: Any = None, return_type: Type[_T] = s
         raise TypeError(f"Default value invalid. Expecting type {return_type.__name__}")
 
     while True:
-        val = cinput(prompt)
+        val = cinput(prompt + "\n" + (f"({default})" if default is not None else "") +"?: ")
         if not val:
             if default is None:
                 continue

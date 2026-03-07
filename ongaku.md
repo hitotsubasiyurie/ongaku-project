@@ -2723,4 +2723,28 @@ spotify api 需要会员，10刀一个月
 1. 所有的专辑必须来自于已有的 scraper
 2. 定期对主题元数据文件进行 merge 合并去重操作
 
+## 2026.03.04
+
+API key	95f980de33919476e34cf0b40d2c6f49
+Shared secret	b84d440ab2bc79d2696d149bc26dc68a
+
+------------------------------【todo】link 里需要是 Url 解码后的明文
+Url 的解码是可重复的
+https://www.last.fm/music/YUSYABU+BAND/U%E3%83%BBD%E3%83%BBN
+
+https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=95f980de33919476e34cf0b40d2c6f49&artist=YUSYABU+BAND&album=U・D・N&format=json
+
+https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=95f980de33919476e34cf0b40d2c6f49&artist=チマメ隊&album=ときめきポポロン♪&format=json
+
+https://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist=チマメ隊&api_key=95f980de33919476e34cf0b40d2c6f49&format=json&limit=99999999
+
+
+https://www.last.fm/music/YUSYABU+BAND/U・D・N
+
+## 2026.03.07
+
+------------------------------【todo】爬取元数据统一入口
+
+
+
 

@@ -20,6 +20,7 @@ class _Settings:
 
     TMP_DIRECTORY = os.path.abspath("tmp")
     BIN_DIRECTORY = os.path.abspath("bin")
+    MUSICBRAINZ_PGDATA = os.path.join(TMP_DIRECTORY, "musicbrainz_pgdata")
 
     log_level: int = field(default=2, validator=validators.in_(_LOG_LEVELS))
     language: str = field(default="en", validator=validators.in_(_LANGUAGES))
@@ -29,9 +30,12 @@ class _Settings:
 
     ui_color_theme: str = field(default="light", validator=validators.in_(_COLOR_THEMES))
     ui_font_size: int = field(default=9, validator=validators.gt(0))
-    ui_font_family: str = field(default="JetBrains Mono")
-    ui_cov_sources: str = field(default="amazonmusic,applemusic,itunes,ototoy,kkbox,lastfm,musicbrainz,discogs,soundcloud")
-    ui_cov_country: str = field(default="jp")
+    ui_font_family: str = field(default="JetBrains Mono", validator=validators.instance_of(str))
+    ui_cov_sources: str = field(default="amazonmusic,applemusic,itunes,ototoy,kkbox,lastfm,musicbrainz,discogs,soundcloud", 
+                                validator=validators.instance_of(str))
+    ui_cov_country: str = field(default="jp", validator=validators.instance_of(str))
+
+    lastfm_api_key: str = field(default="", validator=validators.instance_of(str))
 
     @classmethod
     def load(cls) -> "_Settings":

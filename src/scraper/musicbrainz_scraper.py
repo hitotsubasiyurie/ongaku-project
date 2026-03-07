@@ -12,7 +12,7 @@ class MusicBrainzScraper(Scraper):
 
     ROOT_URL = "https://musicbrainz.org/ws/2"
     PAGE_ROOT_URL = "https://beta.musicbrainz.org"
-    RELEASE_PAGE_URL = "https://beta.musicbrainz.org/release/{}"
+    RELEASE_PAGE_URL = f"{PAGE_ROOT_URL}/release/{{}}"
 
     _HEADERS = {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
@@ -53,7 +53,7 @@ class MusicBrainzScraper(Scraper):
         return albums
 
     @logger_watched(3)
-    def get_album_ids_from_series(self, series_id: str) -> list[str]:
+    def get_release_ids_from_series(self, series_id: str) -> list[str]:
         """
         给定 series mbid 获取 release mbid 列表。
         
@@ -64,13 +64,13 @@ class MusicBrainzScraper(Scraper):
         rg_ids = [r["release_group"]["id"] for r in series["relations"]]
         logger.info(f"Series has {len(rg_ids)} release-groups. {series_id} {rg_ids}")
 
-        [r_ids.extend(self.get_album_ids_from_release_group(rg_id)) for rg_id in rg_ids]
+        [r_ids.extend(self.get_release_ids_from_release_group(rg_id)) for rg_id in rg_ids]
         logger.info(f"Series has {len(r_ids)} releases. {series_id} {r_ids}")
 
         return r_ids
 
     @logger_watched(2)
-    def get_album_ids_from_release_group(self, rg_id: str) -> list[str]:
+    def get_release_ids_from_release_group(self, rg_id: str) -> list[str]:
         """
         给定 release-group mbid 获取 release mbid 列表。
         

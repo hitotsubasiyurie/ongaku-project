@@ -32,7 +32,6 @@ def _builld_vgmdb_database() -> None:
             logger.error("", exc_info=1)
             raise e
         pbar.update(1)
-        return albums
 
     list(pool.map(_get_album, map(str, range(1, latest_id+1))))
 

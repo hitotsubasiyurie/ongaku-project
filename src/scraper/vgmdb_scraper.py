@@ -205,13 +205,16 @@ class VGMdbScraper(BrowserScraper):
         tracks = []
         for tr in table.xpath("./tbody/tr"):
             tds: list[etree._Element] = list(tr.iterchildren("td"))
-            if len(tds) < 2:
+            if not tds:
                 continue
             tracknumber = tds[0].xpath("string(.)").strip()
-            tracknumber = int(tracknumber) if tracknumber.isdigit() else 0
+            # tracknumber 为空白字符时
+            if not tracknumber:
+                continue
+            tracknumber = int(tracknumber)
             track_title = tds[1].xpath("string(.)").strip()
             tracks.append(Track(tracknumber=tracknumber, title=track_title))
-            if not tracknumber or not track_title:
+            if not track_title:
                 logger.warning(f"Failed to get track. {tracknumber, track_title}")
         logger.info(f"Got {len(tracks)} tracks. {[t.title for t in tracks]}")
         return tracks

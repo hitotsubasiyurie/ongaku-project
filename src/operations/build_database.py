@@ -33,7 +33,10 @@ def _builld_vgmdb_database() -> None:
             raise e
         pbar.update(1)
 
-    list(pool.map(_get_album, map(str, range(1, latest_id+1))))
+    for batch in itertools.batched(map(str, range(1, latest_id+1)), 10):
+        list(pool.map(_get_album, batch))
+        scraper.close()
+        scraper = VGMdbScraper()
 
     pool.shutdown()
     pbar.close()

@@ -122,6 +122,7 @@ class VGMdbScraper(BrowserScraper):
         logger.info(f"Will get album. {url}")
 
         resp = self._scraper_get(url, "#subnav")
+        return
         html: etree._Element = etree.HTML(resp.text)
 
         invalid_message = "This album could not be displayed."

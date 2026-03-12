@@ -1,5 +1,3 @@
-import atexit
-import weakref
 import asyncio
 import threading
 from typing import Any
@@ -49,7 +47,8 @@ class BrowserScraper:
     # 最大打开页面数
     _MAX_PAGE_NUM = 10
     # 拦截的资源类型
-    _ABORTED_RESOURCE_TYPES = {"image", "font", "media"}
+    _ABORTED_RESOURCE_TYPES = {"image",}
+    # cookies
     _COOKIES = []
 
     def __init__(self) -> None:
@@ -57,8 +56,6 @@ class BrowserScraper:
         self.__event_loop = asyncio.new_event_loop()
         threading.Thread(target=self.__thread_run_loop, args=(self.__event_loop,), daemon=True).start()
         asyncio.run_coroutine_threadsafe(self.__setup(), self.__event_loop).result()
-        # 对象清理时自动关闭
-        weakref.finalize(self, self.__close)
 
     def __thread_run_loop(self, loop: asyncio.AbstractEventLoop) -> None:
         asyncio.set_event_loop(loop)
@@ -73,9 +70,12 @@ class BrowserScraper:
         if self._COOKIES:
             await self._context.add_cookies(self._COOKIES)
 
-    def __close(self) -> None:
-        if self.__event_loop.is_running():
+    def close(self) -> None:
+        if not self.__event_loop.is_running():
+            return
+        try:
             asyncio.run_coroutine_threadsafe(self._browser.close(), self.__event_loop).result()
+        finally:
             self.__event_loop.call_soon_threadsafe(self.__event_loop.stop)
 
     def _scraper_get(self, url: str, wait_selector: str = "") -> requests.Response:
@@ -112,8 +112,9 @@ class BrowserScraper:
                 await page.close()
 
     async def __route_handler(self, route: Route) -> Any:
-        # 放行 cloudflare 
-        if "challenges.cloudflare.com/cdn-cgi" in route.request.url:
+        # 放行 cloudflare
+        clooudflare_keys = ("challenges.cloudflare.com", "/cdn-cgi", "static.cloudflareinsights.com")
+        if any(k in route.request.url for k in clooudflare_keys):
             await route.continue_()
         elif route.request.resource_type in self._ABORTED_RESOURCE_TYPES:
             await route.abort()

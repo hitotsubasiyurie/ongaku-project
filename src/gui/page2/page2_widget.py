@@ -12,7 +12,7 @@ from src.core.kanban import ThemeKanban
 from src.core.settings import g_settings
 from src.core.storage import COVER_NAME, AUDIO_EXTS, track_stemnames
 from src.external import open_in_explorer, copy_to_clipboard
-from gui._common import with_busy_cursor
+from src.gui._common import with_busy_cursor
 from src.gui.features.put_away_resource import put_away_cover_file, put_away_track_file, \
     put_away_track_files
 from src.gui.notify import show_toast_msg, show_confirm_msg

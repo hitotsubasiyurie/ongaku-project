@@ -18,7 +18,29 @@ class VGMdbScraper(BrowserScraper):
     ARTIST_PAGE_URL = f"{ROOT_URL}/artist/{{}}"
     ALBUM_PAGE_URL = f"{ROOT_URL}/album/{{}}"
 
+    # 拦截的资源类型
+    _ABORTED_RESOURCE_TYPES = {"image", "font", "media", "stylesheet", 
+                               "script", "texttrack", "xhr", "fetch", 
+                               "eventsource", "websocket", "manifest", "other"}
+    # cookies
     _COOKIES = [{"name": "gfa_lang", "value": "ja", "domain": "vgmdb.net", "path": "/"}]
+
+    def get_latest_album_id(self) -> str:
+        """
+        获取最新的 album id 。
+
+        :raises OngakuException:
+        """
+        url = self.ROOT_URL
+        logger.info(f"Will get root page. {url}")
+        resp = self._scraper_get(url, "#subnav")
+
+        html: etree._Element = etree.HTML(resp.text)
+        hrefs = html.xpath("//div[@class='page']//td[@id='rightcolumn']/div[2]//a/@href")
+        album_ids = [h.split("/")[-1] for h in hrefs if "vgmdb.net/album/" in h]
+        latest_id = max(album_ids, key=int)
+        logger.info(f"Got latest album id. {latest_id}")
+        return latest_id
 
     def get_product_ids_from_franchise(self, franchise_id: str) -> list[str]:
         """
@@ -38,21 +60,6 @@ class VGMdbScraper(BrowserScraper):
 
         logger.info(f"Got {len(product_ids)} product ids from franchise {franchise_id}.")
         return product_ids
-
-    def get_product_titles(self, product_id: str) -> list[str]:
-        """
-        获取 product 所有语言的标题。
-
-        :raises OngakuException:
-        """
-        url = self.PRODUCT_PAGE_URL.format(product_id)
-        resp = self._scraper_get(url, "#subnav")
-
-        html: etree._Element = etree.HTML(resp.text)
-        spans: list[etree._Element] = html.xpath("//div[@id='innermain']//h1//span[@class='albumtitle']")
-        titles = list(set(s.xpath("string(.)").strip("/ ") for s in spans))
-        logger.info(f"Got product titles. {product_id} {titles}")
-        return titles
 
     def get_album_ids_from_search_page(self, url: str) -> list[str]:
         """
@@ -117,6 +124,11 @@ class VGMdbScraper(BrowserScraper):
         resp = self._scraper_get(url, "#subnav")
         html: etree._Element = etree.HTML(resp.text)
 
+        invalid_message = "This album could not be displayed."
+        if invalid_message in resp.text:
+            logger.warning(f"Album is invalid. {url}")
+            return []
+
         album_title = html.xpath("//div[@id='innermain']//h1//span[@class='albumtitle' and @style='display:inline']"
                                  )[0].xpath("string(.)").strip("/ ")
         logger.info(f"Got album title. {[album_title]}")
@@ -147,7 +159,7 @@ class VGMdbScraper(BrowserScraper):
         """
         从 info_table 元素获取专辑信息。
         """
-        table = [list(tr.iterchildren("td")) for tr in info_table.iterchildren("tr")]
+        table = [list(tr.iterchildren("td")) for tr in info_table.xpath("/tbody/tr")]
         infos = {tds[0].xpath("string(.)").strip(): tds[1].xpath("string(.)").strip() for tds in table if tds}
         logger.debug(f"Got album info. {json.dumps(infos, ensure_ascii=False)}")
 
@@ -191,12 +203,12 @@ class VGMdbScraper(BrowserScraper):
         # https://vgmdb.net/album/135468
         # https://vgmdb.net/album/122066
         tracks = []
-        for tr in table.iterchildren("tr"):
+        for tr in table.xpath("./tbody/tr"):
             tds: list[etree._Element] = list(tr.iterchildren("td"))
             if len(tds) < 2:
                 continue
             tracknumber = tds[0].xpath("string(.)").strip()
-            tracknumber = int(tracknumber) if tracknumber.isdigit() else None
+            tracknumber = int(tracknumber) if tracknumber.isdigit() else 0
             track_title = tds[1].xpath("string(.)").strip()
             tracks.append(Track(tracknumber=tracknumber, title=track_title))
             if not tracknumber or not track_title:

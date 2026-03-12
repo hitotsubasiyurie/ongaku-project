@@ -8,7 +8,7 @@ from src.core.basemodels import TrackMark
 from src.core.i18n import g_message
 from src.core.kanban import ThemeKanban
 from src.external import convert_audio_bytes_to_wav
-from gui._common import with_busy_cursor
+from src.gui._common import with_busy_cursor
 from src.gui.notify import show_toast_msg
 from src.gui.page3.music_player_bar import MusicPlayerBar
 from src.gui.page3.play_table_view import PlayTableView

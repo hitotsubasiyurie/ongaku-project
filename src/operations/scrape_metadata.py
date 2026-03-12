@@ -58,7 +58,7 @@ def _scrape_vgmdb(urls: list[str], existing_albums: list[Album]) -> list[Album]:
     new_albums = itertools.chain.from_iterable(f.result() for f in futures)
     pool.shutdown()
     pbar.close()
-    scraper.__close()
+    scraper.close()
 
     return new_albums
 

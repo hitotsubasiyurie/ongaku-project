@@ -1,10 +1,10 @@
 
 from src.core.basemodels import Album, Disc, Track
 from src.core.logger import logger, logger_watched
-from src.scraper._scraper import Scraper
+from src.scraper._scraper import RequestScraper
 
 
-class LastFMScraper(Scraper):
+class LastFMScraper(RequestScraper):
 
     ROOT_URL = "https://ws.audioscrobbler.com/2.0"
     PAGE_ROOT_URL = "https://www.last.fm/music"
@@ -21,7 +21,7 @@ class LastFMScraper(Scraper):
             url = f"{self.ROOT_URL}/?method=artist.gettopalbums&api_key={self.api_key}&artist={artist}&page={page}&format=json"
             logger.info(f"Will get artist. {url} page {page}")
 
-            resp = self._cached_request_get(url).json()
+            resp = self._scraper_get(url).json()
 
             names.extend(self._quote(a["url"].split("/")[-1]) for a in resp["topalbums"]["album"])
 
@@ -39,7 +39,7 @@ class LastFMScraper(Scraper):
         url = f"{self.ROOT_URL}/?method=album.getinfo&api_key={self.api_key}&artist={artist}&album={album}&format=json"
         logger.info(f"Will get album. {url}")
 
-        resp = self._cached_request_get(url).json()
+        resp = self._scraper_get(url).json()
         track_data = resp["album"].get("tracks", {}).get("track", [])
         track_data = [track_data] if isinstance(track_data, dict) else track_data
         tracks = [Track(tracknumber=t["@attr"]["rank"], title=t["name"], artist=t["artist"]["name"]) 

@@ -3,12 +3,13 @@ import re
 
 from src.core.basemodels import Album, Disc, Track
 from src.core.logger import logger, logger_watched
-from src.scraper._scraper import Scraper
+from src.scraper._scraper import RequestScraper
+from src.scraper._common import split_multi_disc_album
 
 _LUCENE_ESCAPE_RE = re.compile(r'([+\-&|!(){}\[\]^"~*?:\\/])')
 
 
-class MusicBrainzScraper(Scraper):
+class MusicBrainzScraper(RequestScraper):
 
     ROOT_URL = "https://musicbrainz.org/ws/2"
     PAGE_ROOT_URL = "https://beta.musicbrainz.org"
@@ -41,7 +42,7 @@ class MusicBrainzScraper(Scraper):
         url = f"{self.ROOT_URL}/release/?fmt=json&limit={limit}&query={' AND '.join(lst)}"
         logger.info(f"search url: {url}")
 
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url)
 
         query = resp.json()
         if query["count"] == 0:
@@ -102,7 +103,7 @@ class MusicBrainzScraper(Scraper):
         url = f"{self.ROOT_URL}/{entity_type}/{mbid}?fmt=json&inc={inc}"
         logger.info(f"Lookup {entity_type}. {url}")
 
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url)
         return resp.json()
 
     # 内部方法
@@ -118,7 +119,7 @@ class MusicBrainzScraper(Scraper):
             url = f"{self.ROOT_URL}/recording?release={release_id}&fmt=json&inc=artist-credits&limit={limit}&offset={offset}"
             logger.info(f"Browse recordings of release. {url}")
 
-            resp = self._cached_request_get(url)
+            resp = self._scraper_get(url)
 
             browse = resp.json()
             recordings.extend(browse["recordings"])
@@ -168,7 +169,7 @@ class MusicBrainzScraper(Scraper):
         discs = sorted(MusicBrainzScraper._build_disc_from_release(release), key=lambda d: d.discnumber)
 
         url = MusicBrainzScraper.RELEASE_PAGE_URL.format(release["id"])
-        return MusicBrainzScraper.split_multi_disc_album(catnos, date, title, discs, url)
+        return split_multi_disc_album(catnos, date, title, discs, url)
 
     @staticmethod
     def _build_disc_from_release(release: dict) -> list[Disc]:

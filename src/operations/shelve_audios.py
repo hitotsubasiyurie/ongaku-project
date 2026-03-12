@@ -10,7 +10,7 @@ from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
 from src.core.settings import g_settings
 from src.core.storage import AUDIO_EXTS, album_stemname, track_stemnames, load_albums_from_toml
-from src.operations.common import (analyze_album, analyze_track, album_to_unique_str,
+from src.operations._common import (analyze_album, analyze_track, album_to_unique_str,
                                    track_to_unique_str, albums_assignment, tracks_assignment, count_album_similarity)
 from src.utils import dump_toml
 

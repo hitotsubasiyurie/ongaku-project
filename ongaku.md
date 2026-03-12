@@ -2745,6 +2745,52 @@ https://www.last.fm/music/YUSYABU+BAND/U・D・N
 
 ------------------------------【todo】爬取元数据统一入口
 
+## 2026.03.08
 
+vgmdb.net 引入了 cloudflare 防护。瞬间就让高度依赖元数据的我的软件大伤
+1. 周期性克隆这些元数据网站？网站内部的搜索功能呢？
+2. 使用浏览器绕过 cf ？太重了
+3. 像是 musicbrainz 的 pg 数据库一样，对各个信息源网站建立数据库 ！
+
+建立了数据库之后，就能满足基本的场景了。
+收集到一首专辑，可以根据专辑名，日期，track 等在数据库中查询，然后添加到已有的主题中。
+如下场景仍是依赖原始网站的存活的，根据动漫，艺术家，游戏，某个主题去批量建立主题元数据文件，需要使用原网站的接口
+
+https://vgmdb.net/search?q=Yuki+Yuna+wa+Yuusha+de+Aru&type=
+scrape.io 网站使用如下参数可以获取 vgmdb 
+curl --request GET --location 'http://api.scrape.do/?url=https%3A%2F%2Fvgmdb.net%2Fsearch%3Fq%3DYuki%2BYuna%2Bwa%2BYuusha%2Bde%2BAru%26type%3D&token=4c9439e3707544568eea0ce680b57d1ae25227265ed&geoCode=us&render=true&waitUntil=domcontentloaded&blockResources=false'
+
+python bypass.py https://vgmdb.net/search?q=Yuki+Yuna+wa+Yuusha+de+Aru&type=
+
+## 2026.03.10
+
+https://github.com/FlareSolverr/FlareSolverr
+该项目为 windows 系统提供了二进制文件，在后台运行时会监听 http://localhost:8191/v1 ，收到请求，使用 sleenium driver 新建一个浏览器窗口代理请求网页。性能不足
+
+Browser (进程级): 最重。包含 GUI、渲染引擎等。
+BrowserContext (环境级): 轻量级。类似浏览器的“隐身窗口”。它们共享同一个浏览器进程，但拥有独立的 Cookie、缓存和会话。
+Page (标签页级): 最轻。在 Context 内部开启。
+
+playright 通过异步，原生支持 page 级并发
+https://roundproxies.com/blog/best-patchright-alternatives/
+
+selenium 只能做到 Browser级并发
+
+vgmdb 共有接近 16w 专辑
+https://vgmdb.net/album/159000
+
+
+## 2026.03.11
+
+cloudflare 点击验证，有时会因环境，ip问题触发，此时即使是人类点击，也无法通过验证。
+因此，不需要考虑如何模拟点击。
+
+已完成-----【todo】线程池爬取元数据
+已完成----【todo】playwright 退出报错
+已完成------【todo】无图模式
+
+## 2026.03.12
+
+Playwright通常不需要显式的Page Pool（页面池），因为其原生的BrowserContext机制已极其轻量，支持在单一浏览器实例下并行创建多个隔离页面，效率极高。只有在极端高并发或需复用持久化环境时，才考虑自行实现页面或Context复用。
 
 

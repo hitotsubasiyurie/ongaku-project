@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 import itertools
+from concurrent.futures import ThreadPoolExecutor
 
 from tqdm import tqdm
 
@@ -45,18 +46,20 @@ def _scrape_vgmdb(urls: list[str], existing_albums: list[Album]) -> list[Album]:
 
     # 开始 获取 元数据
 
-    new_albums = []
+    pool = ThreadPoolExecutor()
+    futures = []
     pbar = tqdm(total=len(a_ids), desc="VGMDB", mininterval=0)
+
     for a_id in a_ids:
-        try:
-            new_albums.extend(scraper.get_albums(a_id))
-        except Exception as e:
-            logger.error("", exc_info=1)
-            raise e
-        
-        pbar.update()
-    
+        f = pool.submit(scraper.get_albums, a_id)
+        f.add_done_callback(lambda f: not f.exception() and pbar.update(1))
+        futures.append(f)
+
+    new_albums = itertools.chain.from_iterable(f.result() for f in futures)
+    pool.shutdown()
     pbar.close()
+    scraper.__close()
+
     return new_albums
 
 

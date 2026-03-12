@@ -4,10 +4,10 @@ from lxml import etree
 
 from src.core.basemodels import Album, Track
 from src.core.logger import logger
-from src.scraper._scraper import Scraper
+from src.scraper._scraper import RequestScraper
 
 
-class DoujinMusicInfoScraper(Scraper):
+class DoujinMusicInfoScraper(RequestScraper):
 
     ROOT_URL = "https://www.dojin-music.info"
     CIRCLE_PAGE_URL = f"{ROOT_URL}/circle/{{}}"
@@ -25,7 +25,7 @@ class DoujinMusicInfoScraper(Scraper):
         """
         url = self.CIRCLE_PAGE_URL.format(circle_id)
         logger.info(f"Will get circle. {url}")
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url)
         html: etree._Element = etree.HTML(resp.text)
 
         detail_ul = html.xpath("//ul[@id='circle_detail_cdList']")[0]
@@ -43,7 +43,7 @@ class DoujinMusicInfoScraper(Scraper):
         """
         url = self.CD_PAGE_URL.format(cd_id)
         logger.info(f"Will get cd. {url}")
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url)
         html: etree._Element = etree.HTML(resp.text)
 
 

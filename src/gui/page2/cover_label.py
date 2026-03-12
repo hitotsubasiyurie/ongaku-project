@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 from src.core.i18n import g_message
 from src.core.kanban import AlbumKanban, MetadataState
-from src.gui.common import with_busy_cursor
+from gui._common import with_busy_cursor
 from src.gui.notify import show_toast_msg
 
 OPACITY_CYCLE = itertools.cycle([0.2, 1, 0])

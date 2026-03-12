@@ -8,7 +8,7 @@ from src.core.i18n import g_message
 from src.core.kanban import Kanban
 from src.core.settings import g_settings
 from src.gui.color_theme import BUTTON_QSS
-from src.gui.common import with_busy_cursor
+from gui._common import with_busy_cursor
 from src.gui.notify import show_toast_msg
 from src.gui.page1.page1_widget import Page1Widget
 from src.gui.page2.page2_widget import Page2Widget

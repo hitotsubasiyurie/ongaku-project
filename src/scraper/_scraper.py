@@ -1,15 +1,18 @@
-from collections import Counter
+import atexit
+import weakref
+import asyncio
+import threading
+from typing import Any
 
 import requests
-from diskcache.core import full_name, args_to_key
+from cloakbrowser import launch_async
+from patchright.async_api import Browser, BrowserContext, Route, Page
 
-from src.core.basemodels import Album, Disc
-from src.core.cache import g_request_cache
-from src.core.logger import logger
+from src.core.cache import g_request_cache, full_name, make_key
 from src.utils import retry, RateLimiter
 
 
-class Scraper:
+class RequestScraper:
 
     # 请求 间隔 1.5 秒
     _REQUEST_INTERVAL = 1.5
@@ -26,58 +29,9 @@ class Scraper:
         self.__rate_limiter = RateLimiter(self._REQUEST_INTERVAL)
         self.__request_get = retry(self._REQUEST_RETRY_TIMES, self._REQUEST_RETRY_DELAY)(self.__rate_limiter(requests.get))
 
-    @staticmethod
-    def split_multi_disc_album(catnos: list[str], date: str, album_title: str, discs: list[Disc], link: str) -> list[Album]:
-        """
-        将多碟专辑拆分为独立的专辑。
-
-        | catno | discs | Album |   | |
-        |-------|-------|-------|---|-|
-        | 0     | 0     | 1     |   | 1 张专辑，无 catno 无 tracks |
-        | 0     | 1     | 1     |   | 1 张专辑，无 catno |
-        | 0     | n     | n     |   | n 张专辑，无 catno |
-        | 1     | 0     | 1     |   | 1 张专辑，无 tracks |
-        | 1     | 1     | 1     |   | 1 张专辑 |
-        | 1     | n     | n     |   | n 张专辑 |
-        | n     | 0     | n     |   | n 张专辑，无 tracks |
-        | n     | 1     | 1     | × | 1 张专辑，无法确定 catno |
-        | n     | n     | n     |   | n 张专辑 |
-        | n     | n < m | m     | × | m 张专辑，无法确定 catno |
-        | n     | n > m | n     | × | m 张专辑，无法确定 catno |
-        """
-        if len(catnos) <= 1 and len(discs) <= 1:
-            albums = [Album(catalognumber=catnos[0] if catnos else "", date=date, album=album_title,
-                                    tracks=discs[0].tracks if discs else [], links=[link])]
-        elif len(catnos) <= 1:
-            albums = [Album(catalognumber=catnos[0] if catnos else "", date=date,
-                                        album=f"{album_title} {d.disc}", tracks=d.tracks, links=[link])
-                        for d in discs]
-        elif len(discs) == 0:
-            albums = [Album(catalognumber=c, date=date, album=album_title, tracks=[], links=[link]) for c in catnos]
-        elif len(catnos) == len(discs):
-            albums = [Album(catalognumber=c, date=date, album=f"{album_title} {d.disc}", tracks=d.tracks, links=[link])
-                        for c, d in zip(catnos, discs)]
-        else:
-            logger.warning(f"Failed to assign albums. {catnos, date, album_title}")
-            albums = [Album(catalognumber=", ".join(catnos), date=date, album=f"{album_title} {d.disc}", 
-                            tracks=d.tracks, links=[link])
-                        for d in discs]
-
-        # 处理同名专辑
-        _count = Counter([a.album for a in albums])
-        for i, a in enumerate(albums):
-            if _count[a.album] > 1:
-                a.album += f" Disc {i+1}"
-
-        logger.info(f"Got {len(albums)} albums. {[(a.catalognumber, a.album) for a in albums]}")
-        return albums
-
-    def _cached_request_get(self, url: str, **kwargs) -> requests.Response:
-        """
-        带缓存的 request.get 。
-        """
-        base = (full_name(self.__request_get),)
-        key = args_to_key(base, (url, ), kwargs, False, ())
+    def _scraper_get(self, url: str, **kwargs) -> requests.Response:
+        func_name = full_name(self.__request_get)
+        key = make_key(func_name, url, kwargs)
         result = g_request_cache.get(key)
         if result is None:
             if "timeout" not in kwargs: kwargs["timeout"] = self._REQUEST_TIMEOUT
@@ -88,6 +42,80 @@ class Scraper:
         return result
 
 
+class BrowserScraper:
 
+    # 请求 间隔 1.5 秒
+    _REQUEST_INTERVAL = 1.5
+    # 最大打开页面数
+    _MAX_PAGE_NUM = 10
+    # 拦截的资源类型
+    _ABORTED_RESOURCE_TYPES = {"image", "font", "media"}
+    _COOKIES = []
 
+    def __init__(self) -> None:
+        self.__rate_limiter = RateLimiter(self._REQUEST_INTERVAL)
+        self.__event_loop = asyncio.new_event_loop()
+        threading.Thread(target=self.__thread_run_loop, args=(self.__event_loop,), daemon=True).start()
+        asyncio.run_coroutine_threadsafe(self.__setup(), self.__event_loop).result()
+        # 对象清理时自动关闭
+        weakref.finalize(self, self.__close)
 
+    def __thread_run_loop(self, loop: asyncio.AbstractEventLoop) -> None:
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
+
+    async def __setup(self) -> None:
+        self._browser: Browser = await launch_async(headless=False)
+        self._context: BrowserContext = await self._browser.new_context()
+        self._semaphore = asyncio.Semaphore(self._MAX_PAGE_NUM)
+
+        await self._context.route("**/*", self.__route_handler)
+        if self._COOKIES:
+            await self._context.add_cookies(self._COOKIES)
+
+    def __close(self) -> None:
+        if self.__event_loop.is_running():
+            asyncio.run_coroutine_threadsafe(self._browser.close(), self.__event_loop).result()
+            self.__event_loop.call_soon_threadsafe(self.__event_loop.stop)
+
+    def _scraper_get(self, url: str, wait_selector: str = "") -> requests.Response:
+        """
+        :param wait_selector: 需要等待出现的元素
+        """
+        func_name = full_name(self.__sync_browser_get)
+        key = make_key(func_name, url, wait_selector)
+        resp = g_request_cache.get(key)
+        if resp is None:
+            resp = requests.Response()
+            text = self.__rate_limiter(self.__sync_browser_get)(url, wait_selector)
+            resp._content = text.encode()
+            g_request_cache.set(key, resp)
+        return resp
+
+    def __sync_browser_get(self, url: str, wait_selector: str) -> str:
+        future = asyncio.run_coroutine_threadsafe(
+            self.__async_browser_get(url, wait_selector), 
+            self.__event_loop
+        )
+        return future.result()
+
+    async def __async_browser_get(self, url: str, wait_selector: str) -> str:
+        async with self._semaphore:
+            page = await self._context.new_page()
+            try:
+                await page.goto(url, wait_until="domcontentloaded")
+                # 永远等待
+                if wait_selector:
+                    await page.wait_for_selector(wait_selector, timeout=0)
+                return await page.content()
+            finally:
+                await page.close()
+
+    async def __route_handler(self, route: Route) -> Any:
+        # 放行 cloudflare 
+        if "challenges.cloudflare.com/cdn-cgi" in route.request.url:
+            await route.continue_()
+        elif route.request.resource_type in self._ABORTED_RESOURCE_TYPES:
+            await route.abort()
+        else:
+            await route.continue_()

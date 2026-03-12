@@ -7,21 +7,18 @@ from lxml import etree
 from src.core.basemodels import Album, Disc, Track
 from src.core.exception import OngakuException
 from src.core.logger import logger, logger_watched
-from src.scraper._scraper import Scraper
+from src.scraper._scraper import BrowserScraper
+from src.scraper._common import split_multi_disc_album
 
 
-class VGMdbScraper(Scraper):
+class VGMdbScraper(BrowserScraper):
 
     ROOT_URL = "https://vgmdb.net"
     PRODUCT_PAGE_URL = f"{ROOT_URL}/product/{{}}"
     ARTIST_PAGE_URL = f"{ROOT_URL}/artist/{{}}"
     ALBUM_PAGE_URL = f"{ROOT_URL}/album/{{}}"
 
-    _HEADERS = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
-        # 界面信息 优先日语
-        "cookie": "gfa_lang=ja;"
-    }
+    _COOKIES = [{"name": "gfa_lang", "value": "ja", "domain": "vgmdb.net", "path": "/"}]
 
     def get_product_ids_from_franchise(self, franchise_id: str) -> list[str]:
         """
@@ -31,7 +28,7 @@ class VGMdbScraper(Scraper):
         """
         url = self.PRODUCT_PAGE_URL.format(franchise_id)
         logger.info(f"Will get franchise. {url}")
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url, "#subnav")
         
         html: etree._Element = etree.HTML(resp.text)
         table = html.xpath("//div[@id='collapse_sub']/div/table")[0]
@@ -49,7 +46,7 @@ class VGMdbScraper(Scraper):
         :raises OngakuException:
         """
         url = self.PRODUCT_PAGE_URL.format(product_id)
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url, "#subnav")
 
         html: etree._Element = etree.HTML(resp.text)
         spans: list[etree._Element] = html.xpath("//div[@id='innermain']//h1//span[@class='albumtitle']")
@@ -64,7 +61,7 @@ class VGMdbScraper(Scraper):
         :raises OngakuException:
         """
         logger.info(f"Will get page. {url}")
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url, "#subnav")
 
         html: etree._Element = etree.HTML(resp.text)
         album_urls: list[str] = html.xpath("//div[@id='albumresults']/table/tbody/tr/td/a/@href")
@@ -81,7 +78,7 @@ class VGMdbScraper(Scraper):
         """
         url = self.PRODUCT_PAGE_URL.format(product_id)
         logger.info(f"Will get product. {url}")
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url, "#subnav")
 
         html: etree._Element = etree.HTML(resp.text)
         album_urls: list[str] = html.xpath("//div[@id='discotable']/table/tbody/tr/td/a/@href")
@@ -98,7 +95,7 @@ class VGMdbScraper(Scraper):
         """
         url = self.ARTIST_PAGE_URL.format(artist_id)
         logger.info(f"Will get artist. {url}")
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url, "#subnav")
 
         html: etree._Element = etree.HTML(resp.text)
         album_urls: list[str] = html.xpath("//div[@id='discotable']/table/tbody/tr/td/a/@href")
@@ -117,7 +114,7 @@ class VGMdbScraper(Scraper):
         url = self.ALBUM_PAGE_URL.format(album_id)
         logger.info(f"Will get album. {url}")
 
-        resp = self._cached_request_get(url)
+        resp = self._scraper_get(url, "#subnav")
         html: etree._Element = etree.HTML(resp.text)
 
         album_title = html.xpath("//div[@id='innermain']//h1//span[@class='albumtitle' and @style='display:inline']"
@@ -136,12 +133,12 @@ class VGMdbScraper(Scraper):
         # https://vgmdb.net/album/105234 tracklist 为空
         if not tl_id:
             logger.warning(f"No tracklist span. {url}")
-            return VGMdbScraper.split_multi_disc_album(catnos, date, album_title, [], url)
+            return split_multi_disc_album(catnos, date, album_title, [], url)
 
         tl_span: etree._Element = html.xpath(f"//span[@class='tl' and @id='{tl_id[0]}']")[0]
         discs = self._get_discs(tl_span)
 
-        return VGMdbScraper.split_multi_disc_album(catnos, date, album_title, discs, url)
+        return split_multi_disc_album(catnos, date, album_title, discs, url)
 
     # 内部方法
 
@@ -178,11 +175,11 @@ class VGMdbScraper(Scraper):
         discs = []
         for i, (span, table) in enumerate(itertools.batched(elements, 2)):
             disc_title = span.xpath("string(.)").strip()
-            disc = Disc(discnumber=i+1, disc=disc_title, tracks=self._get_tracks(table))
+            disc = Disc(discnumber=i+1, title=disc_title, tracks=self._get_tracks(table))
             discs.append(disc)
-            logger.info(f"Got disc {disc.discnumber} {[disc.disc]}, with {len(disc.tracks)} tracks.")
+            logger.info(f"Got disc {disc.discnumber} {[disc.title]}, with {len(disc.tracks)} tracks.")
 
-        logger.info(f"Got {len(discs)} discs. {[d.disc for d in discs]}")
+        logger.info(f"Got {len(discs)} discs. {[d.title for d in discs]}")
         return discs
 
     @staticmethod

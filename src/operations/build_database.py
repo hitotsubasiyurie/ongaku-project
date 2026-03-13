@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 
 from tqdm import tqdm
-from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, TaskProgressColumn, MofNCompleteColumn
+from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn, MofNCompleteColumn
 
 from src.core.console import cprint, easy_cinput
 from src.core.i18n import g_message
@@ -82,7 +82,7 @@ def build_database():
 
     # 爬网站
     progress = Progress(TextColumn("{task.description}"), BarColumn(), MofNCompleteColumn(), 
-                        TimeElapsedColumn())
+                        TimeElapsedColumn(), TimeRemainingColumn())
     with progress:
         crawl_threads = [
             Thread(target=_crawl_vgmdb, args=(progress, ), daemon=True),

@@ -37,7 +37,7 @@ class VGMdbScraper(BrowserScraper):
 
         html: etree._Element = etree.HTML(resp.text)
         hrefs = html.xpath("//div[@class='page']//td[@id='rightcolumn']/div[2]//a/@href")
-        album_ids = [h.split("/")[-1] for h in hrefs if "vgmdb.net/album/" in h]
+        album_ids = list(filter(str.isdigit, (h.split("/")[-1] for h in hrefs if "vgmdb.net/album/" in h)))
         latest_id = max(album_ids, key=int)
         logger.info(f"Got latest album id. {latest_id}")
         return latest_id
@@ -51,7 +51,7 @@ class VGMdbScraper(BrowserScraper):
         url = self.PRODUCT_PAGE_URL.format(franchise_id)
         logger.info(f"Will get franchise. {url}")
         resp = self._scraper_get(url, "#subnav")
-        
+
         html: etree._Element = etree.HTML(resp.text)
         table = html.xpath("//div[@id='collapse_sub']/div/table")[0]
         product_urls = [a.xpath("@href")[0] for a in table.iter("a")]
@@ -117,9 +117,8 @@ class VGMdbScraper(BrowserScraper):
         """
         url = self.ALBUM_PAGE_URL.format(album_id)
         logger.info(f"Will get album. {url}")
-
         resp = self._scraper_get(url, "#subnav")
-        return url, resp.text
+        return resp.text
 
     def get_albums(self, album_id: str) -> list[Album]:
         """
@@ -129,8 +128,8 @@ class VGMdbScraper(BrowserScraper):
         """
         url = self.ALBUM_PAGE_URL.format(album_id)
         content = self.get_album_page_content(album_id)
-        html: etree._Element = etree.HTML(content)
 
+        html: etree._Element = etree.HTML(content)
         invalid_message = "This album could not be displayed."
         if invalid_message in content:
             logger.warning(f"Album is invalid. {url}")

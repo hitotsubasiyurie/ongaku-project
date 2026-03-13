@@ -17,6 +17,23 @@ class DoujinMusicInfoScraper(RequestScraper):
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
     }
 
+    def get_latest_cd_id(self) -> str:
+        """
+        获取最新的 cd id 。
+
+        :raises OngakuException:
+        """
+        url = self.ROOT_URL
+        logger.info(f"Will get root page. {url}")
+        resp = self._scraper_get(url)
+
+        html: etree._Element = etree.HTML(resp.text)
+        hrefs = html.xpath("//main/div/main//a/@href")
+        cd_ids = list(filter(str.isdigit, (h.split("/")[-1] for h in hrefs if "/cd/" in h)))
+        latest_id = max(cd_ids, key=int)
+        logger.info(f"Got latest cd id. {latest_id}")
+        return latest_id
+
     def get_cd_ids_from_circle(self, circle_id: str) -> None:
         """
         从 circle 页面获取 cd ids 。
@@ -26,14 +43,23 @@ class DoujinMusicInfoScraper(RequestScraper):
         url = self.CIRCLE_PAGE_URL.format(circle_id)
         logger.info(f"Will get circle. {url}")
         resp = self._scraper_get(url)
-        html: etree._Element = etree.HTML(resp.text)
 
+        html: etree._Element = etree.HTML(resp.text)
         detail_ul = html.xpath("//ul[@id='circle_detail_cdList']")[0]
         cd_urls = detail_ul.xpath("//ul[@id='circle_detail_cdList']//a/@href")
         cd_urls = [u for u in cd_urls if "cd/" in u]
         cd_ids = [u.split("cd/")[1] for u in cd_urls]
         logger.info(f"Got {len(cd_ids)} cd ids from circle {circle_id}.")
         return cd_ids
+
+    def get_cd_page_content(self, cd_id: str) -> str:
+        """
+        获取 album 页面内容。
+        """
+        url = self.CD_PAGE_URL.format(cd_id)
+        logger.info(f"Will get cd. {url}")
+        resp = self._scraper_get(url)
+        return resp.text
 
     def get_album_from_cd(self, cd_id: str) -> Album:
         """
@@ -42,11 +68,9 @@ class DoujinMusicInfoScraper(RequestScraper):
         :raises OngakuException:
         """
         url = self.CD_PAGE_URL.format(cd_id)
-        logger.info(f"Will get cd. {url}")
-        resp = self._scraper_get(url)
-        html: etree._Element = etree.HTML(resp.text)
+        content = self.get_cd_page_content(cd_id)
 
-
+        html: etree._Element = etree.HTML(content)
         album_title = html.xpath("//div[@id='cd_detail']/h1")[0].xpath("string(.)")
 
         detail = html.xpath("//div[@id='cd_detail_header']")[0].xpath("string(.)")

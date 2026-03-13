@@ -2821,3 +2821,13 @@ https://vgmdb.net/album/91
 
 爬取 vgmdb 网站时，要不要以 html 文件格式保存下来呢？
 答案是不需要。 当前我使用了 request cache 来缓存请求结果。 request 返回的内容有很多格式，如 html, json, ... 等。
+
+给 Scraper 增加 ip 池？
+算了，先用着吧。
+浏览器最小也是在在 context 级别设置 ip ，增加 代理功能需要大改现有代码。
+各 ip 池供应商普遍的供应方法是轮动的，需要间隔提取的，ip 会周期失效。需要维护 ip 池
+需要考虑失败的结果。因 ip 的失败，因 cf 验证的失败等
+
+写一个整站爬取功能？把 vgmdb 的 artist product 都爬下来？
+
+

@@ -111,7 +111,16 @@ class VGMdbScraper(BrowserScraper):
         logger.info(f"Got {len(album_ids)} album ids from artist {artist_id}.")
         return album_ids
 
-    @logger_watched(3)
+    def get_album_page_content(self, album_id: str) -> str:
+        """
+        获取 album 页面内容。
+        """
+        url = self.ALBUM_PAGE_URL.format(album_id)
+        logger.info(f"Will get album. {url}")
+
+        resp = self._scraper_get(url, "#subnav")
+        return url, resp.text
+
     def get_albums(self, album_id: str) -> list[Album]:
         """
         从 album 页面获取 Album 模型列表。
@@ -119,14 +128,11 @@ class VGMdbScraper(BrowserScraper):
         :raises OngakuException:
         """
         url = self.ALBUM_PAGE_URL.format(album_id)
-        logger.info(f"Will get album. {url}")
-
-        resp = self._scraper_get(url, "#subnav")
-        return
-        html: etree._Element = etree.HTML(resp.text)
+        content = self.get_album_page_content(album_id)
+        html: etree._Element = etree.HTML(content)
 
         invalid_message = "This album could not be displayed."
-        if invalid_message in resp.text:
+        if invalid_message in content:
             logger.warning(f"Album is invalid. {url}")
             return []
 

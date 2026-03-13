@@ -23,7 +23,7 @@ class _Settings:
     MUSICBRAINZ_PGDATA = os.path.join(TMP_DIRECTORY, "musicbrainz_pgdata")
 
     log_level: int = field(default=2, validator=validators.in_(_LOG_LEVELS))
-    language: str = field(default="en", validator=validators.in_(_LANGUAGES))
+    language: str = field(default="zh-CN", validator=validators.in_(_LANGUAGES))
 
     metadata_directory: str = field(default=r"D:\ongaku-metadata", converter=os.path.abspath)
     resource_directory: str = field(default=r"D:\ongaku-resource", converter=os.path.abspath)

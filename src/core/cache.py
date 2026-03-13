@@ -6,9 +6,17 @@ from diskcache import Cache
 
 from src.core.settings import g_settings
 
-g_cache = Cache(os.path.join(g_settings.TMP_DIRECTORY, "cache"), size_limit=50*1024*1024)
+g_cache = Cache(
+    os.path.join(g_settings.TMP_DIRECTORY, "cache"), 
+    # 50 MiB 上限
+    size_limit=50*1024*1024
+)
 
-g_request_cache = Cache(os.path.join(g_settings.TMP_DIRECTORY, "request_cache"), size_limit=100*1024*1024)
+g_request_cache = Cache(
+    os.path.join(g_settings.TMP_DIRECTORY, "request_cache"), 
+    # 100 GB 上限
+    size_limit=100*1024*1024*1024
+)
 
 
 def full_name(func: Callable) -> str:

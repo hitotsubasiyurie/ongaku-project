@@ -1,3 +1,4 @@
+import time
 import asyncio
 import threading
 from typing import Any
@@ -8,6 +9,7 @@ from patchright.async_api import Browser, BrowserContext, Route, Page
 
 from src.core.cache import g_request_cache, full_name, make_key
 from src.utils import retry, RateLimiter
+from src.core.logger import logger
 
 
 class RequestScraper:
@@ -24,7 +26,9 @@ class RequestScraper:
     _REQUEST_HEADERS = None
 
     def __init__(self) -> None:
+        # 请求 速率限制器
         self.__rate_limiter = RateLimiter(self._REQUEST_INTERVAL)
+        # 封装 request.get 方法
         self.__request_get = retry(self._REQUEST_RETRY_TIMES, self._REQUEST_RETRY_DELAY)(self.__rate_limiter(requests.get))
 
     def _scraper_get(self, url: str, **kwargs) -> requests.Response:
@@ -47,30 +51,47 @@ class BrowserScraper:
     # 最大打开页面数
     _MAX_PAGE_NUM = 10
     # 拦截的资源类型
-    _ABORTED_RESOURCE_TYPES = {"image",}
+    _ABORTED_RESOURCE_TYPES = {"image", "font", "media"}
+    # 页面打开次数后 重启浏览器
+    _RESTART_THRESHOLD = 1000
     # cookies
     _COOKIES = []
 
     def __init__(self) -> None:
+        # 请求 速率限制器
         self.__rate_limiter = RateLimiter(self._REQUEST_INTERVAL)
+        # asyncio 事件循环
         self.__event_loop = asyncio.new_event_loop()
-        threading.Thread(target=self.__thread_run_loop, args=(self.__event_loop,), daemon=True).start()
-        asyncio.run_coroutine_threadsafe(self.__setup(), self.__event_loop).result()
+        # 打开页面数 信号量
+        self._page_semaphore: asyncio.Semaphore
+        # 重启浏览器 计数器
+        self.__restart_counter = 0
+        # 重启浏览器 锁
+        self.__restart_lock: asyncio.Lock
 
-    def __thread_run_loop(self, loop: asyncio.AbstractEventLoop) -> None:
-        asyncio.set_event_loop(loop)
-        loop.run_forever()
+        def __thread_run_loop() -> None:
+            # 子线程运行 loop
+            asyncio.set_event_loop(self.__event_loop)
+            # 初始化 同步原语
+            self.__restart_lock = asyncio.Lock()
+            self._page_semaphore = asyncio.Semaphore(self._MAX_PAGE_NUM)
+            self.__event_loop.run_forever()
 
-    async def __setup(self) -> None:
+        threading.Thread(target=__thread_run_loop, daemon=True).start()
+        asyncio.run_coroutine_threadsafe(self.__setup_browser(), self.__event_loop).result()
+
+    async def __setup_browser(self) -> None:
         self._browser: Browser = await launch_async(headless=False)
         self._context: BrowserContext = await self._browser.new_context()
-        self._semaphore = asyncio.Semaphore(self._MAX_PAGE_NUM)
 
         await self._context.route("**/*", self.__route_handler)
         if self._COOKIES:
             await self._context.add_cookies(self._COOKIES)
 
     def close(self) -> None:
+        """
+        关闭 Scraper。
+        """
         if not self.__event_loop.is_running():
             return
         try:
@@ -100,7 +121,14 @@ class BrowserScraper:
         return future.result()
 
     async def __async_browser_get(self, url: str, wait_selector: str) -> str:
-        async with self._semaphore:
+        # 检查 重启计数器
+        async with self.__restart_lock:
+            self.__restart_counter += 1
+            if self.__restart_counter >= self._RESTART_THRESHOLD:
+                self.__restart_counter = 0
+                await self.__restart_browser()
+
+        async with self._page_semaphore:
             page = await self._context.new_page()
             try:
                 await page.goto(url, wait_until="domcontentloaded")
@@ -112,6 +140,9 @@ class BrowserScraper:
                 await page.close()
 
     async def __route_handler(self, route: Route) -> Any:
+        """
+        浏览器 路由规则。
+        """
         # 放行 cloudflare
         clooudflare_keys = ("challenges.cloudflare.com", "/cdn-cgi", "static.cloudflareinsights.com")
         if any(k in route.request.url for k in clooudflare_keys):
@@ -120,3 +151,18 @@ class BrowserScraper:
             await route.abort()
         else:
             await route.continue_()
+
+    async def __restart_browser(self) -> None:
+        """
+        重启浏览器。
+        """
+        logger.info("Reached restart thresshold. Wait to restart browser.")
+        # 等待所有页面关闭
+        while self._page_semaphore._value < self._MAX_PAGE_NUM:
+            await asyncio.sleep(1)
+        await self._browser.close()
+        await self.__setup_browser()
+        logger.info("Restart browser.")
+
+
+

@@ -2816,3 +2816,8 @@ pillow mutagen attrs cattrs diskcache rtoml PySide6 orjson numpy rapidfuzz scipy
 
 
 https://vgmdb.net/album/91
+
+## 2026.03.13
+
+爬取 vgmdb 网站时，要不要以 html 文件格式保存下来呢？
+答案是不需要。 当前我使用了 request cache 来缓存请求结果。 request 返回的内容有很多格式，如 html, json, ... 等。

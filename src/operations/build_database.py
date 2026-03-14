@@ -22,6 +22,7 @@ from src.utils import retry
 OPERATION_TITLE = g_message.OP_20260312_145800
 
 
+@retry(100)
 def _crawl_vgmdb(progress: Progress) -> None:
     rawdir = Path(g_settings.TMP_DIRECTORY, "vgmdb.net", "album")
     rawdir.mkdir(parents=True, exist_ok=True)

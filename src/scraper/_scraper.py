@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 from cloakbrowser import launch_async
-from patchright.async_api import Browser, BrowserContext, Route, Page
+from patchright.async_api import Browser, BrowserContext, Route
 
 from src.core.cache import g_request_cache, full_name, make_key
 from src.utils import retry, RateLimiter
@@ -31,10 +31,14 @@ class RequestScraper:
         # 封装 request.get 方法
         self.__request_get = retry(self._REQUEST_RETRY_TIMES, self._REQUEST_RETRY_DELAY)(self.__rate_limiter(requests.get))
 
-    def _scraper_get(self, url: str, **kwargs) -> requests.Response:
-        func_name = full_name(self.__request_get)
-        key = make_key(func_name, url, kwargs)
-        result = g_request_cache.get(key)
+    def _scraper_get(self, url: str, use_cache: bool = True, **kwargs) -> requests.Response:
+        """
+        Scraper 网络请求。
+
+        :param use_cache: 是否使用缓存
+        """
+        key = make_key(full_name(self.__request_get), url)
+        result = g_request_cache.get(key) if use_cache else None
         if result is None:
             if "timeout" not in kwargs: kwargs["timeout"] = self._REQUEST_TIMEOUT
             if "headers" not in kwargs: kwargs["headers"] = self._REQUEST_HEADERS
@@ -68,6 +72,8 @@ class BrowserScraper:
         self.__restart_counter = 0
         # 重启浏览器 锁
         self.__restart_lock: asyncio.Lock
+        # 浏览器 user agent
+        self.__user_agent: str = ""
 
         def __thread_run_loop() -> None:
             # 子线程运行 loop
@@ -81,6 +87,9 @@ class BrowserScraper:
         asyncio.run_coroutine_threadsafe(self.__setup_browser(), self.__event_loop).result()
 
     async def __setup_browser(self) -> None:
+        """
+        配置浏览器。
+        """
         self._browser: Browser = await launch_async(headless=False)
         self._context: BrowserContext = await self._browser.new_context()
 
@@ -99,13 +108,29 @@ class BrowserScraper:
         finally:
             self.__event_loop.call_soon_threadsafe(self.__event_loop.stop)
 
-    def _scraper_get(self, url: str, wait_selector: str = "") -> requests.Response:
+    def _get_request_cookies(self, url: str) -> tuple:
         """
+        获取网络请求参数。
+
+        :returns headers, cookies: 
+        """
+        headers = {"User-Agent": self.__user_agent}
+
+        browser_cookies = asyncio.run_coroutine_threadsafe(self._context.cookies(url), self.__event_loop).result()
+        cookies = {c["name"]: c["value"] for c in browser_cookies}
+
+        return headers, cookies
+
+    def _scraper_get(self, url: str, wait_selector: str = "", use_cache: bool = True) -> requests.Response:
+        """
+        Scraper 网络请求。
+
         :param wait_selector: 需要等待出现的元素
+        :param use_cache: 是否使用缓存
         """
         func_name = full_name(self.__sync_browser_get)
         key = make_key(func_name, url, wait_selector)
-        resp = g_request_cache.get(key)
+        resp = g_request_cache.get(key) if use_cache else None
         if resp is None:
             resp = requests.Response()
             text = self.__rate_limiter(self.__sync_browser_get)(url, wait_selector)
@@ -130,6 +155,9 @@ class BrowserScraper:
 
         async with self._page_semaphore:
             page = await self._context.new_page()
+            # 保存 ua
+            if not self.__user_agent:
+                self.__user_agent = await page.evaluate("navigator.userAgent")
             try:
                 await page.goto(url, wait_until="domcontentloaded")
                 # 永远等待

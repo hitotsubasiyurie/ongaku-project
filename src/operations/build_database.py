@@ -17,6 +17,7 @@ from src.scraper import VGMdbScraper, MusicBrainzScraper, DoujinMusicInfoScraper
 from src.external import init_pgdata, pg_ctl_start, pg_ctl_stop
 from src.scraper.musicbrainz_database import MusicBrainzDatabase
 from src.utils import legalize_filename
+from src.utils import retry
 
 OPERATION_TITLE = g_message.OP_20260312_145800
 
@@ -26,6 +27,8 @@ def _crawl_vgmdb(progress: Progress) -> None:
     rawdir.mkdir(parents=True, exist_ok=True)
 
     scraper = VGMdbScraper()
+    scraper.init_cookies()
+
     latest_id = int(scraper.get_latest_album_id())
 
     pool = ThreadPoolExecutor()
@@ -37,7 +40,8 @@ def _crawl_vgmdb(progress: Progress) -> None:
             progress.advance(task_id, 1)
             return
         try:
-            content = scraper.get_album_page_content(a_id)
+            url = scraper.ALBUM_PAGE_URL.format(a_id)
+            content = scraper._get_page_content(url)
             file.write_text(content, encoding="utf-8")
         except Exception as e:
             logger.error("", exc_info=1)
@@ -47,7 +51,6 @@ def _crawl_vgmdb(progress: Progress) -> None:
     list(pool.map(_crawl, map(str, range(1, latest_id+1))))
 
     pool.shutdown()
-    scraper.close()
 
 
 def _crawl_doujinmusicinfo(progress: Progress) -> None:

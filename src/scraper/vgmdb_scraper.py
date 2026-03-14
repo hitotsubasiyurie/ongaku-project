@@ -7,23 +7,34 @@ from lxml import etree
 from src.core.basemodels import Album, Disc, Track
 from src.core.exception import OngakuException
 from src.core.logger import logger, logger_watched
-from src.scraper._scraper import BrowserScraper
+from src.scraper._scraper import BrowserScraper, RequestScraper
 from src.scraper._common import split_multi_disc_album
 
 
-class VGMdbScraper(BrowserScraper):
+class VGMdbScraper(RequestScraper):
 
     ROOT_URL = "https://vgmdb.net"
     PRODUCT_PAGE_URL = f"{ROOT_URL}/product/{{}}"
     ARTIST_PAGE_URL = f"{ROOT_URL}/artist/{{}}"
     ALBUM_PAGE_URL = f"{ROOT_URL}/album/{{}}"
 
-    # 拦截的资源类型
-    _ABORTED_RESOURCE_TYPES = {"image", "font", "media", "stylesheet", 
-                               "script", "texttrack", "xhr", "fetch", 
-                               "eventsource", "websocket", "manifest", "other"}
-    # cookies
-    _COOKIES = [{"name": "gfa_lang", "value": "ja", "domain": "vgmdb.net", "path": "/"}]
+    def init_cookies(self) -> dict[str, str]:
+        scraper = BrowserScraper()
+        scraper._scraper_get(self.ROOT_URL, wait_selector="#subnav", use_cache=False)
+        self.headers, self.cookies = scraper._get_request_cookies(self.ROOT_URL)
+        scraper.close()
+        logger.info(f"Got request cookies. {self.headers} {self.cookies}")
+
+    def _get_page_content(self, url: str) -> str:
+        logger.info(f"Will get page. {url}")
+        resp = self._scraper_get(url, headers=self.headers, cookies=self.cookies)
+
+        keyword = "Site code and design copyright VGMdb.net"
+        if keyword not in resp.text:
+            logger.error(f"Response page not contain keyword. {url}")
+            raise OngakuException()
+
+        return resp.text
 
     def get_latest_album_id(self) -> str:
         """
@@ -32,10 +43,7 @@ class VGMdbScraper(BrowserScraper):
         :raises OngakuException:
         """
         url = self.ROOT_URL
-        logger.info(f"Will get root page. {url}")
-        resp = self._scraper_get(url, "#subnav")
-
-        html: etree._Element = etree.HTML(resp.text)
+        html: etree._Element = etree.HTML(self._get_page_content(url))
         hrefs = html.xpath("//div[@class='page']//td[@id='rightcolumn']/div[2]//a/@href")
         album_ids = list(filter(str.isdigit, (h.split("/")[-1] for h in hrefs if "vgmdb.net/album/" in h)))
         latest_id = max(album_ids, key=int)
@@ -49,10 +57,7 @@ class VGMdbScraper(BrowserScraper):
         :raises OngakuException:
         """
         url = self.PRODUCT_PAGE_URL.format(franchise_id)
-        logger.info(f"Will get franchise. {url}")
-        resp = self._scraper_get(url, "#subnav")
-
-        html: etree._Element = etree.HTML(resp.text)
+        html: etree._Element = etree.HTML(self._get_page_content(url))
         table = html.xpath("//div[@id='collapse_sub']/div/table")[0]
         product_urls = [a.xpath("@href")[0] for a in table.iter("a")]
         product_urls = [u for u in product_urls if "product/" in u]
@@ -67,10 +72,7 @@ class VGMdbScraper(BrowserScraper):
 
         :raises OngakuException:
         """
-        logger.info(f"Will get page. {url}")
-        resp = self._scraper_get(url, "#subnav")
-
-        html: etree._Element = etree.HTML(resp.text)
+        html: etree._Element = etree.HTML(self._get_page_content(url))
         album_urls: list[str] = html.xpath("//div[@id='albumresults']/table/tbody/tr/td/a/@href")
         album_ids = [u.split("album/")[1].strip("/") for u in album_urls if "album/" in u]
 
@@ -84,10 +86,7 @@ class VGMdbScraper(BrowserScraper):
         :raises OngakuException:
         """
         url = self.PRODUCT_PAGE_URL.format(product_id)
-        logger.info(f"Will get product. {url}")
-        resp = self._scraper_get(url, "#subnav")
-
-        html: etree._Element = etree.HTML(resp.text)
+        html: etree._Element = etree.HTML(self._get_page_content(url))
         album_urls: list[str] = html.xpath("//div[@id='discotable']/table/tbody/tr/td/a/@href")
         album_ids = [u.split("album/")[1].strip("/") for u in album_urls]
 
@@ -101,24 +100,12 @@ class VGMdbScraper(BrowserScraper):
         :raises OngakuException:
         """
         url = self.ARTIST_PAGE_URL.format(artist_id)
-        logger.info(f"Will get artist. {url}")
-        resp = self._scraper_get(url, "#subnav")
-
-        html: etree._Element = etree.HTML(resp.text)
+        html: etree._Element = etree.HTML(self._get_page_content(url))
         album_urls: list[str] = html.xpath("//div[@id='discotable']/table/tbody/tr/td/a/@href")
         album_ids = [u.split("album/")[1].strip("/") for u in album_urls]
 
         logger.info(f"Got {len(album_ids)} album ids from artist {artist_id}.")
         return album_ids
-
-    def get_album_page_content(self, album_id: str) -> str:
-        """
-        获取 album 页面内容。
-        """
-        url = self.ALBUM_PAGE_URL.format(album_id)
-        logger.info(f"Will get album. {url}")
-        resp = self._scraper_get(url, "#subnav")
-        return resp.text
 
     def get_albums(self, album_id: str) -> list[Album]:
         """
@@ -127,14 +114,14 @@ class VGMdbScraper(BrowserScraper):
         :raises OngakuException:
         """
         url = self.ALBUM_PAGE_URL.format(album_id)
-        content = self.get_album_page_content(album_id)
+        content = self._get_page_content(url)
 
-        html: etree._Element = etree.HTML(content)
         invalid_message = "This album could not be displayed."
         if invalid_message in content:
             logger.warning(f"Album is invalid. {url}")
             return []
 
+        html: etree._Element = etree.HTML(content)
         album_title = html.xpath("//div[@id='innermain']//h1//span[@class='albumtitle' and @style='display:inline']"
                                  )[0].xpath("string(.)").strip("/ ")
         logger.info(f"Got album title. {[album_title]}")

@@ -2831,3 +2831,9 @@ https://vgmdb.net/album/91
 写一个整站爬取功能？把 vgmdb 的 artist product 都爬下来？
 
 
+在 vgmdb 论坛中 vgmdb.info 作者提到了 cloudflare 的解决方法 cf_clearence 参数
+https://vgmdb.net/forums/showthread.php?t=28946
+https://github.com/hufman/vgmdb
+
+cf_clearance 会在一定时间，一定请求后失效。根据站长所配置的策略
+

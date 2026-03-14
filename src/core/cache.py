@@ -14,8 +14,8 @@ g_cache = Cache(
 
 g_request_cache = Cache(
     os.path.join(g_settings.TMP_DIRECTORY, "request_cache"), 
-    # 100 GB 上限
-    size_limit=100*1024*1024*1024
+    # 50 MiB 上限
+    size_limit=50*1024*1024
 )
 
 
